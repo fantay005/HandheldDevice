@@ -270,11 +270,12 @@ void DisplayClear(void) {
 	for (i = 0; i < 144; i++) {
 		clear[i] = ' ';
 	}
-	LedDisplayGB2312String32(0, 0, LED_DOT_WIDTH / 8, LED_DOT_YEND-1, (const uint8_t *)clear);
+	LedDisplayGB2312String32(0, 0, LED_DOT_WIDTH / 8, LED_DOT_YEND - 1, (const uint8_t *)clear);
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 }
 #endif
 
+#if defined(__LED_HUAIBEI__)
 void DisplayClear(void) {
 	char clear[144];
 	int i;
@@ -292,8 +293,9 @@ void Display2Clear(void) {
 		clear[i] = ' ';
 	}
 	LedDisplayGB2312String162(0, 0, (const uint8_t *)clear);
-	LedDisplayToScan2(2*4, 0, LED_DOT_XEND, LED_DOT_YEND);
+	LedDisplayToScan2(2 * 4, 0, LED_DOT_XEND, LED_DOT_YEND);
 }
+#endif
 
 #if defined(__LED_LIXIN__)
 void DisplayTask(void *helloString) {
@@ -310,11 +312,11 @@ void DisplayTask(void *helloString) {
 			host = p;
 		}
 		p = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
-		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-			assistant = p;
-		} else if (isAsciiStart(p[0])) {
-			assistant = p;
-		}
+//		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
+//			assistant = p;
+//		} else if (isAsciiStart(p[0])) {
+//			assistant = p;
+//		}
 	}
 
 	LedDisplayGB2312String32(288 / 8, 0, LED_DOT_WIDTH / 8, 32, host);

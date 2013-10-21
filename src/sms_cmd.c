@@ -224,7 +224,7 @@ static void __cmd_ALARM_Handler(const SMSInfo *p) {
 	SoftPWNLedSetColor(color);
 	LedDisplayGB2312String162(2 * 4, 0, &pcontent[8]);
 	LedDisplayToScan2(2 * 4, 0, 16 * 12 - 1, 15);
-	__storeSMS2((char*)&pcontent[8]);
+	__storeSMS2((char *)&pcontent[8]);
 }
 #endif
 
@@ -331,7 +331,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{NULL, NULL}
 };
 
-
+#if defined(__LED_HUAIBEI__)
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
 	DateTime dateTime;
@@ -358,6 +358,7 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 					return;
 				}
 			}
+
 #ifdef __LED__
 
 			DisplayClear();
@@ -375,4 +376,19 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	}
 #endif
 }
+#endif
+
+#if defined(__LED_LIXIN__)
+void ProtocolHandlerSMS(const SMSInfo *sms) {
+	const SMSModifyMap *map;
+	int i;
+	__restorUSERParam();
+	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
+		if (strncmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
+			map->smsCommandFunc(sms);
+			return;
+		}
+	}
+}
+#endif
 

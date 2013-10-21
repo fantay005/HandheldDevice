@@ -8,6 +8,7 @@
 #include "second_datetime.h"
 #include "unicode2gbk.h"
 #include "softpwm_led.h"
+#include "softpwm_led.h"
 
 #define SHT_TASK_STACK_SIZE	( configMINIMAL_STACK_SIZE + 64 )
 
@@ -30,7 +31,7 @@
 static void __ledTestTask(void *nouse) {
 	int temp;
 	int humi;
-	enum SoftPWNLedColor color;
+//	enum SoftPWNLedColor color;
 	uint32_t second;
 	DateTime dateTime;
 //	static const char *const weekDayStringTable[] = {
@@ -72,13 +73,13 @@ static void __ledTestTask(void *nouse) {
 		SevenSegLedSetContent(LED_INDEX_HUMI_H, humi / 10);
 		SevenSegLedSetContent(LED_INDEX_HUMI_L, humi % 10);
 		SevenSegLedDisplay();
-		if((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.minute == 0x00)) {
-		    color = SoftPWNLedColorNULL;
-     		SoftPWNLedSetColor(color);
-         	LedDisplayGB2312String162(2 * 4, 0, "淮北气象三农服务");
-	    	LedDisplayToScan2(16 * 4, 0, 16 * 12 - 1, 15);
-            __storeSMS2("淮北气象三农服务");
-		}
+//		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.minute == 0x00)) {
+//			color = SoftPWNLedColorNULL;
+//			SoftPWNLedSetColor(color);
+//			LedDisplayGB2312String162(2 * 4, 0, "淮北气象三农服务");
+//			LedDisplayToScan2(16 * 4, 0, 16 * 12 - 1, 15);
+//			__storeSMS2("淮北气象三农服务");
+//		}
 	}
 }
 

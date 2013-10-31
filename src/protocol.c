@@ -249,7 +249,7 @@ void HandleSendSMS(ProtocolHeader *header, char *p) {
 	MessDisplay(gbk);
 	__storeSMS1(gbk);
 	Unicode2GBKDestroy(gbk);
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
+	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1 , LED_PHY_DOT_HEIGHT - 1);
 #endif
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);

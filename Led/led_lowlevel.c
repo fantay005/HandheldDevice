@@ -32,17 +32,17 @@
 #  error "LED_SCAN_LENGTH%8 MUST be equal to 0"
 #endif
 
-#if !defined(LED_DOT_HEIGHT)
-#  error "LED_DOT_HEIGHT MUST be defined"
-#elif (LED_DOT_HEIGHT%16 != 0)
-#  error "LED_DOT_HEIGHT%16 MUST be equal to 0"
+#if !defined(LED_PHY_DOT_HEIGHT)
+#  error "LED_PHY_DOT_HEIGHT MUST be defined"
+#elif (LED_PHY_DOT_HEIGHT%16 != 0)
+#  error "LED_PHY_DOT_HEIGHT%16 MUST be equal to 0"
 #endif
 
 
-#if !defined(LED_DOT_WIDTH)
-#  error "LED_DOT_WIDTH MUST be defined"
-#elif (LED_DOT_WIDTH%8 != 0)
-#  error "LED_DOT_HEIGHT%8 MUST be equal to 0"
+#if !defined(LED_PHY_DOT_WIDTH)
+#  error "LED_PHY_DOT_WIDTH MUST be defined"
+#elif (LED_PHY_DOT_WIDTH%8 != 0)
+#  error "LED_PHY_DOT_WIDTH%8 MUST be equal to 0"
 #endif
 
 
@@ -53,14 +53,25 @@ static unsigned char __scanBuffer[LED_SCAN_MUX][LED_SCAN_LENGTH];
 #if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
 static unsigned char __displayBuffer[LED_DOT_HEIGHT + 16][LED_DOT_WIDTH / 8];
 #else
-static unsigned char __displayBuffer[LED_DOT_HEIGHT][LED_DOT_WIDTH / 8];
+static unsigned char __displayBuffer[LED_VIR_DOT_HEIGHT][(LED_VIR_DOT_WIDTH / 2 * 3) / 8];
 #endif
 
+void LedDisplayClearAll() {
+	memset(__displayBuffer, 0, sizeof(__displayBuffer));
+}
 
-static int *__displayBufferBit;
-static int *__scanBufferBit[LED_SCAN_MUX];
+void LedScanClearAll() {
+#if LED_DRIVER_LEVEL==1
+	memset(__scanBuffer, 0x00, sizeof(__scanBuffer));
+#else
+	memset(__scanBuffer, 0xFF, sizeof(__scanBuffer));
+#endif
+}
 
-#define BIT_BAND_ADDR_SRAM(addr) ((int *)((int)(0x22000000 + (((int)(addr)) - 0x20000000)*32)))
+static int __displayBufferBit;
+static int __scanBufferBit;
+
+#define BIT_BAND_ADDR_SRAM(addr) (((int)(0x22000000 + (((int)(addr)) - 0x20000000)*32)))
 
 const static unsigned char __dotArrayTable[] = {
 	0x00, 0x80, 0x40, 0xC0, 0x20, 0xA0, 0x60, 0xE0,
@@ -107,11 +118,13 @@ const unsigned char *LedDisplayGB2312String32(int x, int y, int xend, int yend, 
 		return gbString;
 	}
 
-	if (xend > LED_DOT_WIDTH / 8) {
-		xend = LED_DOT_WIDTH / 8;
+	x = x / 8;
+
+	if (xend > LED_VIR_DOT_WIDTH / 8) {
+		xend = LED_VIR_DOT_WIDTH / 8;
 	}
-	if (yend > LED_DOT_HEIGHT) {
-		yend = LED_DOT_HEIGHT;
+	if (yend > LED_VIR_DOT_HEIGHT) {
+		yend = LED_VIR_DOT_HEIGHT;
 	}
 
 	while (*gbString) {
@@ -171,12 +184,12 @@ const unsigned char *LedDisplayGB2312String32(int x, int y, int xend, int yend, 
 		} else if (isUnicodeStart(*gbString)) {
 			int code;
 
-			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_UCS_32X32) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_UCS_32X32) {
 				y += BYTES_HEIGHT_PER_FONT_UCS_32X32;
 				x = 0;
 			}
 
-			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_UCS_32X32) {
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_UCS_32X32) {
 				goto __exit;
 			}
 
@@ -202,27 +215,135 @@ const unsigned char *LedDisplayGB2312String32(int x, int y, int xend, int yend, 
 	}
 __exit:
 	FontDotArrayFetchUnlock();
-	if (*gbString) {
+	return gbString;
+}
+
+
+#if 1
+const unsigned char *LedDisplayGB2312String32Scroll(int x, int y, int dx, const unsigned char *gbString) {
+	int i, j, dxin;
+	if (!FontDotArrayFetchLock()) {
 		return gbString;
 	}
-	return NULL;
+	dxin = dx;
+
+	x = x / 8;
+	dxin = dxin / 8;
+
+	while (*gbString) {
+		if (x >= LED_VIR_DOT_WIDTH / 8) {
+			x -= LED_VIR_DOT_WIDTH / 8;
+		}
+		if (isAsciiStart(*gbString)) {
+			if (dxin < BYTES_WIDTH_PER_FONT_ASCII_32X16) {
+				goto __exit;
+			}
+
+			j = FontDotArrayFetchASCII_32(arrayBuffer, *gbString++);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_ASCII_32X16; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_ASCII_32X16; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_ASCII_32X16 + j];
+					if (j + x >= LED_VIR_DOT_WIDTH / 8) {
+						__displayBuffer[y + i][j + x - LED_VIR_DOT_WIDTH / 8] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_ASCII_32X16 + j];
+					} else if (j + x < LED_VIR_DOT_WIDTH / 2 / 8) {
+						__displayBuffer[y + i][j + x + LED_VIR_DOT_WIDTH / 8] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_ASCII_32X16 + j];
+					}
+				}
+			}
+
+			x += BYTES_WIDTH_PER_FONT_ASCII_32X16;
+			dxin -= BYTES_WIDTH_PER_FONT_ASCII_32X16;
+
+		} else if (isGB2312Start(*gbString)) {
+			int code;
+			if (dxin < BYTES_WIDTH_PER_FONT_GB_32X32) {
+				goto __exit;
+			}
+
+			code = (*gbString++) << 8;
+			code += *gbString++;
+
+			j = FontDotArrayFetchGB_32(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_GB_32X32; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_GB_32X32; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_32X32 + j];
+					if (j + x >= LED_VIR_DOT_WIDTH / 8) {
+						__displayBuffer[y + i][j + x - LED_VIR_DOT_WIDTH / 8] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_32X32 + j];
+					} else if (j + x < LED_VIR_DOT_WIDTH / 2 / 8) {
+						__displayBuffer[y + i][j + x + LED_VIR_DOT_WIDTH / 8] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_32X32 + j];
+					}
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_GB_32X32;
+			dxin -= BYTES_WIDTH_PER_FONT_GB_32X32;
+		} else if (isUnicodeStart(*gbString)) {
+			int code;
+
+			if (dxin < BYTES_WIDTH_PER_FONT_UCS_32X32) {
+				goto __exit;
+			}
+
+			code = (*gbString++) << 8;
+			code += *gbString++;
+
+			j = FontDotArrayFetchUCS_32(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_UCS_32X32; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_UCS_32X32; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_UCS_32X32 + j];
+					if (j + x >= LED_VIR_DOT_WIDTH / 8) {
+						__displayBuffer[y + i][j + x - LED_VIR_DOT_WIDTH / 8] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_UCS_32X32 + j];
+					} else if (j + x < LED_VIR_DOT_WIDTH / 2 / 8) {
+						__displayBuffer[y + i][j + x + LED_VIR_DOT_WIDTH / 8] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_UCS_32X32 + j];
+					}
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_UCS_32X32;
+			dxin -= BYTES_WIDTH_PER_FONT_UCS_32X32;
+		} else {
+			++gbString;
+		}
+	}
+__exit:
+	FontDotArrayFetchUnlock();
+	return gbString;
 }
+
+#endif
+
 
 void LedDisplayGB2312String162(int x, int y, const unsigned char *gbString) {
 	int i, j;
 	if (!FontDotArrayFetchLock()) {
 		return;
 	}
-	y += LED_DOT_HEIGHT;
+	y += LED_VIR_DOT_HEIGHT;
 
 	while (*gbString) {
 		if (isAsciiStart(*gbString)) {
-			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_ASCII_16X8) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_ASCII_16X8) {
 				y += BYTES_HEIGHT_PER_FONT_ASCII_16X8;
 				x = 0;
 			}
 
-			if (y > (LED_DOT_HEIGHT + 16) - BYTES_HEIGHT_PER_FONT_ASCII_16X8) {
+			if (y > (LED_VIR_DOT_HEIGHT + 16) - BYTES_HEIGHT_PER_FONT_ASCII_16X8) {
 				goto __exit;
 			}
 
@@ -243,12 +364,12 @@ void LedDisplayGB2312String162(int x, int y, const unsigned char *gbString) {
 			}
 			code += *gbString++;
 
-			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
 				y += BYTES_HEIGHT_PER_FONT_GB_16X16;
 				x = 0;
 			}
 
-			if (y > (LED_DOT_HEIGHT + 16) - BYTES_HEIGHT_PER_FONT_GB_16X16) {
+			if (y > (LED_VIR_DOT_HEIGHT + 16) - BYTES_HEIGHT_PER_FONT_GB_16X16) {
 				goto __exit;
 			}
 
@@ -269,12 +390,12 @@ void LedDisplayGB2312String162(int x, int y, const unsigned char *gbString) {
 			int code = (*gbString++) << 8;
 			code += *gbString++;
 
-			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
 				y += BYTES_HEIGHT_PER_FONT_GB_16X16;
 				x = 0;
 			}
 
-			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
 				goto __exit;
 			}
 
@@ -301,13 +422,13 @@ __exit:
 
 
 bool LedDisplaySetPixel(int x, int y, int on) {
-	if (x > LED_DOT_XEND) {
+	if (x > LED_VIR_DOT_WIDTH - 1) {
 		return false;
 	}
-	if (y > LED_DOT_YEND) {
+	if (y > LED_VIR_DOT_HEIGHT - 1) {
 		return false;
 	}
-	__displayBufferBit[y * LED_DOT_WIDTH + x] = on ? 1 : 0;
+	*((unsigned int *)(__displayBufferBit + (y * LED_VIR_DOT_WIDTH + x) * 4)) = on ? 1 : 0;
 	return true;
 }
 
@@ -319,12 +440,12 @@ const unsigned char *LedDisplayGB2312String16(int x, int y, const unsigned char 
 
 	while (*gbString) {
 		if (isAsciiStart(*gbString)) {
-			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_ASCII_16X8) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_ASCII_16X8) {
 				y += BYTES_HEIGHT_PER_FONT_ASCII_16X8;
 				x = 0;
 			}
 
-			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_ASCII_16X8) {
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_ASCII_16X8) {
 				goto __exit;
 			}
 
@@ -353,12 +474,12 @@ const unsigned char *LedDisplayGB2312String16(int x, int y, const unsigned char 
 			}
 			code += *gbString++;
 
-			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
 				y += BYTES_HEIGHT_PER_FONT_GB_16X16;
 				x = 0;
 			}
 
-			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
 				goto __exit;
 			}
 
@@ -379,12 +500,12 @@ const unsigned char *LedDisplayGB2312String16(int x, int y, const unsigned char 
 			int code = (*gbString++) << 8;
 			code += *gbString++;
 
-			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
 				y += BYTES_HEIGHT_PER_FONT_GB_16X16;
 				x = 0;
 			}
 
-			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
 				goto __exit;
 			}
 
@@ -412,19 +533,19 @@ __exit:
 	}
 	return NULL;
 }
-
-void LedScanClear(int x, int y, int xend, int yend) {
-	int vx;
-	int *dest;
-
-	for (; y <= yend; ++y) {
-		dest = __scanBufferBit[y % LED_SCAN_MUX] + y / LED_SCAN_MUX + x * 8;
-		for (vx = x; vx <= xend; ++vx) {
-			*dest = 1;
-			dest += 8;
-		}
-	}
-}
+//
+//void LedScanClear(int x, int y, int xend, int yend) {
+//	int vx;
+//	int dest;
+//
+//	for (; y <= yend; ++y) {
+//		dest = __scanBufferBit[y % LED_SCAN_MUX] + (y / LED_SCAN_MUX + x * 8) * 4;
+//		for (vx = x; vx <= xend; ++vx) {
+//			*(unsigned int *)dest = 1;
+//			dest += 8*4;
+//		}
+//	}
+//}
 
 
 
@@ -548,7 +669,7 @@ static inline void __ledScanHardwareInit() {
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-	TIM_TimeBaseStructure.TIM_Period = 92160 / LED_SCAN_MUX;
+	TIM_TimeBaseStructure.TIM_Period = 92160 / LED_SCAN_MUX / 8;
 	TIM_TimeBaseStructure.TIM_Prescaler = 0;
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -602,18 +723,10 @@ bool LedScanSetScanBuffer(int mux, int x, unsigned char dat) {
 }
 
 void LedScanInit() {
-	int i;
-
-#if LED_DRIVER_LEVEL==1
-	memset(__scanBuffer, 0x00, sizeof(__scanBuffer));
-#else
-	memset(__scanBuffer, 0xFF, sizeof(__scanBuffer));
-#endif
+	LedScanClearAll();
+	LedDisplayClearAll();
 	__displayBufferBit = BIT_BAND_ADDR_SRAM(__displayBuffer);
-
-	for (i = 0; i < LED_SCAN_MUX; ++i) {
-		__scanBufferBit[i] = BIT_BAND_ADDR_SRAM(__scanBuffer[i]);
-	}
+	__scanBufferBit = BIT_BAND_ADDR_SRAM(__scanBuffer);
 
 	__ledScanHardwareInit();
 	FontDotArrayInit();
@@ -676,9 +789,10 @@ void LedDisplayClear(int x, int y, int xend, int yend) {
 		for (xv = x; xv <= xend; ++xv) {
 			__displayBuffer[y][xv] = 0;
 		}
-
 	}
 }
+
+
 
 #if defined(USE_QIANGLI_P10_1R1G) && (USE_QIANGLI_P10_1R1G!=0)
 #include "led_qaingli_p10_1R1G.c"
@@ -687,5 +801,10 @@ void LedDisplayClear(int x, int y, int xend, int yend) {
 #if (defined(USE_NORMAL_16SCAN) && (USE_NORMAL_16SCAN != 0))
 #include "led_normal_16scan.c"
 #endif
+
+#if (defined(USE_QIANGLI_P10_1R) && (USE_QIANGLI_P10_1R != 0))
+#include "led_qaingli_p10_1R.c"
+#endif
+
 
 #endif

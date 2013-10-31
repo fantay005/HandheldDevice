@@ -16,11 +16,13 @@
 
 #define DISPLAY_TASK_STACK_SIZE		( configMINIMAL_STACK_SIZE + 256 )
 
-#define MSG_CMD_DISPLAY_CONTROL 0
-#define MSG_CMD_DISPLAY_MESSAGE	1
-#define MSG_CMD_DISPLAY_MESSAGE_RED	1
-#define MSG_CMD_DISPLAY_MESSAGE_GREEN	2
-#define MSG_CMD_DISPLAY_MESSAGE_YELLOW	3
+enum { MSG_CMD_DISPLAY_CONTROL = 0,
+	   MSG_CMD_DISPLAY_MESSAGE,
+	   MSG_CMD_DISPLAY_MESSAGE_RED,
+	   MSG_CMD_DISPLAY_MESSAGE_GREEN,
+	   MSG_CMD_DISPLAY_MESSAGE_YELLOW,
+	   MSG_CMD_DISPLAY_SCROLL_NOTIFY,
+	 };
 
 
 #define	MSG_DATA_DISPLAY_CONTROL_OFF 0
@@ -33,7 +35,7 @@ static const char *assistant = "淮北气象三农服务";
 
 
 #if defined(__LED_LIXIN__)
-static const char *host = "安徽气象欢迎您！";
+static const char *host = "解集人民欢迎您！";
 #endif
 
 typedef struct {
@@ -53,10 +55,12 @@ static char __displayMessageColor = 1;
 static const uint8_t *__displayMessage = NULL;
 static const uint8_t *__displayCurrentPoint = NULL;
 
+static const char *const __message_space = "　　　解集人民欢迎您！　　　";
 void MessDisplay(char *message) {
-	char *p = pvPortMalloc(strlen(message) + 1);
+	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
 	DisplayTaskMessage msg;
 	strcpy(p, message);
+	strcat(p, __message_space);
 	msg.cmd = MSG_CMD_DISPLAY_MESSAGE;
 	msg.data.pointData = p;
 
@@ -66,9 +70,10 @@ void MessDisplay(char *message) {
 }
 
 void DisplayMessageRed(const char *message) {
-	char *p = pvPortMalloc(strlen(message) + 1);
+	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
 	DisplayTaskMessage msg;
 	strcpy(p, message);
+	strcat(p, __message_space);
 	msg.cmd = MSG_CMD_DISPLAY_MESSAGE_RED;
 	msg.data.pointData = p;
 
@@ -78,9 +83,10 @@ void DisplayMessageRed(const char *message) {
 }
 
 void DisplayMessageGreen(const char *message) {
-	char *p = pvPortMalloc(strlen(message) + 1);
+	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
 	DisplayTaskMessage msg;
 	strcpy(p, message);
+	strcat(p, __message_space);
 	msg.cmd = MSG_CMD_DISPLAY_MESSAGE_GREEN;
 	msg.data.pointData = p;
 
@@ -89,10 +95,18 @@ void DisplayMessageGreen(const char *message) {
 	}
 }
 
+void DisplayScrollNotify(int x) {
+	DisplayTaskMessage msg;
+	msg.cmd = MSG_CMD_DISPLAY_SCROLL_NOTIFY;
+	msg.data.wordData = x;
+	xQueueSend(__displayQueue, &msg, configTICK_RATE_HZ);
+}
+
 void DisplayMessageYELLOW(const char *message) {
-	char *p = pvPortMalloc(strlen(message) + 1);
+	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
 	DisplayTaskMessage msg;
 	strcpy(p, message);
+	strcat(p, __message_space);
 	msg.cmd = MSG_CMD_DISPLAY_MESSAGE_YELLOW;
 	msg.data.pointData = p;
 
@@ -118,18 +132,17 @@ void __displayMessageLowlevel(void) {
 	if (__displayCurrentPoint == NULL) {
 		__displayCurrentPoint = __displayMessage;
 	}
-	LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT / 2 - 1);
-	LedDisplayClear(0, LED_DOT_HEIGHT / 2, LED_DOT_XEND, LED_DOT_HEIGHT - 1);
+	LedDisplayClear(0, 0, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT / 2 - 1);
+	LedDisplayClear(0, LED_VIR_DOT_HEIGHT / 2, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT - 1);
 	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String32(0, 0, LED_DOT_WIDTH / 8, 32, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String32(0, 0, LED_VIR_DOT_WIDTH / 8, 32, __displayCurrentPoint);
 	}
 
 	if (__displayMessageColor & 2) {
-		tmp = LedDisplayGB2312String32(0, 32, LED_DOT_WIDTH / 8, 64, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String32(0, 32, LED_VIR_DOT_WIDTH / 8, 64, __displayCurrentPoint);
 	}
 	__displayCurrentPoint = tmp;
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-
+	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 }
 #endif
 
@@ -174,9 +187,10 @@ void __handlerDisplayMessage(DisplayTaskMessage *msg) {
 	if (__displayMessage) {
 		vPortFree((void *)__displayMessage);
 	}
-	__displayCurrentPoint = NULL;
 	__displayMessage = msg->data.pointData;
-	__displayMessageLowlevel();
+	__displayCurrentPoint = __displayMessage;
+	DisplayClear();
+	//__displayMessageLowlevel();
 }
 
 
@@ -184,30 +198,89 @@ void __handlerDisplayMessageRed(DisplayTaskMessage *msg) {
 	if (__displayMessage) {
 		vPortFree((void *)__displayMessage);
 	}
-	__displayCurrentPoint = NULL;
 	__displayMessage = msg->data.pointData;
+	__displayCurrentPoint = __displayMessage;
 	__displayMessageColor = 1;
-	__displayMessageLowlevel();
+	DisplayClear();
+	//__displayMessageLowlevel();
 }
 
 void __handlerDisplayMessageGreen(DisplayTaskMessage *msg) {
 	if (__displayMessage) {
 		vPortFree((void *)__displayMessage);
 	}
-	__displayCurrentPoint = NULL;
 	__displayMessage = msg->data.pointData;
+	__displayCurrentPoint = __displayMessage;
 	__displayMessageColor = 2;
-	__displayMessageLowlevel();
+	DisplayClear();
+	//__displayMessageLowlevel();
 }
 
 void __handlerDisplayMessageYellow(DisplayTaskMessage *msg) {
 	if (__displayMessage) {
 		vPortFree((void *)__displayMessage);
 	}
-	__displayCurrentPoint = NULL;
 	__displayMessage = msg->data.pointData;
+	__displayCurrentPoint = __displayMessage;
 	__displayMessageColor = 3;
-	__displayMessageLowlevel();
+	DisplayClear();
+//	__displayMessageLowlevel();
+}
+const unsigned char *LedDisplayGB2312String32Scroll(int x, int y, int dx, const unsigned char *gbString);
+void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
+	const uint8_t *tmp;
+
+	static int xorg = 0 ;
+	int dx;
+
+	int x = msg->data.wordData;
+
+//	printf("xorg=%d, x=%d\n", xorg, x);
+
+	if (__displayMessage == NULL) {
+		return;
+	}
+
+	if (*__displayCurrentPoint == 0) {
+//		xorg += 96;
+//		if (xorg >= LED_VIR_DOT_WIDTH) {
+//			xorg -= LED_VIR_DOT_WIDTH;
+//		}
+		__displayCurrentPoint = __displayMessage;
+	}
+
+	if (xorg > x) {
+		dx = 32;
+	} else {
+		dx = x - xorg;
+	}
+//
+//	if (x < xorg) {
+//		if ((LED_VIR_DOT_WIDTH - xorg + x) < 96) return;
+//		dx = 96;
+//	} else {
+//		dx = x - xorg;
+//	}
+
+	if (__displayMessageColor & 1) {
+		tmp = LedDisplayGB2312String32Scroll(xorg, 0, dx, __displayCurrentPoint);
+		if (tmp == __displayCurrentPoint) {
+			return;
+		}
+	}
+
+	if (__displayMessageColor & 2) {
+		tmp = LedDisplayGB2312String32Scroll(xorg, 32, dx, __displayCurrentPoint);
+		if (tmp == __displayCurrentPoint) {
+			return;
+		}
+	}
+
+	xorg = xorg + 16 * (tmp - __displayCurrentPoint);
+	if (xorg >= LED_VIR_DOT_WIDTH) {
+		xorg -= LED_VIR_DOT_WIDTH;
+	}
+	__displayCurrentPoint = tmp;
 }
 
 void __destroyDisplayMessage(DisplayTaskMessage *msg) {
@@ -227,10 +300,13 @@ static const struct {
 	{ MSG_CMD_DISPLAY_MESSAGE_RED, __handlerDisplayMessageRed, NULL },
 	{ MSG_CMD_DISPLAY_MESSAGE_GREEN, __handlerDisplayMessageGreen, NULL },
 	{ MSG_CMD_DISPLAY_MESSAGE_YELLOW, __handlerDisplayMessageYellow, NULL },
+	{ MSG_CMD_DISPLAY_SCROLL_NOTIFY, __handlerDisplayScrollNotify, NULL },
 #endif
 
 	{ MSG_CMD_DISPLAY_CONTROL, __handlerDisplayControl, NULL},
 };
+
+#if 0
 
 void __leftToRight() {
 	int x;
@@ -263,26 +339,18 @@ void __lowerToUpper() {
 		vTaskDelay(configTICK_RATE_HZ / 20);
 	}
 }
+
+#endif
 #if defined(__LED_LIXIN__)
 void DisplayClear(void) {
-	char clear[144];
-	int i;
-	for (i = 0; i < 144; i++) {
-		clear[i] = ' ';
-	}
-	LedDisplayGB2312String32(0, 0, LED_DOT_WIDTH / 8, LED_DOT_YEND - 1, (const uint8_t *)clear);
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
+	LedDisplayClearAll();
+	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 }
 #endif
 
 #if defined(__LED_HUAIBEI__)
 void DisplayClear(void) {
-	char clear[144];
-	int i;
-	for (i = 0; i < 144; i++) {
-		clear[i] = ' ';
-	}
-	LedDisplayGB2312String16(0, 0, (const uint8_t *)clear);
+	LedDisplayClearAll();
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 }
 
@@ -301,38 +369,34 @@ void Display2Clear(void) {
 void DisplayTask(void *helloString) {
 	portBASE_TYPE rc;
 	DisplayTaskMessage msg;
+	const char *p;
 
-	printf("DisplayTask: start-> %s\n", (const char *)helloString);
+//	printf("DisplayTask: start-> %s\n", (const char *)helloString);
 	__displayQueue = xQueueCreate(5, sizeof(DisplayTaskMessage));
-	{
-		const char *p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
-		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-			host = p;
-		} else if (isAsciiStart(p[0])) {
-			host = p;
-		}
-		p = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
-
-		LedDisplayGB2312String32(288 / 8, 0, LED_DOT_WIDTH / 8, 32, host);
-		LedDisplayGB2312String32(288 / 8, 32, LED_DOT_WIDTH / 8, 64, host);
-		LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-		LedScanOnOff(1);
-		while (1) {
-			rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
-			if (rc == pdTRUE) {
-				int i;
-				for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
-					if (__messageHandlerFunctions[i].cmd == msg.cmd) {
-						__messageHandlerFunctions[i].handlerFunc(&msg);
-						if (__messageHandlerFunctions[i].destroyFunc != NULL) {
-							__messageHandlerFunctions[i].destroyFunc(&msg);
-						}
-						break;
+	p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
+	if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
+		host = p;
+	} else if (isAsciiStart(p[0])) {
+		host = p;
+	}
+	LedScanOnOff(1);
+	DisplayMessageRed((char*)host);
+	ScrollDisplayInit();
+	while (1) {
+		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
+		if (rc == pdTRUE) {
+			int i;
+			for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
+				if (__messageHandlerFunctions[i].cmd == msg.cmd) {
+					__messageHandlerFunctions[i].handlerFunc(&msg);
+					if (__messageHandlerFunctions[i].destroyFunc != NULL) {
+						__messageHandlerFunctions[i].destroyFunc(&msg);
 					}
+					break;
 				}
-			} else {
-				__displayMessageLowlevel();
 			}
+		} else {
+//				__displayMessageLowlevel();
 		}
 	}
 }
@@ -361,9 +425,7 @@ void DisplayTask(void *helloString) {
 		}
 	}
 	MessDisplay((char *)host);
-//	LedDisplayGB2312String16(0, 0, host);
 	LedDisplayGB2312String162(8, 0, assistant);
-//	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 	LedDisplayToScan2(2 * 4, 0, LED_DOT_XEND, 15);
 	LedScanOnOff(1);
 	while (1) {

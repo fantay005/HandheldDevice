@@ -3,7 +3,7 @@
 
 #include "preinclude_commoh.h"
 
-//利辛县, 强力双色LED, 32*12
+//利辛县, 强力双色LED, 32*9
 #define __LED__                          1
 #define __LED_LIXIN__                    1
 #define __LED_LIXIN_384__                1

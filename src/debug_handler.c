@@ -37,7 +37,6 @@ void __setScanBuffer(const char *p) {
 		return;
 	}
 
-
 	x = strtol(&tmp[1], &tmp, 10);
 	if ((tmp == NULL) || (*tmp != ','))	{
 		printf("error format 2\n");
@@ -45,7 +44,7 @@ void __setScanBuffer(const char *p) {
 	}
 
 	dat = strtol(&tmp[1], &tmp, 16);
-	printf("LedScanSetScanBuffer(%d, %d, %02X):", mux, x, dat);
+	printf("LedScanSetScanBuffer(mux=%d, x=%d, dat=%02X):", mux, x, dat);
 	if (LedScanSetScanBuffer(mux, x, dat)) {
 		printf("Succeed\n");
 	} else {
@@ -126,7 +125,11 @@ typedef struct {
 static const DebugHandlerMap __handlerMaps[] = {
 	{ "ST", __setRtcTime },
 #ifdef __LED__
+	/// SSB3,2,1
+	/// Set scan buffer MUX=3, X=2, ON
 	{ "SSB", __setScanBuffer},
+	/// SSB3,2,1
+	/// Set display buffer X=3, Y=2, ON
 	{ "SDB", __setDisplayBuffer },
 #endif
 #ifdef __LED_HUAIBEI__

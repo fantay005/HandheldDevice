@@ -580,7 +580,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{NULL, NULL}
 };
 
-
+#if defined(__LED_HUAIBEI__)
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
 	DateTime dateTime;
@@ -644,4 +644,19 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 #endif
 }
+#endif
+
+#if defined(__LED_LIXIN__)
+void ProtocolHandlerSMS(const SMSInfo *sms) {
+	const SMSModifyMap *map;
+	int i;
+	__restorUSERParam();
+	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
+		if (strncmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
+			map->smsCommandFunc(sms);
+			return;
+		}
+	}
+}
+#endif
 

@@ -106,14 +106,14 @@ void USART1_IRQHandler(void) {
 
 
 int fputc(int c, FILE *f) {
+    USART_SendData(USART1, c);
 	while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-	USART_SendData(USART1, c);
 	return c;
 }
 
 int putch(int c) {
+    USART_SendData(USART1, c);
 	while (USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET);
-	USART_SendData(USART1, c);
 	return c;
 }
 

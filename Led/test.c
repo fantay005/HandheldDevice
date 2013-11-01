@@ -8,6 +8,7 @@
 #include "second_datetime.h"
 #include "unicode2gbk.h"
 #include "softpwm_led.h"
+#include "softpwm_led.h"
 
 #define SHT_TASK_STACK_SIZE	( configMINIMAL_STACK_SIZE + 64 )
 
@@ -30,7 +31,7 @@
 static void __ledTestTask(void *nouse) {
 	int temp;
 	int humi;
-	enum SoftPWNLedColor color;
+//	enum SoftPWNLedColor color;
 	uint32_t second;
 	DateTime dateTime;
 //	static const char *const weekDayStringTable[] = {

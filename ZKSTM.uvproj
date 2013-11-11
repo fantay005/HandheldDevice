@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>LED_HUAIBEI</TargetName>
+      <TargetName>LED_FEIDONG</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>

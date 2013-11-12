@@ -368,10 +368,10 @@ void __gsmModemStart() {
 	vTaskDelay(configTICK_RATE_HZ / 2);
 
 	__gsmAssertResetPin();
-	vTaskDelay(configTICK_RATE_HZ * 2);
+	vTaskDelay(configTICK_RATE_HZ * 3);
 
 	__gsmDeassertResetPin();
-	vTaskDelay(configTICK_RATE_HZ * 5);
+	vTaskDelay(configTICK_RATE_HZ * 6);
 }
 
 /// Check if has the GSM modem connect to a TCP server.

@@ -53,7 +53,7 @@ static unsigned char __scanBuffer[LED_SCAN_MUX][LED_SCAN_LENGTH];
 #if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
 static unsigned char __displayBuffer[LED_DOT_HEIGHT + 16][LED_DOT_WIDTH / 8];
 #else
-static unsigned char __displayBuffer[LED_VIR_DOT_HEIGHT][(LED_VIR_DOT_WIDTH / 2 * 3) / 8];
+static unsigned char __displayBuffer[LED_VIR_DOT_HEIGHT / 2 * 3][LED_VIR_DOT_WIDTH  / 8];
 #endif
 
 void LedDisplayClearAll() {
@@ -218,8 +218,109 @@ __exit:
 	return gbString;
 }
 
+const unsigned char *LedDisplayGB2312String16Scroll(int x, int y, int dy, const unsigned char *gbString) {
+	int i, j;
+	if (!FontDotArrayFetchLock()) {
+		return gbString;
+	}
 
-#if 1
+	while (*gbString) {
+		if (isAsciiStart(*gbString)) {
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_ASCII_16X8) {
+				y += BYTES_HEIGHT_PER_FONT_ASCII_16X8;
+				x = 0;
+			}
+
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_ASCII_16X8) {
+				goto __exit;
+			}
+
+			j = FontDotArrayFetchASCII_16(arrayBuffer, *gbString);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+			if (*gbString & 0x01) {
+				for (i = 0; i < BYTES_HEIGHT_PER_FONT_ASCII_16X8; ++i) {
+					__displayBuffer[y + i][x] = arrayBuffer[i + 1];
+				}
+			} else {
+				for (i = 0; i < BYTES_HEIGHT_PER_FONT_ASCII_16X8; ++i) {
+					__displayBuffer[y + i][x] = arrayBuffer[i];
+				}
+			}
+			++gbString;
+			x += BYTES_WIDTH_PER_FONT_ASCII_16X8;
+
+		} else if (isGB2312Start(*gbString)) {
+			int code = (*gbString++) << 8;
+			if (!isGB2312Start(*gbString)) {
+				goto __exit;
+			}
+			code += *gbString++;
+
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
+				y += BYTES_HEIGHT_PER_FONT_GB_16X16;
+				x = 0;
+			}
+
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
+				goto __exit;
+			}
+
+			j = FontDotArrayFetchGB_16(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_GB_16X16; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_GB_16X16; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_16X16 + j];
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_GB_16X16;
+		} else if (isUnicodeStart(*gbString)) {
+			int code = (*gbString++) << 8;
+			code += *gbString++;
+
+			if (x > LED_VIR_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_16X16) {
+				y += BYTES_HEIGHT_PER_FONT_GB_16X16;
+				x = 0;
+			}
+
+			if (y > LED_VIR_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_16X16) {
+				goto __exit;
+			}
+
+			j = FontDotArrayFetchUCS_16(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_GB_16X16; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_GB_16X16; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_16X16 + j];
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_GB_16X16;
+		} else {
+			++gbString;
+		}
+	}
+__exit:
+	FontDotArrayFetchUnlock();
+	if (*gbString) {
+		return gbString;
+	}
+	return NULL;
+}
+
+#if 0
 const unsigned char *LedDisplayGB2312String32Scroll(int x, int y, int dx, const unsigned char *gbString) {
 	int i, j, dxin;
 	if (!FontDotArrayFetchLock()) {
@@ -325,9 +426,7 @@ __exit:
 	FontDotArrayFetchUnlock();
 	return gbString;
 }
-
 #endif
-
 
 void LedDisplayGB2312String162(int x, int y, const unsigned char *gbString) {
 	int i, j;
@@ -533,24 +632,6 @@ __exit:
 	}
 	return NULL;
 }
-//
-//void LedScanClear(int x, int y, int xend, int yend) {
-//	int vx;
-//	int dest;
-//
-//	for (; y <= yend; ++y) {
-//		dest = __scanBufferBit[y % LED_SCAN_MUX] + (y / LED_SCAN_MUX + x * 8) * 4;
-//		for (vx = x; vx <= xend; ++vx) {
-//			*(unsigned int *)dest = 1;
-//			dest += 8*4;
-//		}
-//	}
-//}
-
-
-
-
-
 
 #if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
 void LedDisplayToScan2(int x, int y, int xend, int yend) {

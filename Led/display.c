@@ -226,14 +226,14 @@ void __handlerDisplayMessageYellow(DisplayTaskMessage *msg) {
 	DisplayClear();
 //	__displayMessageLowlevel();
 }
-const unsigned char *LedDisplayGB2312String32Scroll(int x, int y, int dx, const unsigned char *gbString);
+const unsigned char *LedDisplayGB2312String16Scroll(int x, int y, int dy, const unsigned char *gbString);
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 
-	static int xorg = 0 ;
-	int dx;
+	static int yorg = 0 ;
+	int dy;
 
-	int x = msg->data.wordData;
+	int y = msg->data.wordData;
 
 //	printf("xorg=%d, x=%d\n", xorg, x);
 
@@ -249,10 +249,10 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 		__displayCurrentPoint = __displayMessage;
 	}
 
-	if (xorg > x) {
-		dx = 32;
+	if (yorg > y) {
+		dy = 16;
 	} else {
-		dx = x - xorg;
+		dy = y - yorg;
 	}
 //
 //	if (x < xorg) {
@@ -263,22 +263,22 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 //	}
 
 	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String32Scroll(xorg, 0, dx, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String16Scroll(yorg, 0, dy, __displayCurrentPoint);
 		if (tmp == __displayCurrentPoint) {
 			return;
 		}
 	}
 
 	if (__displayMessageColor & 2) {
-		tmp = LedDisplayGB2312String32Scroll(xorg, 32, dx, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String16Scroll(yorg, 32, dy, __displayCurrentPoint);
 		if (tmp == __displayCurrentPoint) {
 			return;
 		}
 	}
 
-	xorg = xorg + 16 * (tmp - __displayCurrentPoint);
-	if (xorg >= LED_VIR_DOT_WIDTH) {
-		xorg -= LED_VIR_DOT_WIDTH;
+	yorg = yorg + 8 * (tmp - __displayCurrentPoint);
+	if (yorg >= LED_VIR_DOT_HEIGHT) {
+		yorg -= LED_VIR_DOT_HEIGHT;
 	}
 	__displayCurrentPoint = tmp;
 }
@@ -306,41 +306,6 @@ static const struct {
 	{ MSG_CMD_DISPLAY_CONTROL, __handlerDisplayControl, NULL},
 };
 
-#if 0
-
-void __leftToRight() {
-	int x;
-	for (x = 0; x <= LED_DOT_XEND; ++x) {
-		LedDisplayToScan(x, 0, x, LED_DOT_YEND);
-		vTaskDelay(configTICK_RATE_HZ / 50);
-	}
-}
-
-void __upperToLower() {
-	int y;
-	for (y = 0; y <= LED_DOT_YEND; ++y) {
-		LedDisplayToScan(0, y, LED_DOT_XEND, y);
-		vTaskDelay(configTICK_RATE_HZ / 20);
-	}
-}
-
-void __rightToLeft() {
-	int x;
-	for (x = LED_DOT_XEND; x >= 0; --x) {
-		LedDisplayToScan(x, 0, x, LED_DOT_YEND);
-		vTaskDelay(configTICK_RATE_HZ / 50);
-	}
-}
-
-void __lowerToUpper() {
-	int y;
-	for (y = LED_DOT_YEND; y >= 0; --y) {
-		LedDisplayToScan(0, y, LED_DOT_XEND, y);
-		vTaskDelay(configTICK_RATE_HZ / 20);
-	}
-}
-
-#endif
 #if defined(__LED_LIXIN__)
 void DisplayClear(void) {
 	LedDisplayClearAll();
@@ -424,9 +389,6 @@ void DisplayTask(void *helloString) {
 			assistant = p;
 		}
 	}
-	MessDisplay((char *)host);
-	LedDisplayGB2312String162(8, 0, assistant);
-	LedDisplayToScan2(2 * 4, 0, LED_DOT_XEND, 15);
 	LedScanOnOff(1);
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);

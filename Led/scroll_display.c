@@ -48,22 +48,21 @@ void __scrollDisplayTask(void *helloString) {
 #else
 void __scrollDisplayTask(void *helloString) {
 	portBASE_TYPE rc;
-	int xContentEnd = LED_VIR_DOT_WIDTH-1;
-	int xDisp = 40;
+	int yDisp = 84;
 	printf("ScrollDisplayTask, start\n");
 	while(1) {
 		if (xSemaphoreTake(__scrollSemaphore, portMAX_DELAY) == pdTRUE) {
-			LedScrollDisplayToScan(xDisp, 0, 0, 0);
-			if (xDisp % 32 == 0) {
-				int xPre = xDisp - 32;
-				if (xPre < 0) {
-					xPre + LED_VIR_DOT_WIDTH;
+			LedScrollDisplayToScan(0, yDisp, 0, 0);
+			if (yDisp % 16 == 0) {
+				int yPre = yDisp - 16;
+				if (yPre < 0) {
+					yPre += LED_VIR_DOT_HEIGHT;
 				}
-				DisplayScrollNotify(xPre);
+				DisplayScrollNotify(yPre);
 			}
-			++xDisp;
-			if (xDisp >= LED_VIR_DOT_WIDTH) {
-				xDisp = 0;
+//			++yDisp;
+			if (yDisp >= LED_VIR_DOT_HEIGHT) {
+				yDisp = 0;
 			}
 		}
 	}
@@ -93,16 +92,16 @@ static void __init(void) {
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-	TIM_TimeBaseStructure.TIM_Period = 20000;
+	TIM_TimeBaseStructure.TIM_Period = 5000;
 	TIM_TimeBaseStructure.TIM_Prescaler = 0;
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 
-	TIM_PrescalerConfig(TIM3, 80, TIM_PSCReloadMode_Immediate);
+	TIM_PrescalerConfig(TIM3, 4000, TIM_PSCReloadMode_Immediate);
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Timing;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse = 8192;
+	TIM_OCInitStructure.TIM_Pulse = 50000;
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
 	TIM_OC1Init(TIM3, &TIM_OCInitStructure);

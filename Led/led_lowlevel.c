@@ -218,7 +218,7 @@ __exit:
 	return gbString;
 }
 
-const unsigned char *LedDisplayGB2312String16Scroll(int x, int y, int dy, const unsigned char *gbString) {
+const unsigned char *LedDisplayGB2312String16ScrollLeft(int x, int y, int dy, const unsigned char *gbString) {
 	int i, j;
 	if (!FontDotArrayFetchLock()) {
 		return gbString;
@@ -321,7 +321,7 @@ __exit:
 }
 
 #if 0
-const unsigned char *LedDisplayGB2312String32Scroll(int x, int y, int dx, const unsigned char *gbString) {
+const unsigned char *LedDisplayGB2312String32ScrollLeft(int x, int y, int dx, const unsigned char *gbString) {
 	int i, j, dxin;
 	if (!FontDotArrayFetchLock()) {
 		return gbString;
@@ -427,6 +427,195 @@ __exit:
 	return gbString;
 }
 #endif
+
+
+const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, const unsigned char *gbString) {
+	int i, j, k, t;
+	int y = *py;
+
+	if (!FontDotArrayFetchLock()) {
+		return gbString;
+	}
+	x = x / 8;
+
+	while (*gbString) {
+		if (isAsciiStart(*gbString)) {
+			if (x > (LED_VIR_DOT_WIDTH - 8) / 8) {
+		        for (; x < LED_VIR_DOT_WIDTH /8; ++x) {
+			         for(k = y ; k < y + 16; ++k){
+					     __displayBuffer[k][x] = 0;
+				     }	
+		        }
+				x = 0;
+				y += 16;
+				dy -= 16;
+			}
+
+			if (dy < 16) {
+				goto __exit;
+			}
+	
+//			if (y > LED_VIR_DOT_HEIGHT - 32) {
+//				goto __exit;
+//			}
+
+			j = FontDotArrayFetchASCII_16(arrayBuffer, *gbString++);
+
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_ASCII_16X8; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_ASCII_16X8; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_ASCII_16X8 + j];
+					if (i + y >= LED_VIR_DOT_HEIGHT) {
+						__displayBuffer[y + i - LED_VIR_DOT_HEIGHT][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_ASCII_16X8 + j];
+					} else if (i + y < LED_VIR_DOT_HEIGHT /2) {
+						__displayBuffer[y + i + LED_VIR_DOT_HEIGHT][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_ASCII_16X8 + j];
+					}
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_ASCII_16X8;
+		} else if (isGB2312Start(*gbString)) {
+			int code;
+			if (y > LED_VIR_DOT_HEIGHT) {
+			    for(k = 0; k < y - LED_VIR_DOT_HEIGHT; ++k){
+					for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
+						__displayBuffer[k][t] = 0;
+					}
+			    }
+			}else if(y < LED_VIR_DOT_HEIGHT/2) {
+			    for(k = 160; k < y + LED_VIR_DOT_HEIGHT; ++k){
+					for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
+						__displayBuffer[k][t] = 0;
+					}
+			    }
+			}				
+
+			if (x > (LED_VIR_DOT_WIDTH - 16) / 8) {
+		        for (; x < LED_VIR_DOT_WIDTH /8; ++x) {
+			         for(k = y ; k < y + 16; ++k){
+					     __displayBuffer[k][x] = 0;
+				     }	
+		        }
+				x = 0;
+				y += 16;
+				dy -= 16;
+			}
+
+			if (dy < 16) {
+				goto __exit;
+			}
+			 
+			code = (*gbString++) << 8;
+			code += *gbString++;
+
+			j = FontDotArrayFetchGB_16(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_GB_16X16; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_GB_16X16; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_16X16 + j];
+					if (i + y >= LED_VIR_DOT_HEIGHT) {
+						__displayBuffer[y + i - LED_VIR_DOT_HEIGHT][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_16X16 + j];
+					} else if (i + y < LED_VIR_DOT_HEIGHT /2) {
+						__displayBuffer[y + i + LED_VIR_DOT_HEIGHT][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_16X16 + j];
+					}
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_GB_16X16;
+		} else if (isUnicodeStart(*gbString)) {
+			int code;
+
+			if (y > LED_VIR_DOT_HEIGHT) {
+			    for(k = 0; k < y - LED_VIR_DOT_HEIGHT; ++k){
+					for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
+						__displayBuffer[k][t] = 0;
+					}
+			    }
+			}else if(y < LED_VIR_DOT_HEIGHT/2) {
+			    for(k = 160; k < y + LED_VIR_DOT_HEIGHT; ++k){
+					for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
+						__displayBuffer[k][t] = 0;
+					}
+			    }
+			}
+
+			if (x > (LED_VIR_DOT_WIDTH - 16) / 8) {
+		        for (; x < LED_VIR_DOT_WIDTH /8; ++x) {
+			         for(k = y ; k < y + 16; ++k){
+					     __displayBuffer[k][x] = 0;
+				     }	
+		        }
+				x = 0;
+				y += 16;
+				dy -= 16;
+			}
+
+			if (dy < 16) {
+				goto __exit;
+			}
+
+			code = (*gbString++) << 8;
+			code += *gbString++;
+
+			j = FontDotArrayFetchUCS_16(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_UCS_16X16; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_UCS_16X16; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_UCS_16X16 + j];
+					if (i + y >= LED_VIR_DOT_HEIGHT) {
+						__displayBuffer[y + i - LED_VIR_DOT_HEIGHT][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_UCS_16X16 + j];
+					} else if (i + y < LED_VIR_DOT_HEIGHT /2) {
+						__displayBuffer[y + i + LED_VIR_DOT_HEIGHT][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_UCS_16X16 + j];
+					}
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_UCS_16X16;
+		} else {
+			++gbString;
+		}
+	}
+	if (x != 0) {		
+		for ( ; x < LED_VIR_DOT_WIDTH /8; ++x) {
+			 for(k = y ; k < y + 16; ++k){
+				__displayBuffer[k][x] = 0;
+			}	
+	   }
+
+		if (y > LED_VIR_DOT_HEIGHT) {
+			 for(k = 0; k < y - LED_VIR_DOT_HEIGHT; ++k){
+				for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
+					__displayBuffer[k][t] = 0;
+				}
+			 }
+		}else if(y < LED_VIR_DOT_HEIGHT/2) {
+			 for(k = 160; k < y + LED_VIR_DOT_HEIGHT; ++k){
+				 for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
+					__displayBuffer[k][t] = 0;
+				}
+			 }
+		}						
+		y += 16;
+
+     }
+
+__exit:
+	*py = y;
+	FontDotArrayFetchUnlock();
+	return gbString;
+}
 
 void LedDisplayGB2312String162(int x, int y, const unsigned char *gbString) {
 	int i, j;

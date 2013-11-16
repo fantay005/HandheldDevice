@@ -48,7 +48,7 @@ void __scrollDisplayTask(void *helloString) {
 #else
 void __scrollDisplayTask(void *helloString) {
 	portBASE_TYPE rc;
-	int yDisp = 84;
+	int yDisp = 96;
 	printf("ScrollDisplayTask, start\n");
 	while(1) {
 		if (xSemaphoreTake(__scrollSemaphore, portMAX_DELAY) == pdTRUE) {
@@ -60,7 +60,7 @@ void __scrollDisplayTask(void *helloString) {
 				}
 				DisplayScrollNotify(yPre);
 			}
-//			++yDisp;
+			++yDisp;
 			if (yDisp >= LED_VIR_DOT_HEIGHT) {
 				yDisp = 0;
 			}

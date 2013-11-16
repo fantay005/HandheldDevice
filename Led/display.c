@@ -57,10 +57,10 @@ static const uint8_t *__displayCurrentPoint = NULL;
 
 static const char *const __message_space = "　　　解集人民欢迎您！　　　";
 void MessDisplay(char *message) {
-	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
+	char *p = pvPortMalloc(strlen(message) + 1);
 	DisplayTaskMessage msg;
 	strcpy(p, message);
-	strcat(p, __message_space);
+//	strcat(p, __message_space);
 	msg.cmd = MSG_CMD_DISPLAY_MESSAGE;
 	msg.data.pointData = p;
 
@@ -226,31 +226,36 @@ void __handlerDisplayMessageYellow(DisplayTaskMessage *msg) {
 	DisplayClear();
 //	__displayMessageLowlevel();
 }
-const unsigned char *LedDisplayGB2312String16Scroll(int x, int y, int dy, const unsigned char *gbString);
+const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, const unsigned char *gbString);
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 
-	static int yorg = 0 ;
+	static int yorg = 80;
 	int dy;
 
-	int y = msg->data.wordData;
-
-//	printf("xorg=%d, x=%d\n", xorg, x);
+	int y = msg->data.wordData;		          
+//	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
 	if (__displayMessage == NULL) {
 		return;
 	}
 
 	if (*__displayCurrentPoint == 0) {
-//		xorg += 96;
-//		if (xorg >= LED_VIR_DOT_WIDTH) {
-//			xorg -= LED_VIR_DOT_WIDTH;
+		yorg = 80;
+//		if (yorg >= LED_VIR_DOT_HEIGHT) {
+//			yorg -= LED_VIR_DOT_HEIGHT;
 //		}
 		__displayCurrentPoint = __displayMessage;
 	}
+	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
-	if (yorg > y) {
-		dy = 16;
+	if (yorg >= 160){
+		yorg = yorg - 160;
+	}
+	if (yorg > y + 80) {
+		dy = y + 160 - yorg;
+	} else if (yorg > y) {
+		return;
 	} else {
 		dy = y - yorg;
 	}
@@ -262,23 +267,9 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 //		dx = x - xorg;
 //	}
 
-	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String16Scroll(yorg, 0, dy, __displayCurrentPoint);
-		if (tmp == __displayCurrentPoint) {
-			return;
-		}
-	}
-
-	if (__displayMessageColor & 2) {
-		tmp = LedDisplayGB2312String16Scroll(yorg, 32, dy, __displayCurrentPoint);
-		if (tmp == __displayCurrentPoint) {
-			return;
-		}
-	}
-
-	yorg = yorg + 8 * (tmp - __displayCurrentPoint);
-	if (yorg >= LED_VIR_DOT_HEIGHT) {
-		yorg -= LED_VIR_DOT_HEIGHT;
+	tmp = LedDisplayGB2312String32ScrollUp(0, &yorg, dy, __displayCurrentPoint);
+	if (tmp == __displayCurrentPoint) {
+		return;
 	}
 	__displayCurrentPoint = tmp;
 }
@@ -345,7 +336,7 @@ void DisplayTask(void *helloString) {
 		host = p;
 	}
 	LedScanOnOff(1);
-	DisplayMessageRed((char*)host);
+//	DisplayMessageRed((char*)host);
 	ScrollDisplayInit();
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
@@ -404,7 +395,7 @@ void DisplayTask(void *helloString) {
 				}
 			}
 		} else {
-			__displayMessageLowlevel();
+//			__displayMessageLowlevel();
 		}
 	}
 }

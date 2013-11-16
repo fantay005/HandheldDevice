@@ -28,10 +28,10 @@ void LedScrollDisplayToScan(int dispX, int dispY, int scanX, int scanY) {
 	const unsigned int *dest;
 	int vDispX, vScanX;
 
-	for (; dispY <= LED_VIR_DOT_HEIGHT && scanY < LED_PHY_DOT_HEIGHT; ++dispY, ++scanY) {
-		src = (unsigned int *)(__displayBufferBit + (dispY * LED_VIR_DOT_WIDTH * 3 / 2 + dispX) * 4);
+	for (; dispY <= LED_VIR_DOT_HEIGHT*3/2 && scanY < LED_PHY_DOT_HEIGHT; ++dispY, ++scanY) {
+		src = (unsigned int *)(__displayBufferBit + (dispY * LED_VIR_DOT_WIDTH + dispX) * 4);
 		dest = &__addrTransferTable[scanY][scanX];
-		for (vDispX = dispX, vScanX = scanX; vDispX < LED_VIR_DOT_WIDTH * 3 / 2 && vScanX < LED_PHY_DOT_WIDTH;	++vDispX, ++vScanX) {
+		for (vDispX = dispX, vScanX = scanX; vDispX < LED_VIR_DOT_WIDTH && vScanX < LED_PHY_DOT_WIDTH;	++vDispX, ++vScanX) {
 #if LED_DRIVER_LEVEL==0
 			*(unsigned int *)(__scanBufferBit + *dest++) = !*src++;
 #elif LED_DRIVER_LEVEL==1

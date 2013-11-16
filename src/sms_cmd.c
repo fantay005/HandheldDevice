@@ -641,7 +641,6 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	} else {
 		MessDisplay((char *)(sms->content));
 	}
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 #endif
 }
 #endif
@@ -649,13 +648,28 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 #if defined(__LED_LIXIN__)
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
+	const char *pnumber = sms->number;
+	int index;
 	int i;
 	__restorUSERParam();
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
 		if (strncmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
 			map->smsCommandFunc(sms);
 			return;
 		}
+	}
+
+	if (index == 0) {
+		return;
+	}
+		SMS_Prompt();
+	if (sms->encodeType == ENCODE_TYPE_UCS2) {
+		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
+		MessDisplay(gbk);
+		Unicode2GBKDestroy(gbk);
+	} else {
+		MessDisplay((char *)(sms->content));
 	}
 }
 #endif

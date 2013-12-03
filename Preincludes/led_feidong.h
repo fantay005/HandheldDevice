@@ -6,7 +6,7 @@
 //利辛县, 强力双色LED, 32*9
 #define __LED__                          1
 #define __LED_HUAIBEI__                  1
-#define __TARGET_STRING__                "LED_HUAIBEI"
+#define __TARGET_STRING__                "LED_FEIDONG"
 
 
 #define USE_NORMAL_16SCAN                1

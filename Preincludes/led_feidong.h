@@ -10,6 +10,7 @@
 
 
 #define USE_NORMAL_16SCAN                1
+#define LED_OE_LEVEL                     1
 
 
 /// LED扫描模式, 可以是16,8,4,2; 分别是1/16,1/8,1/4,1/2扫描;

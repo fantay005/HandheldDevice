@@ -16,6 +16,7 @@
 #include "atcmd.h"
 #include "norflash.h"
 #include "unicode2gbk.h"
+#include "gsm.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 9 / 10)
@@ -60,13 +61,17 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555};
+static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
 void ATCmdSendChar(char c) {
 	USART_SendData(USART2, c);
 	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
+}
+
+const char *GsmGetIMEI(void) {
+	return __imei;
 }
 
 /// Store __gsmRuntimeParameter to flash.
@@ -96,6 +101,7 @@ typedef enum {
 	TYPE_NO_CARRIER,
 	TYPE_SEND_AT,
 	TYPE_SEND_SMS,
+	TYPE_SET_GPRS_CONNECTION,
 } GsmTaskMessageType;
 
 /// Message format send to GSM task.
@@ -193,6 +199,16 @@ bool GsmTaskSendTcpData(const char *dat, int len) {
 	return false;
 }
 
+bool GsmTaskSetGprsConnect(bool isOn) {
+	GsmTaskMessage *message = __gsmCreateMessage(TYPE_SET_GPRS_CONNECTION, (char *)&isOn, sizeof(isOn));
+	if (pdTRUE != xQueueSend(__queue, &message, configTICK_RATE_HZ * 15)) {
+		__gsmDestroyMessage(message);
+		return false;
+	}
+	return true;
+}
+
+
 static void __gsmInitUsart(int baud) {
 	USART_InitTypeDef USART_InitStructure;
 	USART_InitStructure.USART_BaudRate = baud;
@@ -239,6 +255,12 @@ static void __gsmInitHardware(void) {
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
+
+	GPIO_SetBits(GPIOD, GPIO_Pin_3);
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOD, &GPIO_InitStructure);				   //ÅÐ¶ÏTCPÊÇ·ñ´ò¿ª
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
@@ -593,10 +615,6 @@ int __gsmGetImeiFromModem() {
 		return 0;
 	}
 	strcpy(__imei, reply);
-	for (i = 0; i < 15; i++) {
-		__gsmRuntimeParameter.IMEI[i] = __imei[i];
-	}
-	__storeGsmRuntimeParameter();
 	AtCommandDropReplyLine(reply);
 	return 1;
 }
@@ -657,6 +675,19 @@ void __handleSendSMS(GsmTaskMessage *msg) {
 	}
 }
 
+
+void __handleGprsConnection(GsmTaskMessage *msg) {	
+	bool *dat = __gsmGetMessageData(msg);
+	__gsmRuntimeParameter.isonTCP = *dat;
+    __storeGsmRuntimeParameter();
+	if(!__gsmRuntimeParameter.isonTCP){
+	   	if (!ATCommandAndCheckReply("AT+CGATT=0\r", "OK", configTICK_RATE_HZ )) {
+		     printf("AT+CGATT error\r");
+	    }
+	}
+}
+
+
 typedef struct {
 	GsmTaskMessageType type;
 	void (*handlerFunc)(GsmTaskMessage *);
@@ -671,6 +702,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_NO_CARRIER, __handleResetNoCarrier },
 	{ TYPE_SEND_AT, __handleSendAtCommand },
 	{ TYPE_SEND_SMS, __handleSendSMS },
+    { TYPE_SET_GPRS_CONNECTION, __handleGprsConnection },
 	{ TYPE_NONE, NULL },
 };
 
@@ -705,7 +737,9 @@ static void __gsmTask(void *parameter) {
 			__gsmDestroyMessage(message);
 		} else {
 			int curT;
-			continue;
+			if(__gsmRuntimeParameter.isonTCP == 0){
+			   continue;
+			}
 			curT = xTaskGetTickCount();
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				printf("Gsm: Connect TCP error\n");

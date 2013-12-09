@@ -19,6 +19,7 @@
 #include "softpwm_led.h"
 #include "version.h"
 #include "second_datetime.h"
+#include "gsm.h"
 
 
 typedef struct {
@@ -291,16 +292,12 @@ static void __cmd_ADMIN_Handler(const SMSInfo *p) {
 
 static void __cmd_IMEI_Handler(const SMSInfo *p) {
 	char buf[16];
-	int len, i;
+	int len;
 	char *pdu;
-	char imei[15];
-	NorFlashRead(GSM_PARAM_STORE_ADDR, (short *)&__cmdGMSParameter, sizeof(__cmdGMSParameter));
-	for (i = 0; i < 15; i++) {
-		imei[i] = __cmdGMSParameter.IMEI[i];
-	}
-	sprintf(buf, "<IMEI>%s", imei);
+
+	sprintf(buf, "<IMEI>%s", GsmGetIMEI());
 	pdu = pvPortMalloc(300);
-	len = SMSEncodePdu8bit(pdu, p->number, buf);
+	len = SMSEncodePdu8bit(pdu, (const char *)p->number, buf);
 	GsmTaskSendSMS(pdu, len);
 	vPortFree(pdu);
 }
@@ -480,6 +477,15 @@ static void __cmd_VERSION_Handler(const SMSInfo *sms) {
 	// send this string to sms->number;
 }
 
+static void __cmd_CTCP_Handler(const SMSInfo *sms){
+	const char *p = (const char *)sms->content;
+	if((p[6] != '1') && (p[6] != '0')){
+	   return;
+	}
+	GsmTaskSetGprsConnect(p[6] - '0');
+} 
+
+
 #define UP1 (1 << 1)
 #define UP2 (1 << 2)
 #define UP3 (1 << 3)
@@ -538,6 +544,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 #endif
 
 	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
+	{"<CTCP>",  __cmd_CTCP_Handler, UP_ALL},
 	{NULL, NULL}
 };
 

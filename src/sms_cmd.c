@@ -654,7 +654,7 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	__restorUSERParam();
 	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
-		if (strncmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
+		if (strncasecmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
 			map->smsCommandFunc(sms);
 			return;
 		}

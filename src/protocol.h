@@ -8,5 +8,6 @@ char *ProtoclCreateHeartBeat(int *size);
 char *ProtoclCreatLogin(char *imei, int *size);
 void ProtocolHandler(char *p);
 void ProtocolHandlerSMS(const SMSInfo *sms);
+char *ProtoclQueryMeteTim(int *size);
 
 #endif

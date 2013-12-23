@@ -14,6 +14,7 @@
 #include "zklib.h"
 #include "unicode2gbk.h"
 #include "led_lowlevel.h"
+#include "stm32f10x_usart.h"
 
 
 #define WOMANSOUND  0x33
@@ -44,6 +45,7 @@ typedef enum {
 typedef enum {
 	Login = 0x31,
 	Heart =	0x32,
+	Polling = 0x34,
 
 	SetupUser =	0x30,
 	RemoveUser = 0x31,
@@ -141,6 +143,10 @@ char *ProtoclCreateHeartBeat(int *size) {
 	return ProtocolMessage(TermActive, Heart, NULL, size);
 }
 
+char *ProtoclQueryMeteTim(int *size) {
+	return ProtocolMessage(QueryPara, Polling, "58210", size);	  //颍上58210    
+}
+
 char *TerminalCreateFeedback(const char radom[4], int *size) {
 	char r[5];
 	r[0] = radom[0];
@@ -190,9 +196,9 @@ void HandleRemoveUser(ProtocolHeader *header, char *p) {
 
 void HandleDeadTime(ProtocolHeader *header, char *p) {
 	int len;
-	int choose;
-	choose = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakPause(choose);
+//	int choose;
+//	choose = (p[1] - '0') * 10 + (p[0] - '0');
+//	XfsTaskSetSpeakPause(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -200,16 +206,16 @@ void HandleDeadTime(ProtocolHeader *header, char *p) {
 }
 
 void HandleVoiceType(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	if (choose == 0x34) {
-		choose = MANSOUND;
-	} else if (choose == 0x35) {
-		choose = MIXSOUND;
-	} else if (choose == 0x33) {
-		choose = WOMANSOUND;
-	}
-	XfsTaskSetSpeakType(choose);
+	int len;
+//	choose = *p;
+//	if (choose == 0x34) {
+//		choose = MANSOUND;
+//	} else if (choose == 0x35) {
+//		choose = MIXSOUND;
+//	} else if (choose == 0x33) {
+//		choose = WOMANSOUND;
+//	}
+//	XfsTaskSetSpeakType(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -217,9 +223,9 @@ void HandleVoiceType(ProtocolHeader *header, char *p) {
 }
 
 void HandleVolumeSetting(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	XfsTaskSetSpeakVolume(choose);
+	int len;
+//	choose = *p;
+//	XfsTaskSetSpeakVolume(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -227,9 +233,9 @@ void HandleVolumeSetting(ProtocolHeader *header, char *p) {
 }
 
 void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
-	int len, times;
-	times = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakTimes(times);
+	int len;
+//	times = (p[1] - '0') * 10 + (p[0] - '0');
+//	XfsTaskSetSpeakTimes(times);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -244,7 +250,7 @@ void HandleSendSMS(ProtocolHeader *header, char *p) {
 	XfsTaskSpeakUCS2(p, len);
 #elif defined(__LED__)
 	gbk = Unicode2GBK(p, len);
-	SMS_Prompt();
+//	SMS_Prompt();
 	DisplayClear();
 	MessDisplay(gbk);
 	__storeSMS1(gbk);
@@ -281,6 +287,262 @@ void HandleBasicParameter(ProtocolHeader *header, char *p) {
 }
 
 void HandleCoordinate(ProtocolHeader *header, char *p) {
+	ProtocolDestroyMessage(p);
+}
+
+
+void USART3_Send_Byte(unsigned char byte){
+    USART_SendData(USART3, byte); 
+    while( USART_GetFlagStatus(USART3,USART_FLAG_TC)!= SET);          
+}
+
+void UART3_Send_Str(unsigned char *s, int size){
+    unsigned char i=0; 
+    for(; i < size; ++i) 
+    {
+       USART3_Send_Byte(s[i]); 
+    }
+}
+
+static char para[210];
+
+void HandleWeatherStation(ProtocolHeader *header, char *p) {
+	int i, n;
+	uint8_t *gbk;
+	int len;
+	len = (header->lenH << 8) + header->lenL;
+	memset(para, ' ', sizeof(para));
+	gbk = Unicode2GBK(&p[0], (len - 4));
+	if((*gbk++ == 'T') && (*gbk++ == 'E')){
+
+		n = 0;
+		para[n++] = '#';
+		para[n++] =	'H';
+		para[n++] =	'O';
+		para[n++] =	'T';
+
+	    //显示温度
+		n = 4;
+	    para[n++] = 0xCE; //温
+		para[n++] = 0xC2;
+		para[n++] = 0xB6; //度
+		para[n++] = 0xC8;
+		para[n++] = 0x3A; //:
+	   	for(i=0; i<10; i++){
+			para[n++] = *gbk++;
+		    while((*gbk == 'D')&& (*(gbk+1) == 'I')){
+			      i = 20;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i==10){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+		para[++n] = 0xA1; //℃
+		para[++n] = 0xE6;
+
+		//显示风向
+		n = 22;
+		para[n++] = 0xB7; //风
+		para[n++] = 0xE7;
+		para[n++] = 0xCF; //向
+		para[n++] = 0xF2;
+		para[n++] = 0x3A; //:
+	    for(i=0; i<14; i++){
+	        para[n++] = *gbk++;
+		    while((*gbk == 'S') && (*(gbk+1) == 'P')){
+			      i = 20;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i==14){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+
+		//显示风速
+		n = 40;
+		para[n++] = 0xB7; //风
+		para[n++] = 0xE7;
+		para[n++] = 0xCB; //速
+		para[n++] = 0xD9;
+		para[n++] = 0x3A; //:
+	    for(i=0; i<10; i++){
+            para[n++] = *gbk++;
+		    while((*gbk == 'P') && (*(gbk+1) == 'R')){
+			      i = 20;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i==10){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+		para[n++] =	0x6D; // m
+		para[n++] =	0x2F; // /
+		para[n++] =	0x73; // s
+
+		//显示气压
+		n = 58;
+		para[n++] = 0xC6; //气
+		para[n++] = 0xF8;
+		para[n++] = 0xD1; //压
+		para[n++] = 0xB9;
+		para[n++] = 0x3A; //:
+	    for(i=0; i<14; i++){
+            para[n++] = *gbk++;
+		    while((*gbk == 'H') && (*(gbk+1) == 'U')){
+			      i = 20;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i == 14){ 
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+		para[n++] =	0x68; // h
+		para[n++] =	0x70; // p
+		para[n++] =	0x61; // a
+
+		//显示相对湿度
+		n = 76;
+		para[n++] = 0xCF; //相
+		para[n++] = 0xE0;
+		para[n++] = 0xB6; //对
+		para[n++] = 0xD4;
+		para[n++] = 0xCA; //湿
+		para[n++] = 0xAA;
+		para[n++] = 0xB6; //度
+		para[n++] = 0xC8;
+		para[n++] = 0x3A; //:
+	    for(i=0; i<10; i++){
+            para[n++] = *gbk++;
+		    while((*gbk == 'R') && (*(gbk+1) == 'A')){
+			      i = 20;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i == 10){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+		para[n++] =	0x25; // %
+
+		//显示降雨
+		n = 94;
+		para[n++] = 0xBD; //降
+		para[n++] = 0xB5;
+		para[n++] = 0xCB; //水
+		para[n++] = 0xAE;
+		para[n++] = 0x3A; //:
+	    for(i=0; i<10; i++){
+            para[n++] = *gbk++;
+		    while((*gbk == 'T') && (*(gbk+1) == 'O')){
+			      i = 20;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i == 10){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+		para[n++] =	0x6D; //m
+		para[n++] =	0x6D; //m
+
+		//显示24小时天气预报数据
+		n = 112;
+		para[n++] = 0x32; //24
+		para[n++] = 0x34;
+		para[n++] = 0x68; //h
+		para[n++] = 0x3A; //:
+	    for(i=0; i<20; i++){
+            para[n++] = *gbk++;
+		    while((*gbk == 'A') && (*(gbk+1) == 'T')){
+			      i = 30;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i == 20){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+
+		//显示48小时天气预报数据
+		n = 130;
+		para[n++] = 0x34; //48
+		para[n++] = 0x38;
+		para[n++] = 0x68; //h
+		para[n++] = 0x3A; //:
+	    for(i=0; i<20; i++){
+            para[n++] = *gbk++;
+		    while((*gbk == 'T') && (*(gbk+1) == 'I')){
+			      i = 30;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i == 20){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+
+		//采集数据时间
+		n = 148;
+	    for(i=0; i<20; i++){
+            para[n++] = *gbk++;
+		    while((*gbk == 'T')&& (*(gbk+1) == 'F')){
+			      i = 40;
+				  gbk = gbk + 2;
+				  break;
+		    }
+	    }
+		if(i == 20){
+		   Unicode2GBKDestroy(gbk);
+		   ProtocolDestroyMessage(p);
+		   return;
+		}
+
+		//信息来源
+	    n = 184;
+		para[n++] =	0xF2;//颍
+		para[n++] =	0xA3;
+		para[n++] =	0xC9;//上
+		para[n++] =	0xCF;
+		para[n++] =	0xCF;//县
+		para[n++] =	0xD8;
+		para[n++] =	0xC6;//气
+		para[n++] =	0xF8;
+		para[n++] =	0xCF;//象
+		para[n++] =	0xF3;
+		para[n++] =	0xBE;//局
+		para[n++] =	0xD6;
+		para[n++] =	0xB7;//发
+		para[n++] =	0xA2;
+		para[n++] =	0xB2;//布
+		para[n++] =	0xBC;
+//		para[n++] = '\r';
+//		para[n] = 0x00;
+		para[sizeof(para) - 1] = '\r';
+
+	}
+    UART3_Send_Str(&para[0], sizeof(para));
+	Unicode2GBKDestroy(gbk);
 	ProtocolDestroyMessage(p);
 }
 
@@ -342,6 +604,7 @@ void ProtocolHandler(char *p) {
 		{'2', '8', HandleRecoverFactory},
 		{'3', '1', HandleBasicParameter},
 		{'3', '2', HandleCoordinate},
+		{'3', '4', HandleWeatherStation},
 		{'4', '1', HandleRecordMP3},
 		{'4', '2', HandleSMSPromptSound},
 		{'4', '3', HandleRecordPromptSound},

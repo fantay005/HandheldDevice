@@ -135,12 +135,12 @@ void __displayMessageLowlevel(void) {
 	LedDisplayClear(0, 0, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT / 2 - 1);
 	LedDisplayClear(0, LED_VIR_DOT_HEIGHT / 2, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT - 1);
 	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String32(0, 0, LED_VIR_DOT_WIDTH / 8, 32, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String16(0, 0, __displayCurrentPoint);
 	}
 
-	if (__displayMessageColor & 2) {
-		tmp = LedDisplayGB2312String32(0, 32, LED_VIR_DOT_WIDTH / 8, 64, __displayCurrentPoint);
-	}
+//	if (__displayMessageColor & 2) {
+//		tmp = LedDisplayGB2312String32(0, 32, LED_VIR_DOT_WIDTH / 8, 64, __displayCurrentPoint);
+//	}
 	__displayCurrentPoint = tmp;
 	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 }
@@ -337,7 +337,7 @@ void DisplayTask(void *helloString) {
 	}
 	LedScanOnOff(1);
 //	DisplayMessageRed((char*)host);
-	ScrollDisplayInit();
+//	ScrollDisplayInit();
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
 		if (rc == pdTRUE) {
@@ -352,7 +352,7 @@ void DisplayTask(void *helloString) {
 				}
 			}
 		} else {
-//				__displayMessageLowlevel();
+				__displayMessageLowlevel();
 		}
 	}
 }

@@ -607,11 +607,6 @@
               <FilePath>./SRC/tim.c</FilePath>
             </File>
             <File>
-              <FileName>xfs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/xfs.c</FilePath>
-            </File>
-            <File>
               <FileName>debug_handler.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\SRC\debug_handler.c</FilePath>

@@ -128,7 +128,7 @@
           <Target>
             <UseTarget>1</UseTarget>
             <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
-            <RunToMain>1</RunToMain>
+            <RunToMain>0</RunToMain>
             <RestoreBreakpoints>1</RestoreBreakpoints>
             <RestoreWatchpoints>1</RestoreWatchpoints>
             <RestoreMemoryDisplay>1</RestoreMemoryDisplay>
@@ -293,7 +293,7 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8010000</StartAddress>
+                <StartAddress>0x8000000</StartAddress>
                 <Size>0x80000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
@@ -582,19 +582,9 @@
               <FilePath>./SRC/FreeRTOSConfig.c</FilePath>
             </File>
             <File>
-              <FileName>gsm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/gsm.c</FilePath>
-            </File>
-            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>./SRC/main.c</FilePath>
-            </File>
-            <File>
-              <FileName>protocol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/protocol.c</FilePath>
             </File>
             <File>
               <FileName>startup_stm32f10x_hd_arm.s</FileName>
@@ -607,24 +597,9 @@
               <FilePath>./SRC/tim.c</FilePath>
             </File>
             <File>
-              <FileName>xfs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/xfs.c</FilePath>
-            </File>
-            <File>
               <FileName>debug_handler.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\SRC\debug_handler.c</FilePath>
-            </File>
-            <File>
-              <FileName>recovery.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\recovery.c</FilePath>
-            </File>
-            <File>
-              <FileName>sms_cmd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\sms_cmd.c</FilePath>
             </File>
             <File>
               <FileName>version.c</FileName>
@@ -676,11 +651,6 @@
           <GroupName>ZKLibs</GroupName>
           <Files>
             <File>
-              <FileName>atcmd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./ZKLibs/atcmd.c</FilePath>
-            </File>
-            <File>
               <FileName>sms.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\sms.c</FilePath>
@@ -714,11 +684,6 @@
               <FilePath>.\ZKLibs\stm32\fsmc_nor.c</FilePath>
             </File>
             <File>
-              <FileName>rtc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\rtc.c</FilePath>
-            </File>
-            <File>
               <FileName>libupdater.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\libupdater.c</FilePath>
@@ -732,11 +697,6 @@
               <FileName>uart_debug.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\uart_debug.c</FilePath>
-            </File>
-            <File>
-              <FileName>watchdog.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\watchdog.c</FilePath>
             </File>
             <File>
               <FileName>unicode2gbk.c</FileName>
@@ -759,26 +719,6 @@
               <FilePath>.\Led\led_lowlevel.c</FilePath>
             </File>
             <File>
-              <FileName>sht1x.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\sht1x.c</FilePath>
-            </File>
-            <File>
-              <FileName>seven_seg_led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\seven_seg_led.c</FilePath>
-            </File>
-            <File>
-              <FileName>test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\test.c</FilePath>
-            </File>
-            <File>
-              <FileName>softpwm_led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\softpwm_led.c</FilePath>
-            </File>
-            <File>
               <FileName>scroll_display.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Led\scroll_display.c</FilePath>
@@ -787,18 +727,6 @@
         </Group>
         <Group>
           <GroupName>SPEAKER</GroupName>
-          <Files>
-            <File>
-              <FileName>mp3.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3.c</FilePath>
-            </File>
-            <File>
-              <FileName>soundcontrol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\soundcontrol.c</FilePath>
-            </File>
-          </Files>
         </Group>
       </Groups>
     </Target>

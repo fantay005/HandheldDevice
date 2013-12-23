@@ -21,7 +21,7 @@ static void __setRtcTime(const char *p) {
 	} else {
 		dateTime.second = 0;
 	}
-	RtcSetTime(DateTimeToSecond(&dateTime));
+//	RtcSetTime(DateTimeToSecond(&dateTime));
 }
 
 #ifdef __LED__
@@ -83,15 +83,15 @@ void __setDisplayBuffer(const char *p) {
 }
 #endif
 
-void __sendAtCommandToGSM(const char *p) {
-	extern int GsmTaskSendAtCommand(const char * atcmd);
-	printf("SendAtCommandToGSM: ");
-	if (GsmTaskSendAtCommand(p)) {
-		printf("Succeed\n");
-	} else {
-		printf("Failed\n");
-	}
-}
+//void __sendAtCommandToGSM(const char *p) {
+//	extern int GsmTaskSendAtCommand(const char * atcmd);
+//	printf("SendAtCommandToGSM: ");
+//	if (GsmTaskSendAtCommand(p)) {
+//		printf("Succeed\n");
+//	} else {
+//		printf("Failed\n");
+//	}
+//}
 
 #ifdef __LED_HUAIBEI__
 static void __setSoftPWMLed(const char *p) {
@@ -135,7 +135,7 @@ static const DebugHandlerMap __handlerMaps[] = {
 #ifdef __LED_HUAIBEI__
 	{ "SPWM", __setSoftPWMLed },
 #endif
-	{ "AT", __sendAtCommandToGSM },
+//	{ "AT", __sendAtCommandToGSM },
 	{ NULL, NULL },
 };
 

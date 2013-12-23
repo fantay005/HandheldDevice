@@ -81,19 +81,19 @@ int main(void) {
 	PreSetupHardware();
 	NorFlashInit();
 	UartDebugInit();
-	RtcInit();
-	WatchdogInit();
-	SoftPWMLedInit();
-	RecoveryInit();
+//	RtcInit();
+//	WatchdogInit();
+//	SoftPWMLedInit();
+//	RecoveryInit();
 #if defined(__SPKEAER__)
-	SoundControlInit();
+//	SoundControlInit();
 #endif
-	XfsInit();
-	GSMInit();
+//	XfsInit();
+//	GSMInit();
 #if defined(__LED__)
 	DisplayInit();
-	SevenSegLedInit();
-	SHT10TestInit();
+//	SevenSegLedInit();
+//	SHT10TestInit();
 #endif
 
 	printf("\n==============================\n");

@@ -190,9 +190,9 @@ void HandleRemoveUser(ProtocolHeader *header, char *p) {
 
 void HandleDeadTime(ProtocolHeader *header, char *p) {
 	int len;
-	int choose;
-	choose = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakPause(choose);
+//	int choose;
+//	choose = (p[1] - '0') * 10 + (p[0] - '0');
+//	XfsTaskSetSpeakPause(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -200,16 +200,16 @@ void HandleDeadTime(ProtocolHeader *header, char *p) {
 }
 
 void HandleVoiceType(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	if (choose == 0x34) {
-		choose = MANSOUND;
-	} else if (choose == 0x35) {
-		choose = MIXSOUND;
-	} else if (choose == 0x33) {
-		choose = WOMANSOUND;
-	}
-	XfsTaskSetSpeakType(choose);
+	int len;
+//	choose = *p;
+//	if (choose == 0x34) {
+//		choose = MANSOUND;
+//	} else if (choose == 0x35) {
+//		choose = MIXSOUND;
+//	} else if (choose == 0x33) {
+//		choose = WOMANSOUND;
+//	}
+//	XfsTaskSetSpeakType(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -217,9 +217,9 @@ void HandleVoiceType(ProtocolHeader *header, char *p) {
 }
 
 void HandleVolumeSetting(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	XfsTaskSetSpeakVolume(choose);
+	int len;
+//	choose = *p;
+//	XfsTaskSetSpeakVolume(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -227,9 +227,9 @@ void HandleVolumeSetting(ProtocolHeader *header, char *p) {
 }
 
 void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
-	int len, times;
-	times = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakTimes(times);
+	int len;
+//	times = (p[1] - '0') * 10 + (p[0] - '0');
+//	XfsTaskSetSpeakTimes(times);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -244,7 +244,7 @@ void HandleSendSMS(ProtocolHeader *header, char *p) {
 	XfsTaskSpeakUCS2(p, len);
 #elif defined(__LED__)
 	gbk = Unicode2GBK(p, len);
-	SMS_Prompt();
+//	SMS_Prompt();
 	DisplayClear();
 	MessDisplay(gbk);
 	__storeSMS1(gbk);
@@ -329,24 +329,24 @@ void ProtocolHandler(char *p) {
 //	if (strncmp(p, "#H", 2) != 0) return;
 	int i;
 	const static ProtocolHandleMap map[] = {
-		{'1', '1', HandleLogin},
-		{'1', '2', HandleHeartBeat},
-		{'2', '0', HandleSettingUser},
-		{'2', '1', HandleRemoveUser},
-		{'2', '2', HandleDeadTime},
-		{'2', '3', HandleVoiceType},
-		{'2', '4', HandleVolumeSetting},
-		{'2', '5', HandleBroadcastTimes},
-		{'2', '6', HandleSendSMS},
-		{'2', '7', HandleRestart},
-		{'2', '8', HandleRecoverFactory},
-		{'3', '1', HandleBasicParameter},
-		{'3', '2', HandleCoordinate},
-		{'4', '1', HandleRecordMP3},
-		{'4', '2', HandleSMSPromptSound},
-		{'4', '3', HandleRecordPromptSound},
-		{'4', '4', HandleMP3Music},
-		{'4', '5', HandleLongSMS},
+//		{'1', '1', HandleLogin},
+//		{'1', '2', HandleHeartBeat},
+//		{'2', '0', HandleSettingUser},
+//		{'2', '1', HandleRemoveUser},
+//		{'2', '2', HandleDeadTime},
+//		{'2', '3', HandleVoiceType},
+//		{'2', '4', HandleVolumeSetting},
+//		{'2', '5', HandleBroadcastTimes},
+//		{'2', '6', HandleSendSMS},
+//		{'2', '7', HandleRestart},
+//		{'2', '8', HandleRecoverFactory},
+//		{'3', '1', HandleBasicParameter},
+//		{'3', '2', HandleCoordinate},
+//		{'4', '1', HandleRecordMP3},
+//		{'4', '2', HandleSMSPromptSound},
+//		{'4', '3', HandleRecordPromptSound},
+//		{'4', '4', HandleMP3Music},
+//		{'4', '5', HandleLongSMS},
 	};
 	ProtocolHeader *header = (ProtocolHeader *)p;
 

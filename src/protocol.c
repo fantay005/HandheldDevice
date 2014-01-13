@@ -44,6 +44,7 @@ typedef enum {
 typedef enum {
 	Login = 0x31,
 	Heart =	0x32,
+	Polling = 0x34,
 
 	SetupUser =	0x30,
 	RemoveUser = 0x31,
@@ -104,12 +105,12 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 		ProtocolHeader *h = (ProtocolHeader *)ret;
 		h->header[0] = '#';
 		h->header[1] = 'H';
-		h->lenH = len >> 8;
-		h->lenL = len;
-		h->type = type;
-		h->class = class;
-		h->radom = 0x3030;
-		h->reserve = 0x3030;
+		h->lenH = 'H';
+		h->lenL = 'L';
+		h->type = 'T';
+		h->class = 'C';
+		h->radom = 0x3231;
+		h->reserve = 0x3433;
 	}
 
 	if (message != NULL) {
@@ -121,17 +122,13 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 		sum += *p++;
 	}
 
-	*p++ = HexToChar(sum >> 4);
-	*p++ = HexToChar(sum);
+	*p++ = 'B';
+	*p++ = 'B';
 	*p++ = 0x0D;
 	*p = 0x0A;
 	return (char *)ret;
 }
-//
-//void SoftReset(void) {
-//	__set_FAULTMASK(1);  //关闭所有终端
-//	NVIC_SystemReset();	 //复位
-//}
+
 
 char *ProtoclCreatLogin(char *imei, int *size) {
 	return ProtocolMessage(TermActive, Login, imei, size);
@@ -163,199 +160,205 @@ void HandleLogin(ProtocolHeader *header, char *p) {
 	ProtocolDestroyMessage(p);
 }
 
-void HandleHeartBeat(ProtocolHeader *header, char *p) {
-	ProtocolDestroyMessage(p);
-}
+//void HandleHeartBeat(ProtocolHeader *header, char *p) {
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleSettingUser(ProtocolHeader *header, char *p) {
+//	int len;
+//	int j, i = p[0] - '0';
+//	p[12] = 0;
+//	SMSCmdSetUser(i, (char *)&p[1]);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleRemoveUser(ProtocolHeader *header, char *p) {
+//	int len;
+//	int index = p[0] - '0';
+//	SMSCmdRemoveUser(index);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleDeadTime(ProtocolHeader *header, char *p) {
+//	int len;
+//	int choose;
+//	choose = (p[1] - '0') * 10 + (p[0] - '0');
+//	XfsTaskSetSpeakPause(choose);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleVoiceType(ProtocolHeader *header, char *p) {
+//	int len,  choose;
+//	choose = *p;
+//	if (choose == 0x34) {
+//		choose = MANSOUND;
+//	} else if (choose == 0x35) {
+//		choose = MIXSOUND;
+//	} else if (choose == 0x33) {
+//		choose = WOMANSOUND;
+//	}
+//	XfsTaskSetSpeakType(choose);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleVolumeSetting(ProtocolHeader *header, char *p) {
+//	int len,  choose;
+//	choose = *p;
+//	XfsTaskSetSpeakVolume(choose);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
+//	int len, times;
+//	times = (p[1] - '0') * 10 + (p[0] - '0');
+//	XfsTaskSetSpeakTimes(times);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleSendSMS(ProtocolHeader *header, char *p) {
+//	int len;
+//	uint8_t *gbk;
+//	len = (header->lenH << 8) + header->lenL;
+//#if defined(__SPEAKER__)
+//	XfsTaskSpeakUCS2(p, len);
+//#elif defined(__LED__)
+//	gbk = Unicode2GBK(p, len);
+//	SMS_Prompt();
+//	DisplayClear();
+//	MessDisplay(gbk);
+//	__storeSMS1(gbk);
+//	Unicode2GBKDestroy(gbk);
+//	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1 , LED_PHY_DOT_HEIGHT - 1);
+//#endif
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//	return;
+//}
+//
+//void HandleRestart(ProtocolHeader *header, char *p) {
+//	int len;
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//	GsmTaskResetSystemAfter(10);
+//}
+//
+//
+//void HandleRecoverFactory(ProtocolHeader *header, char *p) {
+//	int len;
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleBasicParameter(ProtocolHeader *header, char *p) {
+//
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleCoordinate(ProtocolHeader *header, char *p) {
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleRecordMP3(ProtocolHeader *header, char *p) {
+//	int len;
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleSMSPromptSound(ProtocolHeader *header, char *p) {
+//	int len;
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleRecordPromptSound(ProtocolHeader *header, char *p) {
+//	int len;
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleMP3Music(ProtocolHeader *header, char *p) {
+//	int len;
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleLongSMS(ProtocolHeader *header, char *p) {
+//	int len;
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
 
-void HandleSettingUser(ProtocolHeader *header, char *p) {
-	int len;
-	int j, i = p[0] - '0';
-	p[12] = 0;
-	SMSCmdSetUser(i, (char *)&p[1]);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleRemoveUser(ProtocolHeader *header, char *p) {
-	int len;
-	int index = p[0] - '0';
-	SMSCmdRemoveUser(index);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleDeadTime(ProtocolHeader *header, char *p) {
-	int len;
-	int choose;
-	choose = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakPause(choose);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleVoiceType(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	if (choose == 0x34) {
-		choose = MANSOUND;
-	} else if (choose == 0x35) {
-		choose = MIXSOUND;
-	} else if (choose == 0x33) {
-		choose = WOMANSOUND;
-	}
-	XfsTaskSetSpeakType(choose);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleVolumeSetting(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	XfsTaskSetSpeakVolume(choose);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
-	int len, times;
-	times = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakTimes(times);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleSendSMS(ProtocolHeader *header, char *p) {
-	int len;
-	uint8_t *gbk;
-	len = (header->lenH << 8) + header->lenL;
-#if defined(__SPEAKER__)
-	XfsTaskSpeakUCS2(p, len);
-#elif defined(__LED__)
-	gbk = Unicode2GBK(p, len);
-	SMS_Prompt();
-	DisplayClear();
-	MessDisplay(gbk);
-	__storeSMS1(gbk);
-	Unicode2GBKDestroy(gbk);
-	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1 , LED_PHY_DOT_HEIGHT - 1);
-#endif
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-	return;
-}
-
-void HandleRestart(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-	GsmTaskResetSystemAfter(10);
-}
-
-
-void HandleRecoverFactory(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleBasicParameter(ProtocolHeader *header, char *p) {
-
-	ProtocolDestroyMessage(p);
-}
-
-void HandleCoordinate(ProtocolHeader *header, char *p) {
-	ProtocolDestroyMessage(p);
-}
-
-void HandleRecordMP3(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleSMSPromptSound(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleRecordPromptSound(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleMP3Music(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleLongSMS(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
+//void HandleWeatherStation(ProtocolHeader *header, char *p) {
+//
+//}
 
 
 void ProtocolHandler(char *p) {
-//	if (strncmp(p, "#H", 2) != 0) return;
-	int i;
-	const static ProtocolHandleMap map[] = {
-		{'1', '1', HandleLogin},
-		{'1', '2', HandleHeartBeat},
-		{'2', '0', HandleSettingUser},
-		{'2', '1', HandleRemoveUser},
-		{'2', '2', HandleDeadTime},
-		{'2', '3', HandleVoiceType},
-		{'2', '4', HandleVolumeSetting},
-		{'2', '5', HandleBroadcastTimes},
-		{'2', '6', HandleSendSMS},
-		{'2', '7', HandleRestart},
-		{'2', '8', HandleRecoverFactory},
-		{'3', '1', HandleBasicParameter},
-		{'3', '2', HandleCoordinate},
-		{'4', '1', HandleRecordMP3},
-		{'4', '2', HandleSMSPromptSound},
-		{'4', '3', HandleRecordPromptSound},
-		{'4', '4', HandleMP3Music},
-		{'4', '5', HandleLongSMS},
-	};
-	ProtocolHeader *header = (ProtocolHeader *)p;
-
-	for (i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
-		if ((map[i].type == header->type) && (map[i].class == header->class)) {
-			map[i].func(header, p + sizeof(ProtocolHeader));
-			break;
-		}
-	}
+////	if (strncmp(p, "#H", 2) != 0) return;
+//	int i;
+//	const static ProtocolHandleMap map[] = {
+////		{'1', '1', HandleLogin},
+////		{'1', '2', HandleHeartBeat},
+////		{'2', '0', HandleSettingUser},
+////		{'2', '1', HandleRemoveUser},
+////		{'2', '2', HandleDeadTime},
+////		{'2', '3', HandleVoiceType},
+////		{'2', '4', HandleVolumeSetting},
+////		{'2', '5', HandleBroadcastTimes},
+////		{'2', '6', HandleSendSMS},
+////		{'2', '7', HandleRestart},
+////		{'2', '8', HandleRecoverFactory},
+////		{'3', '1', HandleBasicParameter},
+////		{'3', '2', HandleCoordinate},
+//		{'T', 'C', HandleWeatherStation},
+////		{'4', '1', HandleRecordMP3},
+////		{'4', '2', HandleSMSPromptSound},
+////		{'4', '3', HandleRecordPromptSound},
+////		{'4', '4', HandleMP3Music},
+////		{'4', '5', HandleLongSMS},
+//	};
+//	ProtocolHeader *header = (ProtocolHeader *)p;
+//
+//	for (i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
+//		if ((map[i].type == header->type) && (map[i].class == header->class)) {
+//			map[i].func(header, p + sizeof(ProtocolHeader));
+//			break;
+//		}
+//	}
+    MessDisplay(&p[2]);
 }
 
 

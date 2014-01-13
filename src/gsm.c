@@ -18,7 +18,7 @@
 #include "unicode2gbk.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 9 / 10)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 60)
 #define GSM_IMEI_LENGTH              15
 
 #if defined(__SPEAKER__)
@@ -60,7 +60,7 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12304};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -269,15 +269,8 @@ static char isSMS = 0;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
-	if (isIPD == 1) {
-		lenIPD = data << 8;
-		isIPD = 2;
-	} else if (isIPD == 2) {
-		lenIPD += data;
-		isIPD = 3;
-	}
-	buffer[bufferIndex++] = data;
-	if ((isIPD == 3) && (bufferIndex >= lenIPD + 14)) {
+    	buffer[bufferIndex++] = data;
+	if (data == 0x0A) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		GsmTaskMessage *message;
 		buffer[bufferIndex++] = 0;
@@ -726,10 +719,8 @@ static void __gsmTask(void *parameter) {
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				printf("Gsm: Connect TCP error\n");
 			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
-				int size;
-				const char *dat = ProtoclCreateHeartBeat(&size);
-				__gsmSendTcpDataLowLevel(dat, size);
-				ProtocolDestroyMessage(dat);
+				const char *dat = "lingbi2\n";
+				__gsmSendTcpDataLowLevel(dat, 8);
 				lastT = curT;
 			}
 		}

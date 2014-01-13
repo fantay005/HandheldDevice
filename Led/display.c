@@ -226,12 +226,15 @@ void __handlerDisplayMessageYellow(DisplayTaskMessage *msg) {
 	DisplayClear();
 //	__displayMessageLowlevel();
 }
+
+static int k = 0;
+
 const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, const unsigned char *gbString);
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 
 	static int yorg = 80;
-	int dy;
+	int dy, len;
 
 	int y = msg->data.wordData;		          
 //	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
@@ -241,19 +244,25 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	}
 
 	if (*__displayCurrentPoint == 0) {
-		yorg = 80;
+	    ++k;
+		__displayCurrentPoint = "   ";
 //		if (yorg >= LED_VIR_DOT_HEIGHT) {
 //			yorg -= LED_VIR_DOT_HEIGHT;
 //		}
-		__displayCurrentPoint = __displayMessage;
+        len = strlen(__displayMessage + 1) / 2 / (QIANGLI_UNIT_X_NUM * 2) + 1;
+        if (k == QIANGLI_UNIT_Y_NUM * 2 - len + 1 ){
+		    __displayCurrentPoint = __displayMessage;
+			k = 0;
+		}
 	}
 	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
-	if (yorg >= 160){
-		yorg = yorg - 160;
+
+	if (yorg >= QIANGLI_UNIT_Y_NUM * 32){
+		yorg = yorg - QIANGLI_UNIT_Y_NUM * 32;
 	}
-	if (yorg > y + 80) {
-		dy = y + 160 - yorg;
+	if (yorg > y + QIANGLI_UNIT_Y_NUM * 16) {
+		dy = y + QIANGLI_UNIT_Y_NUM * 32 - yorg;
 	} else if (yorg > y) {
 		return;
 	} else {

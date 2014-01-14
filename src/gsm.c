@@ -18,7 +18,8 @@
 #include "unicode2gbk.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 60)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 3)
+#define METE_GPRS_HEART_BEAT_TIME	 (configTICK_RATE_HZ * 60 * 5)
 #define GSM_IMEI_LENGTH              15
 
 #if defined(__SPEAKER__)
@@ -688,7 +689,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0;
+	portTickType lastT = 0, lastTMETE = 0;
 
 	while (1) {
 		printf("Gsm start\n");
@@ -720,9 +721,16 @@ static void __gsmTask(void *parameter) {
 				printf("Gsm: Connect TCP error\n");
 			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				const char *dat = "lingbi2\n";
+//				printf("send lingbi2.\n");
 				__gsmSendTcpDataLowLevel(dat, 8);
 				lastT = curT;
-			}
+			} 	else if ((curT - lastTMETE) >= METE_GPRS_HEART_BEAT_TIME) {
+				int size;
+				const char *dat = ProtoclCreateHeartBeat(&size);
+				__gsmSendTcpDataLowLevel(dat, size);
+				ProtocolDestroyMessage(dat);
+				lastTMETE = curT;
+		    }
 		}
 	}
 }

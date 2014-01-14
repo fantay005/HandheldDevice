@@ -227,34 +227,28 @@ void __handlerDisplayMessageYellow(DisplayTaskMessage *msg) {
 //	__displayMessageLowlevel();
 }
 
-static int k = 0;
-
 const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, const unsigned char *gbString);
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 
 	static int yorg = 80;
-	int dy, len;
+	int dy;
 
 	int y = msg->data.wordData;		          
 //	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
+
 
 	if (__displayMessage == NULL) {
 		return;
 	}
 
 	if (*__displayCurrentPoint == 0) {
-	    ++k;
-		__displayCurrentPoint = "   ";
-//		if (yorg >= LED_VIR_DOT_HEIGHT) {
-//			yorg -= LED_VIR_DOT_HEIGHT;
-//		}
-        len = strlen(__displayMessage + 1) / 2 / (QIANGLI_UNIT_X_NUM * 2) + 1;
-        if (k == QIANGLI_UNIT_Y_NUM * 2 - len + 1 ){
+		yorg = 80;
+		if (y == 80){
 		    __displayCurrentPoint = __displayMessage;
-			k = 0;
 		}
 	}
+
 	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
 

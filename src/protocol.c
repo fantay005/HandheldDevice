@@ -122,8 +122,8 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 		sum += *p++;
 	}
 
-	*p++ = 'B';
-	*p++ = 'B';
+	*p++ = 'A';
+	*p++ = 'A';
 	*p++ = 0x0D;
 	*p = 0x0A;
 	return (char *)ret;

@@ -231,8 +231,9 @@ const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, co
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 
-	static int yorg = 32;
+	static int yorg = 128;
 	int dy;
+
 
 	int y = msg->data.wordData;		          
 //	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
@@ -243,8 +244,8 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	}
 
 	if (*__displayCurrentPoint == 0) {
-		yorg = 32;
-		if (y == 32){
+		yorg = 128;
+		if (y == 128){
 		    __displayCurrentPoint = __displayMessage;
 		}
 	}
@@ -252,12 +253,11 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
 
-	if (yorg >= QIANGLI_UNIT_Y_NUM * 32){
-		yorg = yorg - QIANGLI_UNIT_Y_NUM * 32;
+	if (yorg >= QIANGLI_UNIT_Y_NUM * 16 * 3){
+		yorg = yorg - QIANGLI_UNIT_Y_NUM * 16 * 3;
 	}
-	if (yorg > y + QIANGLI_UNIT_Y_NUM * 16) {
-		dy = y + QIANGLI_UNIT_Y_NUM * 32 - yorg;
-	} else if (yorg > y) {
+
+    if((yorg > y)||((y - yorg) > 32)){
 		return;
 	} else {
 		dy = y - yorg;

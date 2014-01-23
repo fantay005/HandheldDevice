@@ -487,7 +487,7 @@ const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, co
 					}
 			    }
 			}else if(y < LED_VIR_DOT_HEIGHT/2) {
-			    for(k = 160; k < y + LED_VIR_DOT_HEIGHT; ++k){
+			    for(k = LED_VIR_DOT_HEIGHT; k < y + LED_VIR_DOT_HEIGHT; ++k){
 					for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
 						__displayBuffer[k][t] = 0;
 					}
@@ -540,7 +540,7 @@ const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, co
 					}
 			    }
 			}else if(y < LED_VIR_DOT_HEIGHT/2) {
-			    for(k = 160; k < y + LED_VIR_DOT_HEIGHT; ++k){
+			    for(k = LED_VIR_DOT_HEIGHT; k < y + LED_VIR_DOT_HEIGHT; ++k){
 					for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
 						__displayBuffer[k][t] = 0;
 					}
@@ -601,7 +601,7 @@ const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, co
 				}
 			 }
 		}else if(y < LED_VIR_DOT_HEIGHT/2) {
-			 for(k = 160; k < y + LED_VIR_DOT_HEIGHT; ++k){
+			 for(k = LED_VIR_DOT_HEIGHT; k < y + LED_VIR_DOT_HEIGHT; ++k){
 				 for(t = 0; t < LED_VIR_DOT_WIDTH; ++t){
 					__displayBuffer[k][t] = 0;
 				}

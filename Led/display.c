@@ -35,7 +35,7 @@ static const char *assistant = "淮北气象三农服务";
 
 
 #if defined(__LED_LIXIN__)
-static const char *host = "解集人民欢迎您！";
+static const char *host = "  ";
 #endif
 
 typedef struct {
@@ -55,7 +55,7 @@ static char __displayMessageColor = 1;
 static const uint8_t *__displayMessage = NULL;
 static const uint8_t *__displayCurrentPoint = NULL;
 
-static const char *const __message_space = "　　　解集人民欢迎您！　　　";
+static const char *const __message_space = "　　";
 void MessDisplay(char *message) {
 	char *p = pvPortMalloc(strlen(message) + 1);
 	DisplayTaskMessage msg;
@@ -230,7 +230,7 @@ const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, co
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 
-	static int yorg = 80;
+	static int yorg = LED_PHY_DOT_HEIGHT;
 	int dy;
 
 	int y = msg->data.wordData;		          
@@ -241,19 +241,18 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	}
 
 	if (*__displayCurrentPoint == 0) {
-		yorg = 80;
+		yorg = LED_PHY_DOT_HEIGHT;
+		if (y == yorg){
+			__displayCurrentPoint = __displayMessage;
+		}
 //		if (yorg >= LED_VIR_DOT_HEIGHT) {
 //			yorg -= LED_VIR_DOT_HEIGHT;
-//		}
-		__displayCurrentPoint = __displayMessage;
+//		}		
 	}
 	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
-	if (yorg >= 160){
-		yorg = yorg - 160;
-	}
-	if (yorg > y + 80) {
-		dy = y + 160 - yorg;
+	if (yorg >= LED_VIR_DOT_HEIGHT){
+		yorg = yorg - LED_VIR_DOT_HEIGHT;
 	} else if (yorg > y) {
 		return;
 	} else {

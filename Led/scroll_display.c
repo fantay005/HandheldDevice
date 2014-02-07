@@ -48,9 +48,10 @@ void __scrollDisplayTask(void *helloString) {
 #else
 void __scrollDisplayTask(void *helloString) {
 	portBASE_TYPE rc;
-	int yDisp = 96;
+	int yDisp = 368;
 	printf("ScrollDisplayTask, start\n");
 	while(1) {
+        
 		if (xSemaphoreTake(__scrollSemaphore, portMAX_DELAY) == pdTRUE) {
 			LedScrollDisplayToScan(0, yDisp, 0, 0);
 			if (yDisp % 16 == 0) {

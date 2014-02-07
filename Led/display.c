@@ -189,7 +189,6 @@ void __handlerDisplayMessage(DisplayTaskMessage *msg) {
 	}
 	__displayMessage = msg->data.pointData;
 	__displayCurrentPoint = __displayMessage;
-	DisplayClear();
 	//__displayMessageLowlevel();
 }
 
@@ -257,7 +256,7 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 		yorg = yorg - QIANGLI_UNIT_Y_NUM * 16 * 3;
 	}
 
-    if((yorg > y)||((y - yorg) > 32)){
+    if(yorg >= y){
 		return;
 	} else {
 		dy = y - yorg;

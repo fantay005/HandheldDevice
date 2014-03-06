@@ -76,6 +76,7 @@ extern void RecoveryInit(void);
 extern void NorFlashInit(void);
 extern void WatchdogInit(void);
 extern void SoftPWMLedInit(void);
+extern void MP3Init(void);
 
 int main(void) {
 	PreSetupHardware();
@@ -85,11 +86,10 @@ int main(void) {
 	WatchdogInit();
 	SoftPWMLedInit();
 	RecoveryInit();
-#if defined(__SPKEAER__)
 	SoundControlInit();
-#endif
 	XfsInit();
 	GSMInit();
+	MP3Init();
 #if defined(__LED__)
 	DisplayInit();
 	SevenSegLedInit();

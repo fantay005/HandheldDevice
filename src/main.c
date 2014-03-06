@@ -96,9 +96,9 @@ int main(void) {
 	SHT10TestInit();
 #endif
 
-	printf("\n==============================\n");
+	printf("\n==================================\n");
 	printf("%s", Version());
-	printf("\n==============================\n");
+	printf("\n==================================\n");
 	vTaskStartScheduler();
 	return 0;
 }

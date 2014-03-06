@@ -276,7 +276,7 @@ static void __cmd_ERR_Handler(const SMSInfo *p) {
 }
 
 static void __cmd_ADMIN_Handler(const SMSInfo *p) {
-	char buf[24];
+	char buf[30];
 	int len;
 	char *pdu;
 	if (NULL == __user(1)) {
@@ -291,7 +291,7 @@ static void __cmd_ADMIN_Handler(const SMSInfo *p) {
 }
 
 static void __cmd_IMEI_Handler(const SMSInfo *p) {
-	char buf[16];
+	char buf[24];
 	int len;
 	char *pdu;
 
@@ -473,8 +473,13 @@ static void __cmd_A_Handler(const SMSInfo *sms) {
 #endif
 
 static void __cmd_VERSION_Handler(const SMSInfo *sms) {
+    char *pdu;
+	int len;
 	const char *version = Version();
-	// send this string to sms->number;
+	pdu = pvPortMalloc(300);
+	len = SMSEncodePdu8bit(pdu, sms->number,(char *)version);
+	GsmTaskSendSMS(pdu, len);
+	vPortFree(pdu);
 }
 
 static void __cmd_CTCP_Handler(const SMSInfo *sms){
@@ -543,7 +548,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"3", __cmd_YELLOW_Display, UP_ALL},
 #endif
 
-	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
+	{"<VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{"<CTCP>",  __cmd_CTCP_Handler, UP_ALL},
 	{NULL, NULL}
 };

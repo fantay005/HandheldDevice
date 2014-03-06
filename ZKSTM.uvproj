@@ -7,7 +7,7 @@
 
   <Targets>
     <Target>
-      <TargetName>LED_FEIDONG</TargetName>
+      <TargetName>LED_V1</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
       <TargetOption>
@@ -43,14 +43,14 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\out\LED_FEIDONG\</OutputDirectory>
-          <OutputName>LED_FEIDONG</OutputName>
+          <OutputDirectory>.\out\LED_V1\</OutputDirectory>
+          <OutputName>LED_V1</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>
           <DebugInformation>1</DebugInformation>
           <BrowseInformation>1</BrowseInformation>
-          <ListingPath>.\out\LED_FEIDONG\</ListingPath>
+          <ListingPath>.\out\LED_V1\</ListingPath>
           <HexFormatSelection>1</HexFormatSelection>
           <Merge32K>0</Merge32K>
           <CreateBatchFile>0</CreateBatchFile>
@@ -343,7 +343,7 @@
             <wLevel>0</wLevel>
             <uThumb>0</uThumb>
             <VariousControls>
-              <MiscControls>--preinclude=led_feidong.h</MiscControls>
+              <MiscControls>--preinclude=led_v1_feidong.h</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
               <IncludePath>FreeRTOS/include;.\FreeRTOS\portable\RVDS\ARM_CM3;.\Libraries\CMSIS\CM3\CoreSupport;.\Libraries\CMSIS\CM3\DeviceSupport\ST\STM32F10x;.\Libraries\STM32F10x_StdPeriph_Driver\inc;.\SRC;.\ZKLibs;.\ZKLibs\M35;.\ZKLibs\stm32;.\Led;.\Preincludes</IncludePath>
@@ -778,20 +778,20 @@
               <FileType>1</FileType>
               <FilePath>.\Led\softpwm_led.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>SPEAKER</GroupName>
-          <Files>
+            <File>
+              <FileName>fm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Led\fm.c</FilePath>
+            </File>
             <File>
               <FileName>mp3.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3.c</FilePath>
+              <FilePath>.\Led\mp3.c</FilePath>
             </File>
             <File>
               <FileName>soundcontrol.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Speaker\soundcontrol.c</FilePath>
+              <FilePath>.\Led\soundcontrol.c</FilePath>
             </File>
           </Files>
         </Group>

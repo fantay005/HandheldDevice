@@ -25,15 +25,25 @@
 #if defined(__SPEAKER__)
 #  define RESET_GPIO_GROUP           GPIOA
 #  define RESET_GPIO                 GPIO_Pin_11
-#elif defined(__LED__)
+#elif defined(__LED_V1__)
+#  define RESET_GPIO_GROUP           GPIOG
+#  define RESET_GPIO                 GPIO_Pin_15
+#else
 #  define RESET_GPIO_GROUP           GPIOB
 #  define RESET_GPIO                 GPIO_Pin_1
 #endif
 
 #define __gsmAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)
 #define __gsmDeassertResetPin()      GPIO_ResetBits(RESET_GPIO_GROUP, RESET_GPIO)
+
+#if defined(__LED_V1__)
+#define __gsmPowerSupplyOn()		 GPIO_SetBits(GPIOG, GPIO_Pin_14)
+#define __gsmPowerSupplyOff()		 GPIO_ResetBits(GPIOG, GPIO_Pin_14)
+#else
 #define __gsmPowerSupplyOn()         GPIO_SetBits(GPIOB, GPIO_Pin_0)
 #define __gsmPowerSupplyOff()        GPIO_ResetBits(GPIOB, GPIO_Pin_0)
+#endif
+
 #define __gsmPortMalloc(size)        pvPortMalloc(size)
 #define __gsmPortFree(p)             vPortFree(p)
 
@@ -251,10 +261,17 @@ static void __gsmInitHardware(void) {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSMÄ£¿éµÄSTATAS
 
+#if defined(__LED_V1__)
+	GPIO_ResetBits(GPIOG, GPIO_Pin_14);
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOG, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
+#else
 	GPIO_ResetBits(GPIOB, GPIO_Pin_0);
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
+#endif
 
 	GPIO_SetBits(GPIOD, GPIO_Pin_3);
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3;

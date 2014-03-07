@@ -104,12 +104,12 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 		ProtocolHeader *h = (ProtocolHeader *)ret;
 		h->header[0] = '#';
 		h->header[1] = 'H';
-		h->lenH = len >> 8;
-		h->lenL = len;
-		h->type = type;
-		h->class = class;
-		h->radom = 0x3030;
-		h->reserve = 0x3030;
+		h->lenH = 'E';
+		h->lenL = 'F';
+		h->type = 'E';
+		h->class = 'I';
+		h->radom = 0x3231;
+		h->reserve = 0x3433;
 	}
 
 	if (message != NULL) {
@@ -121,10 +121,12 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 		sum += *p++;
 	}
 
-	*p++ = HexToChar(sum >> 4);
-	*p++ = HexToChar(sum);
+	*p++ = 'B';
+	*p++ = 'B';
 	*p++ = 0x0D;
-	*p = 0x0A;
+	*p++ = 0x0A;
+	*p = 0;
+	*size = p - ret;
 	return (char *)ret;
 }
 //
@@ -133,12 +135,18 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 //	NVIC_SystemReset();	 //¸´Î»
 //}
 
+extern char *sensordat(void);
+
 char *ProtoclCreatLogin(char *imei, int *size) {
 	return ProtocolMessage(TermActive, Login, imei, size);
 }
 
 char *ProtoclCreateHeartBeat(int *size) {
 	return ProtocolMessage(TermActive, Heart, NULL, size);
+}
+
+char *ProtoclQueryMeteTim(char *dat, int *size){
+	return ProtocolMessage(TermActive, Login, dat, size);
 }
 
 char *TerminalCreateFeedback(const char radom[4], int *size) {
@@ -167,26 +175,26 @@ void HandleHeartBeat(ProtocolHeader *header, char *p) {
 	ProtocolDestroyMessage(p);
 }
 
-void HandleSettingUser(ProtocolHeader *header, char *p) {
-	int len;
-	int j, i = p[0] - '0';
-	p[12] = 0;
-	SMSCmdSetUser(i, (char *)&p[1]);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleRemoveUser(ProtocolHeader *header, char *p) {
-	int len;
-	int index = p[0] - '0';
-	SMSCmdRemoveUser(index);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
+//void HandleSettingUser(ProtocolHeader *header, char *p) {
+//	int len;
+//	int j, i = p[0] - '0';
+//	p[12] = 0;
+//	SMSCmdSetUser(i, (char *)&p[1]);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
+//
+//void HandleRemoveUser(ProtocolHeader *header, char *p) {
+//	int len;
+//	int index = p[0] - '0';
+//	SMSCmdRemoveUser(index);
+//	len = (header->lenH << 8) + header->lenL;
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//}
 
 void HandleDeadTime(ProtocolHeader *header, char *p) {
 	int len;
@@ -225,7 +233,7 @@ void HandleVolumeSetting(ProtocolHeader *header, char *p) {
 	GsmTaskSendTcpData(p, len);
 	ProtocolDestroyMessage(p);
 }
-
+																				
 void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
 	int len;
 //	times = (p[1] - '0') * 10 + (p[0] - '0');
@@ -236,26 +244,26 @@ void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
 	ProtocolDestroyMessage(p);
 }
 
-void HandleSendSMS(ProtocolHeader *header, char *p) {
-	int len;
-	uint8_t *gbk;
-	len = (header->lenH << 8) + header->lenL;
-#if defined(__SPEAKER__)
-	XfsTaskSpeakUCS2(p, len);
-#elif defined(__LED__)
-	gbk = Unicode2GBK(p, len);
-//	SMS_Prompt();
-	DisplayClear();
-	MessDisplay(gbk);
-	__storeSMS1(gbk);
-	Unicode2GBKDestroy(gbk);
-	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1 , LED_PHY_DOT_HEIGHT - 1);
-#endif
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-	return;
-}
+//void HandleSendSMS(ProtocolHeader *header, char *p) {
+//	int len;
+//	uint8_t *gbk;
+//	len = (header->lenH << 8) + header->lenL;
+//#if defined(__SPEAKER__)
+//	XfsTaskSpeakUCS2(p, len);
+//#elif defined(__LED__)
+//	gbk = Unicode2GBK(p, len);
+////	SMS_Prompt();
+//	DisplayClear();
+//	MessDisplay(gbk);
+//	__storeSMS1(gbk);
+//	Unicode2GBKDestroy(gbk);
+//	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1 , LED_PHY_DOT_HEIGHT - 1);
+//#endif
+//	p = TerminalCreateFeedback((char *) & (header->type), &len);
+//	GsmTaskSendTcpData(p, len);
+//	ProtocolDestroyMessage(p);
+//	return;
+//}
 
 void HandleRestart(ProtocolHeader *header, char *p) {
 	int len;
@@ -329,8 +337,8 @@ void ProtocolHandler(char *p) {
 //	if (strncmp(p, "#H", 2) != 0) return;
 	int i;
 	const static ProtocolHandleMap map[] = {
-//		{'1', '1', HandleLogin},
-//		{'1', '2', HandleHeartBeat},
+		{'1', '1', HandleLogin},
+		{'1', '2', HandleHeartBeat},
 //		{'2', '0', HandleSettingUser},
 //		{'2', '1', HandleRemoveUser},
 //		{'2', '2', HandleDeadTime},

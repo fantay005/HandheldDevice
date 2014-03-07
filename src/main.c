@@ -81,6 +81,7 @@ int main(void) {
 	PreSetupHardware();
 	NorFlashInit();
 	UartDebugInit();
+	Uart3Init();
 //	RtcInit();
 //	WatchdogInit();
 //	SoftPWMLedInit();
@@ -89,9 +90,9 @@ int main(void) {
 //	SoundControlInit();
 #endif
 //	XfsInit();
-//	GSMInit();
+	GSMInit();
 #if defined(__LED__)
-	DisplayInit();
+//	DisplayInit();
 //	SevenSegLedInit();
 //	SHT10TestInit();
 #endif

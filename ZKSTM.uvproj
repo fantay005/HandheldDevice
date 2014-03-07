@@ -645,6 +645,31 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>gsm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gsm.c</FilePath>
+            </File>
+            <File>
+              <FileName>protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>sms_cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sms_cmd.c</FilePath>
+            </File>
+            <File>
+              <FileName>recovery.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\recovery.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart3.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\uart3.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -664,6 +689,11 @@
               <FileName>second_datetime.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\second_datetime.c</FilePath>
+            </File>
+            <File>
+              <FileName>atcmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ZKLibs\atcmd.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -703,30 +733,17 @@
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\unicode2gbk.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>LED</GroupName>
-          <Files>
             <File>
-              <FileName>display.c</FileName>
+              <FileName>watchdog.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Led\display.c</FilePath>
+              <FilePath>.\ZKLibs\stm32\watchdog.c</FilePath>
             </File>
             <File>
-              <FileName>led_lowlevel.c</FileName>
+              <FileName>rtc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Led\led_lowlevel.c</FilePath>
-            </File>
-            <File>
-              <FileName>scroll_display.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\scroll_display.c</FilePath>
+              <FilePath>.\ZKLibs\stm32\rtc.c</FilePath>
             </File>
           </Files>
-        </Group>
-        <Group>
-          <GroupName>SPEAKER</GroupName>
         </Group>
       </Groups>
     </Target>

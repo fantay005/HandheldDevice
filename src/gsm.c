@@ -18,15 +18,16 @@
 #include "unicode2gbk.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 9 / 10)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
+#define GSM_GPRS_SEND_DATA_TIME      (configTICK_RATE_HZ * 60 * 2)
 #define GSM_IMEI_LENGTH              15
 
 #if defined(__SPEAKER__)
 #  define RESET_GPIO_GROUP           GPIOA
 #  define RESET_GPIO                 GPIO_Pin_11
 #elif defined(__LED__)
-#  define RESET_GPIO_GROUP           GPIOB
-#  define RESET_GPIO                 GPIO_Pin_1
+#  define RESET_GPIO_GROUP           GPIOG
+#  define RESET_GPIO                 GPIO_Pin_10
 #endif
 
 #define __gsmAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)
@@ -60,7 +61,7 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12304};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -267,6 +268,7 @@ static int bufferIndex = 0;
 static char isIPD = 0;
 static char isSMS = 0;
 static int lenIPD;
+static char isONtcp = 0;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
 	if (isIPD == 1) {
@@ -404,6 +406,11 @@ bool __gsmSendTcpDataLowLevel(const char *p, int len) {
 	char buf[16];
 	char *reply;
 
+	if (!isONtcp){
+	   return;
+	}
+
+
 	sprintf(buf, "AT+QISEND=%d\r", len);
 	ATCommand(buf, NULL, configTICK_RATE_HZ / 5);
 	for (i = 0; i < len; i++) {
@@ -450,6 +457,7 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 		data = ProtoclCreatLogin(__imei, &size);
 		__gsmSendTcpDataLowLevel(data, size);
 		ProtocolDestroyMessage(data);
+		isONtcp = 1;
 		return true;
 	}
 	AtCommandDropReplyLine(reply);
@@ -711,7 +719,7 @@ static void __gsmTask(void *parameter) {
 
 	for (;;) {
 		printf("Gsm: loop again\n");
-		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 10);
+		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 3);
 		if (rc == pdTRUE) {
 			const MessageHandlerMap *map = __messageHandlerMaps;
 			for (; map->type != TYPE_NONE; ++map) {
@@ -722,10 +730,14 @@ static void __gsmTask(void *parameter) {
 			}
 			__gsmDestroyMessage(message);
 		} else {
-			int curT = xTaskGetTickCount();
+			portTickType curT; 
+			curT = xTaskGetTickCount();
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
+			    isONtcp = 0;
 				printf("Gsm: Connect TCP error\n");
-			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
+			}
+																		
+			if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				int size;
 				const char *dat = ProtoclCreateHeartBeat(&size);
 				__gsmSendTcpDataLowLevel(dat, size);

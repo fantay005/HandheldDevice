@@ -10,6 +10,7 @@
 #include "sms.h"
 #include "led_lowlevel.h"
 #include "stm32f10x_gpio.h"
+#include "stm32f10x_usart.h"
 #include "norflash.h"
 #include "zklib.h"
 #include "libupdater.h"
@@ -29,9 +30,9 @@ USERParam __userParam;
 
 GMSParameter  __cmdGMSParameter;
 
-//void __storeSMS1(const char *sms) {
-//	NorFlashWrite(SMS1_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
-//}
+void __storeSMS1(const char *sms) {
+	NorFlashWrite(SMS1_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
 
 void __storeSMS2(const char *sms) {
 	NorFlashWrite(SMS2_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
@@ -402,92 +403,92 @@ static void __cmd_UPDATA_Handler(const SMSInfo *p) {
 	vPortFree(mark);
 }
 
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-static void __cmd_ALARM_Handler(const SMSInfo *p) {
-	const char *pcontent = p->content;
-	enum SoftPWNLedColor color;
-	switch (pcontent[7]) {
-	case '3':
-		color = SoftPWNLedColorYellow;
-		break;
-	case '2':
-		color = SoftPWNLedColorOrange;
-		break;
-	case '4':
-		color = SoftPWNLedColorBlue;
-		break;
-	case '1':
-		color = SoftPWNLedColorRed;
-		break;
-	default :
-		color =	SoftPWNLedColorNULL;
-		break;
-	}
-	Display2Clear();
-	SoftPWNLedSetColor(color);
-	LedDisplayGB2312String162(2 * 4, 0, &pcontent[8]);
-	LedDisplayToScan2(2 * 4, 0, 16 * 12 - 1, 15);
-	__storeSMS2((char *)&pcontent[8]);
-}
-#endif
+//#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
+//static void __cmd_ALARM_Handler(const SMSInfo *p) {
+//	const char *pcontent = p->content;
+//	enum SoftPWNLedColor color;
+//	switch (pcontent[7]) {
+//	case '3':
+//		color = SoftPWNLedColorYellow;
+//		break;
+//	case '2':
+//		color = SoftPWNLedColorOrange;
+//		break;
+//	case '4':
+//		color = SoftPWNLedColorBlue;
+//		break;
+//	case '1':
+//		color = SoftPWNLedColorRed;
+//		break;
+//	default :
+//		color =	SoftPWNLedColorNULL;
+//		break;
+//	}
+//	Display2Clear();
+//	SoftPWNLedSetColor(color);
+//	LedDisplayGB2312String162(2 * 4, 0, &pcontent[8]);
+//	LedDisplayToScan2(2 * 4, 0, 16 * 12 - 1, 15);
+//	__storeSMS2((char *)&pcontent[8]);
+//}
+//#endif
 
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-
-static void __cmd_RED_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
-//		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
-		DisplayMessageRed(gbk);
-		Unicode2GBKDestroy(gbk);
-		__storeSMS1(gbk);
-	} else {
-//		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
-		DisplayMessageRed(&pcontent[3]);
-		__storeSMS1(&pcontent[3]);
-	}
-}
-
-static void __cmd_GREEN_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
-//		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
-		DisplayMessageGreen(gbk);
-		Unicode2GBKDestroy(gbk);
-		__storeSMS1(gbk);
-	} else {
-//		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
-		DisplayMessageGreen(&pcontent[3]);
-		__storeSMS1(&pcontent[3]);
-
-	}
-}
-
-static void __cmd_YELLOW_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
-//		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
-		DisplayMessageYELLOW(gbk);
-		Unicode2GBKDestroy(gbk);
-		__storeSMS1(gbk);
-	} else {
-//		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
-		DisplayMessageYELLOW(&pcontent[3]);
-		__storeSMS1(&pcontent[3]);
-	}
-}
-
-#endif
+//#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
 //
+//static void __cmd_RED_Display(const SMSInfo *sms) {
+//	const char *pcontent = sms->content;
+//	int plen = sms->contentLen;
+//
+//	DisplayClear();
+//	if (sms->encodeType == ENCODE_TYPE_UCS2) {
+//		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
+////		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
+//		DisplayMessageRed(gbk);
+//		Unicode2GBKDestroy(gbk);
+//		__storeSMS1(gbk);
+//	} else {
+////		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
+//		DisplayMessageRed(&pcontent[3]);
+//		__storeSMS1(&pcontent[3]);
+//	}
+//}
+
+//static void __cmd_GREEN_Display(const SMSInfo *sms) {
+//	const char *pcontent = sms->content;
+//	int plen = sms->contentLen;
+//	DisplayClear();
+//	if (sms->encodeType == ENCODE_TYPE_UCS2) {
+//		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
+////		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
+//		DisplayMessageGreen(gbk);
+//		Unicode2GBKDestroy(gbk);
+//		__storeSMS1(gbk);
+//	} else {
+////		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
+//		DisplayMessageGreen(&pcontent[3]);
+//		__storeSMS1(&pcontent[3]);
+//
+//	}
+//}
+
+//static void __cmd_YELLOW_Display(const SMSInfo *sms) {
+//	const char *pcontent = sms->content;
+//	int plen = sms->contentLen;
+//	DisplayClear();
+//	if (sms->encodeType == ENCODE_TYPE_UCS2) {
+//		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
+////		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
+//		DisplayMessageYELLOW(gbk);
+//		Unicode2GBKDestroy(gbk);
+//		__storeSMS1(gbk);
+//	} else {
+////		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
+//		DisplayMessageYELLOW(&pcontent[3]);
+//		__storeSMS1(&pcontent[3]);
+//	}
+//}
+//
+//#endif
+////
 //static void __cmd_A_Handler(const SMSInfo *sms) {
 //	const char *pcontent = sms->content;
 //	int plen = sms->contentLen;
@@ -566,15 +567,15 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
 //	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#endif
+//#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
+//	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
+//#endif
 
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-	{"<1>", __cmd_RED_Display, UP_ALL},
-	{"<2>", __cmd_GREEN_Display, UP_ALL},
-	{"<3>", __cmd_YELLOW_Display, UP_ALL},
-#endif
+//#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
+//	{"<1>", __cmd_RED_Display, UP_ALL},
+//	{"<2>", __cmd_GREEN_Display, UP_ALL},
+//	{"<3>", __cmd_YELLOW_Display, UP_ALL},
+//#endif
 
 	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{NULL, NULL}
@@ -613,35 +614,35 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 			return;
 		}
 	}
-#if defined(__LED_HUAIBEI__)
-
-	if (index == 0) {
-		return;
-	}
-
-	DisplayClear();
-	switch (index) {
-	case 1:
-		__storeSMS1(sms->content);
-	case 2:
-		__storeSMS2(sms->content);
-	case 3:
-		__storeSMS3(sms->content);
-	case 4:
-		__storeSMS4(sms->content);
-	case 5:
-		__storeSMS5(sms->content);
-	case 6:
-		__storeSMS6(sms->content);
-	}
-//	SMS_Prompt();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
-		MessDisplay(gbk);
-	} else {
-		MessDisplay((char *)(sms->content));
-	}
-#endif
+//#if defined(__LED_HUAIBEI__)
+//
+//	if (index == 0) {
+//		return;
+//	}
+//
+//	DisplayClear();
+//	switch (index) {
+//	case 1:
+//		__storeSMS1(sms->content);
+//	case 2:
+//		__storeSMS2(sms->content);
+//	case 3:
+//		__storeSMS3(sms->content);
+//	case 4:
+//		__storeSMS4(sms->content);
+//	case 5:
+//		__storeSMS5(sms->content);
+//	case 6:
+//		__storeSMS6(sms->content);
+//	}
+////	SMS_Prompt();
+//	if (sms->encodeType == ENCODE_TYPE_UCS2) {
+//		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
+//		MessDisplay(gbk);
+//	} else {
+//		MessDisplay((char *)(sms->content));
+//	}
+//#endif
 }
 #endif
 
@@ -650,7 +651,6 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
 	const char *pnumber = sms->number;
 	int index;
-	int i;
 	__restorUSERParam();
 	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
@@ -660,17 +660,17 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 		}
 	}
 
-	if (index == 0) {
-		return;
-	}
-//		SMS_Prompt();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
-		MessDisplay(gbk);
-		Unicode2GBKDestroy(gbk);
-	} else {
-		MessDisplay((char *)(sms->content));
-	}
+//	if (index == 0) {
+//		return;
+//	}
+////		SMS_Prompt();
+//	if (sms->encodeType == ENCODE_TYPE_UCS2) {
+//		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
+//		MessDisplay(gbk);
+//		Unicode2GBKDestroy(gbk);
+//	} else {
+//		MessDisplay((char *)(sms->content));
+//	}
 }
 #endif
 

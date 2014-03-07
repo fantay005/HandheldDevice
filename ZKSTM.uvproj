@@ -61,6 +61,8 @@
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+            <nStopU1X>0</nStopU1X>
+            <nStopU2X>0</nStopU2X>
           </BeforeCompile>
           <BeforeMake>
             <RunUserProg1>0</RunUserProg1>
@@ -342,6 +344,7 @@
             <Rwpi>0</Rwpi>
             <wLevel>0</wLevel>
             <uThumb>0</uThumb>
+            <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls>--preinclude=led_huaibei_p10.h</MiscControls>
               <Define></Define>
@@ -357,6 +360,7 @@
             <SplitLS>0</SplitLS>
             <SwStkChk>0</SwStkChk>
             <NoWarn>0</NoWarn>
+            <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -635,6 +639,7 @@
                     <Rwpi>2</Rwpi>
                     <wLevel>0</wLevel>
                     <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
                     <VariousControls>
                       <MiscControls></MiscControls>
                       <Define></Define>
@@ -644,6 +649,21 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
+            </File>
+            <File>
+              <FileName>gsm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gsm.c</FilePath>
+            </File>
+            <File>
+              <FileName>protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>sms_cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\sms_cmd.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -665,6 +685,11 @@
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\second_datetime.c</FilePath>
             </File>
+            <File>
+              <FileName>atcmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ZKLibs\atcmd.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -674,24 +699,9 @@
           <GroupName>ZKLibs_stm32</GroupName>
           <Files>
             <File>
-              <FileName>font_dot_array.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./ZKLibs/stm32/font_dot_array.c</FilePath>
-            </File>
-            <File>
-              <FileName>fsmc_nor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\fsmc_nor.c</FilePath>
-            </File>
-            <File>
               <FileName>libupdater.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\libupdater.c</FilePath>
-            </File>
-            <File>
-              <FileName>norflash.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\norflash.c</FilePath>
             </File>
             <File>
               <FileName>uart_debug.c</FileName>
@@ -699,34 +709,16 @@
               <FilePath>.\ZKLibs\stm32\uart_debug.c</FilePath>
             </File>
             <File>
-              <FileName>unicode2gbk.c</FileName>
+              <FileName>watchdog.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\unicode2gbk.c</FilePath>
+              <FilePath>.\ZKLibs\stm32\watchdog.c</FilePath>
+            </File>
+            <File>
+              <FileName>rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ZKLibs\stm32\rtc.c</FilePath>
             </File>
           </Files>
-        </Group>
-        <Group>
-          <GroupName>LED</GroupName>
-          <Files>
-            <File>
-              <FileName>display.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\display.c</FilePath>
-            </File>
-            <File>
-              <FileName>led_lowlevel.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\led_lowlevel.c</FilePath>
-            </File>
-            <File>
-              <FileName>scroll_display.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\scroll_display.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>SPEAKER</GroupName>
         </Group>
       </Groups>
     </Target>

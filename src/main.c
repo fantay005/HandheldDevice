@@ -79,22 +79,11 @@ extern void SoftPWMLedInit(void);
 
 int main(void) {
 	PreSetupHardware();
-	NorFlashInit();
 	UartDebugInit();
 //	RtcInit();
 //	WatchdogInit();
-//	SoftPWMLedInit();
-//	RecoveryInit();
-#if defined(__SPKEAER__)
-//	SoundControlInit();
-#endif
-//	XfsInit();
-//	GSMInit();
-#if defined(__LED__)
-	DisplayInit();
-//	SevenSegLedInit();
-//	SHT10TestInit();
-#endif
+
+	GSMInit();
 
 	printf("\n==============================\n");
 	printf("%s", Version());

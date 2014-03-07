@@ -18,39 +18,19 @@
 #include "unicode2gbk.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 9 / 10)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
+#define GSM_GPRS_SEND_DATA_TIME      (configTICK_RATE_HZ * 60 * 2)
 #define GSM_IMEI_LENGTH              15
 
-#if defined(__SPEAKER__)
-#  define RESET_GPIO_GROUP           GPIOA
-#  define RESET_GPIO                 GPIO_Pin_11
-#elif defined(__LED__)
-#  define RESET_GPIO_GROUP           GPIOB
-#  define RESET_GPIO                 GPIO_Pin_1
-#endif
+#define RESET_GPIO_GROUP           GPIOG
+#define RESET_GPIO                 GPIO_Pin_10
 
 #define __gsmAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)
 #define __gsmDeassertResetPin()      GPIO_ResetBits(RESET_GPIO_GROUP, RESET_GPIO)
-#define __gsmPowerSupplyOn()         GPIO_SetBits(GPIOB, GPIO_Pin_0)
-#define __gsmPowerSupplyOff()        GPIO_ResetBits(GPIOB, GPIO_Pin_0)
+
 #define __gsmPortMalloc(size)        pvPortMalloc(size)
 #define __gsmPortFree(p)             vPortFree(p)
 
-
-
-void __gsmSMSEncodeConvertToGBK(SMSInfo *info) {
-	uint8_t *gbk;
-
-	if (info->encodeType == ENCODE_TYPE_GBK) {
-		return;
-	}
-
-	gbk = Unicode2GBK(info->content, info->contentLen);
-	strcpy(info->content, gbk);
-	Unicode2GBKDestroy(gbk);
-	info->encodeType = ENCODE_TYPE_GBK;
-	info->contentLen = strlen(info->content);
-}
 
 
 /// GSM task message queue.
@@ -60,30 +40,13 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12304};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
 void ATCmdSendChar(char c) {
-	USART_SendData(USART2, c);
-	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-}
-
-/// Store __gsmRuntimeParameter to flash.
-static inline void __storeGsmRuntimeParameter(void) {
-	NorFlashWrite(GSM_PARAM_STORE_ADDR, (const short *)&__gsmRuntimeParameter, sizeof(__gsmRuntimeParameter));
-}
-
-/// Restore __gsmRuntimeParameter from flash.
-static inline void __restorGsmRuntimeParameter(void) {
-	NorFlashRead(GSM_PARAM_STORE_ADDR, (short *)&__gsmRuntimeParameter, sizeof(__gsmRuntimeParameter));
-}
-
-/// Low level set TCP server IP and port.
-static void __setGSMserverIPLowLevel(char *ip, int port) {
-	strcpy(__gsmRuntimeParameter.serverIP, ip);
-	__gsmRuntimeParameter.serverPORT = port;
-	__storeGsmRuntimeParameter();
+	USART_SendData(USART3, c);
+	while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 }
 
 typedef enum {
@@ -201,47 +164,59 @@ static void __gsmInitUsart(int baud) {
 	USART_InitStructure.USART_Parity = USART_Parity_No;
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	USART_Init(USART2, &USART_InitStructure);
-	USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
-	USART_Cmd(USART2, ENABLE);
+	USART_Init(USART3, &USART_InitStructure);
+	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+	USART_Cmd(USART3, ENABLE);
+	
+	USART_SendData(USART3, 0x55);//向外发数据
 }
 
 /// Init the CPU on chip hardware for the GSM modem.
 static void __gsmInitHardware(void) {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
+	
+	GPIO_PinRemapConfig(GPIO_FullRemap_USART3,ENABLE);
+//	GPIO_PinRemapConfig(GPIO_Remap_USART2,ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSM模块的串口
+	GPIO_Init(GPIOD, &GPIO_InitStructure);				   //GSM模块的串口
+// 	GPIO_SetBits(GPIOD, GPIO_Pin_8);
+// 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
+// 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+// 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+// 	GPIO_Init(GPIOD, &GPIO_InitStructure);
+// 	
+// 	GPIO_SetBits(GPIOD, GPIO_Pin_9);
+// 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9;
+// 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+// 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+// 	GPIO_Init(GPIOD, &GPIO_InitStructure);
 
 	__gsmDeassertResetPin();
 	GPIO_InitStructure.GPIO_Pin =  RESET_GPIO;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(RESET_GPIO_GROUP, &GPIO_InitStructure);				    //GSM模块的RTS和RESET
-
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_11;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOG, &GPIO_InitStructure);				    //GSM模块的RTS和RESET
+	
+// 	GPIO_ResetBits(GPIOG, GPIO_Pin_11);
+// 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_11;
+// 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+// 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+// 	GPIO_Init(GPIOG, &GPIO_InitStructure);	
 
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSM模块的STATAS
 
-	GPIO_ResetBits(GPIOB, GPIO_Pin_0);
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
-
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
-	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -267,6 +242,7 @@ static int bufferIndex = 0;
 static char isIPD = 0;
 static char isSMS = 0;
 static int lenIPD;
+static char isONtcp = 0;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
 	if (isIPD == 1) {
@@ -307,15 +283,15 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 	}
 }
 
-void USART2_IRQHandler(void) {
+void USART3_IRQHandler(void) {
 	unsigned char data;
-	if (USART_GetITStatus(USART2, USART_IT_RXNE) == RESET) {
+	if (USART_GetITStatus(USART3, USART_IT_RXNE) == RESET) {
 		return;
 	}
 
-	data = USART_ReceiveData(USART2);
+	data = USART_ReceiveData(USART3);
 	USART_SendData(USART1, data);
-	USART_ClearITPendingBit(USART2, USART_IT_RXNE);
+	USART_ClearITPendingBit(USART3, USART_IT_RXNE);
 	if (isIPD) {
 		__gmsReceiveIPDData(data);
 		return;
@@ -361,17 +337,10 @@ void USART2_IRQHandler(void) {
 
 /// Start GSM modem.
 void __gsmModemStart() {
-	__gsmPowerSupplyOff();
-	vTaskDelay(configTICK_RATE_HZ / 2);
-
-	__gsmPowerSupplyOn();
-	vTaskDelay(configTICK_RATE_HZ / 2);
-
 	__gsmAssertResetPin();
-	vTaskDelay(configTICK_RATE_HZ * 3);
-
+	vTaskDelay(configTICK_RATE_HZ * 2);
 	__gsmDeassertResetPin();
-	vTaskDelay(configTICK_RATE_HZ * 6);
+
 }
 
 /// Check if has the GSM modem connect to a TCP server.
@@ -403,6 +372,11 @@ bool __gsmSendTcpDataLowLevel(const char *p, int len) {
 	int i;
 	char buf[16];
 	char *reply;
+
+	if (!isONtcp){
+	   return;
+	}
+
 
 	sprintf(buf, "AT+QISEND=%d\r", len);
 	ATCommand(buf, NULL, configTICK_RATE_HZ / 5);
@@ -450,6 +424,7 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 		data = ProtoclCreatLogin(__imei, &size);
 		__gsmSendTcpDataLowLevel(data, size);
 		ProtocolDestroyMessage(data);
+		isONtcp = 1;
 		return true;
 	}
 	AtCommandDropReplyLine(reply);
@@ -575,13 +550,10 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
-	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
-#if defined(__SPEAKER__)
-		XfsTaskSpeakGBK(sms->content, sms->contentLen);
-#elif defined(__LED__)
+
 	ProtocolHandlerSMS(sms);
-#endif
+
 	__gsmPortFree(sms);
 }
 
@@ -614,7 +586,6 @@ int __gsmGetImeiFromModem() {
 	for (i = 0; i < 15; i++) {
 		__gsmRuntimeParameter.IMEI[i] = __imei[i];
 	}
-	__storeGsmRuntimeParameter();
 	AtCommandDropReplyLine(reply);
 	return 1;
 }
@@ -711,7 +682,7 @@ static void __gsmTask(void *parameter) {
 
 	for (;;) {
 		printf("Gsm: loop again\n");
-		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 10);
+		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 3);
 		if (rc == pdTRUE) {
 			const MessageHandlerMap *map = __messageHandlerMaps;
 			for (; map->type != TYPE_NONE; ++map) {
@@ -722,10 +693,14 @@ static void __gsmTask(void *parameter) {
 			}
 			__gsmDestroyMessage(message);
 		} else {
-			int curT = xTaskGetTickCount();
+			portTickType curT; 
+			curT = xTaskGetTickCount();
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
+			    isONtcp = 0;
 				printf("Gsm: Connect TCP error\n");
-			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
+			}
+																		
+			if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				int size;
 				const char *dat = ProtoclCreateHeartBeat(&size);
 				__gsmSendTcpDataLowLevel(dat, size);

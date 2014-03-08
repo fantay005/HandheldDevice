@@ -83,7 +83,7 @@ int main(void) {
 	UartDebugInit();
 	Uart3Init();
 //	RtcInit();
-//	WatchdogInit();
+	WatchdogInit();
 //	SoftPWMLedInit();
 //	RecoveryInit();
 #if defined(__SPKEAER__)

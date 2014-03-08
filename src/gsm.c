@@ -19,7 +19,6 @@
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
-#define GSM_GPRS_SEND_DATA_TIME      (configTICK_RATE_HZ * 60 * 2)
 #define GSM_IMEI_LENGTH              15
 
 #if defined(__SPEAKER__)
@@ -388,6 +387,7 @@ bool __gsmIsTcpConnected() {
 		}
 		if (strncmp(&reply[7], "CONNECT OK", 10) == 0) {
 			AtCommandDropReplyLine(reply);
+			isONtcp = 1;
 			return true;
 		}
 		if (strncmp(&reply[7], "TCP CONNECTING", 12) == 0) {
@@ -453,11 +453,11 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 	if (strncmp("CONNECT OK", reply, 10) == 0) {
 		int size;
 		const char *data;
+		isONtcp = 1;
 		AtCommandDropReplyLine(reply);
 		data = ProtoclCreatLogin(__imei, &size);
 		__gsmSendTcpDataLowLevel(data, size);
 		ProtocolDestroyMessage(data);
-		isONtcp = 1;
 		return true;
 	}
 	AtCommandDropReplyLine(reply);

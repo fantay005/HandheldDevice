@@ -8,6 +8,7 @@
 #include "misc.h"
 #include "xfs.h"
 #include "norflash.h"
+#include "soundcontrol.h"
 
 static xQueueHandle __uartQueue;
 static xQueueHandle __speakQueue;
@@ -437,7 +438,9 @@ void __xfsTask(void *parameter) {
 		rc = xQueueReceive(__speakQueue, &pmsg, portMAX_DELAY);
 		if (rc == pdTRUE) {
 			__restorSpeakParam();
+			SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
 			__handleSpeakMessage(pmsg);
+			SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
 			vPortFree(pmsg);
 		}
 	}

@@ -17,6 +17,7 @@
 #include "norflash.h"
 #include "unicode2gbk.h"
 #include "gsm.h"
+#include "soundcontrol.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
@@ -657,11 +658,11 @@ void __handleReset(GsmTaskMessage *msg) {
 }
 
 void __handleResetNoCarrier(GsmTaskMessage *msg) {
-	GPIO_SetBits(GPIOD, GPIO_Pin_2);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_GSM, 0);
 }
 
 void __handleRING(GsmTaskMessage *msg) {
-	GPIO_ResetBits(GPIOD, GPIO_Pin_2);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_GSM, 1);
 }
 
 

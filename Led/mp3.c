@@ -445,7 +445,7 @@ void vMP3(void *parameter) {
 	__VS1003queue = xQueueCreate(5, sizeof(MusicData));
 	Mp3Reset();
 	Vs1003SoftReset();
-	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_MP3, 1); 
+//	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_MP3, 1); 
 	printf("MP3: loop again\n");
 
 	while(1) {

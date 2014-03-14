@@ -20,6 +20,8 @@
 #include "version.h"
 #include "second_datetime.h"
 #include "gsm.h"
+#include "fm.h"
+#include "soundcontrol.h"
 
 
 typedef struct {
@@ -472,6 +474,16 @@ static void __cmd_A_Handler(const SMSInfo *sms) {
 }
 #endif
 
+static void __cmd_FMC_Handler(const SMSInfo *sms){
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 0);
+}
+
+
+static void __cmd_FMO_Handler(const SMSInfo *sms){
+	const char *pcontent = (const char *)sms->content;
+	fmopen(atoi(&pcontent[5]));
+}
+
 static void __cmd_VERSION_Handler(const SMSInfo *sms) {
     char *pdu;
 	int len;
@@ -547,7 +559,8 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"2", __cmd_GREEN_Display, UP_ALL},
 	{"3", __cmd_YELLOW_Display, UP_ALL},
 #endif
-
+  {"<FMO>",  __cmd_FMO_Handler,  UP_ALL}, 
+	{"<FMC>",  __cmd_FMC_Handler,  UP_ALL},
 	{"<VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{"<CTCP>",  __cmd_CTCP_Handler, UP_ALL},
 	{NULL, NULL}

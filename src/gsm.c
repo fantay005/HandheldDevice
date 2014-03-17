@@ -18,8 +18,8 @@
 #include "unicode2gbk.h"
 #include "gsm.h"
 
-#define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 9 / 10)
+#define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 256)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
 #define GSM_IMEI_LENGTH              15
 
 #if defined(__SPEAKER__)

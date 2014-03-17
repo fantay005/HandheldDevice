@@ -443,16 +443,10 @@ static void __cmd_YELLOW_Display(const SMSInfo *sms) {
 
 #endif
 
-#if defined (__LED__)
 static void __cmd_A_Handler(const SMSInfo *sms) {
 	const char *pcontent = sms->content;
 	int plen = sms->contentLen;
 	const char *pnumber = sms->number;
-	int index;
-	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
-	if (index == 0) {
-		return;
-	}
 	if (sms->encodeType == ENCODE_TYPE_UCS2) {
 		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
 		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
@@ -472,7 +466,7 @@ static void __cmd_A_Handler(const SMSInfo *sms) {
 	}
 //	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 }
-#endif
+
 
 static void __cmd_FMC_Handler(const SMSInfo *sms){
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 0);
@@ -546,9 +540,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<TEST>", __cmd_TEST_Handler, UP_ALL},
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
-#if defined(__LED__)
-	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#endif
+	{"<A>", __cmd_A_Handler, UP_ALL},
 
 #if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
 	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
@@ -569,22 +561,22 @@ const static SMSModifyMap __SMSModifyMap[] = {
 
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
-	DateTime dateTime;
+// 	DateTime dateTime;
 	int index;
 	const char *p = sms->time;
 	const char *pnumber = sms->number;
-	__restorUSERParam();
-	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
-	dateTime.month = (p[2] - '0') * 10 + (p[3] - '0');
-	dateTime.date = (p[4] - '0') * 10 + (p[5] - '0');
-	dateTime.hour = (p[6] - '0') * 10 + (p[7] - '0');
-	dateTime.minute = (p[8] - '0') * 10 + (p[9] - '0');
-	if (p[10] != 0 && p[11] != 0) {
-		dateTime.second = (p[10] - '0') * 10 + (p[11] - '0');
-	} else {
-		dateTime.second = 0;
-	}
-	RtcSetTime(DateTimeToSecond(&dateTime));
+//__restorUSERParam();
+// 	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
+// 	dateTime.month = (p[2] - '0') * 10 + (p[3] - '0');
+// 	dateTime.date = (p[4] - '0') * 10 + (p[5] - '0');
+// 	dateTime.hour = (p[6] - '0') * 10 + (p[7] - '0');
+// 	dateTime.minute = (p[8] - '0') * 10 + (p[9] - '0');
+// 	if (p[10] != 0 && p[11] != 0) {
+// 		dateTime.second = (p[10] - '0') * 10 + (p[11] - '0');
+// 	} else {
+// 		dateTime.second = 0;
+// 	}
+// 	RtcSetTime(DateTimeToSecond(&dateTime));
 
 	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
@@ -599,7 +591,6 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 			return;
 		}
 	}
-#if defined(__LED_HUAIBEI__)
 
 	if (index == 0) {
 		return;
@@ -615,6 +606,5 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 		MessDisplay((char *)(sms->content));
 	}
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-#endif
 }
 

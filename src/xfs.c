@@ -249,7 +249,6 @@ static void __initHardware() {
 	USART_InitTypeDef   USART_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-#if defined(__SPEAKER__)
 	GPIO_PinRemapConfig(GPIO_PartialRemap_USART3, ENABLE);
 
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_10;
@@ -261,24 +260,6 @@ static void __initHardware() {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);					//讯飞语音模块的串口
 
-#elif(__LED__)
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_10;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);					//讯飞语音模块的串口
-#endif
-
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-	GPIO_ResetBits(GPIOA, GPIO_Pin_6);
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_6;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-#endif
-
 	USART_InitStructure.USART_BaudRate = 9600;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
@@ -288,17 +269,15 @@ static void __initHardware() {
 	USART_Init(USART3, &USART_InitStructure);
 	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 	USART_Cmd(USART3, ENABLE);
-
-#if defined(__SPEAKER__)
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_7;
+	
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);					  //讯飞语音模块的RESET
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);					  //讯飞语音模块的RDY
-#endif
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
@@ -308,14 +287,11 @@ static void __initHardware() {
 	NVIC_Init(&NVIC_InitStructure);
 }
 
-static void __xfsInitRuntime() {
-#if defined (__SPEAKER__)
-	GPIO_ResetBits(GPIOC, GPIO_Pin_7);
+static void __xfsInitRuntime() {	
+	GPIO_ResetBits(GPIOC, GPIO_Pin_8);
 	vTaskDelay(configTICK_RATE_HZ / 5);
-	GPIO_SetBits(GPIOC, GPIO_Pin_7);
-#elif defined (__LED__)
+	GPIO_SetBits(GPIOC, GPIO_Pin_8);
 	vTaskDelay(configTICK_RATE_HZ / 5);
-#endif
 	__xfsWoken();
 	vTaskDelay(configTICK_RATE_HZ);
 	__xfsSetup();
@@ -440,7 +416,6 @@ void __xfsTask(void *parameter) {
 			__restorSpeakParam();
 			SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
 			__handleSpeakMessage(pmsg);
-			SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
 			vPortFree(pmsg);
 		}
 	}
@@ -521,6 +496,7 @@ void USART3_IRQHandler(void) {
 	}
 
 	data = USART_ReceiveData(USART3);
+	USART_SendData(USART1, data);
 	USART_ClearITPendingBit(USART3, USART_IT_RXNE);
 	if (pdTRUE == xQueueSendFromISR(__uartQueue, &data, &xHigherPriorityTaskWoken)) {
 		if (xHigherPriorityTaskWoken) {

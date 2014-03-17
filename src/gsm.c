@@ -40,9 +40,6 @@
 #if defined(__LED_V1__)
 #define __gsmPowerSupplyOn()		 GPIO_SetBits(GPIOG, GPIO_Pin_14)
 #define __gsmPowerSupplyOff()		 GPIO_ResetBits(GPIOG, GPIO_Pin_14)
-#else
-#define __gsmPowerSupplyOn()         GPIO_SetBits(GPIOB, GPIO_Pin_0)
-#define __gsmPowerSupplyOff()        GPIO_ResetBits(GPIOB, GPIO_Pin_0)
 #endif
 
 #define __gsmPortMalloc(size)        pvPortMalloc(size)
@@ -58,12 +55,12 @@ void __gsmSMSEncodeConvertToGBK(SMSInfo *info) {
 	}
 
 	gbk = Unicode2GBK(info->content, info->contentLen);
+	memset(info->content, 0, 162);
 	strcpy(info->content, gbk);
 	Unicode2GBKDestroy(gbk);
 	info->encodeType = ENCODE_TYPE_GBK;
 	info->contentLen = strlen(info->content);
 }
-
 
 /// GSM task message queue.
 static xQueueHandle __queue;
@@ -267,11 +264,6 @@ static void __gsmInitHardware(void) {
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_14;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOG, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
-#else
-	GPIO_ResetBits(GPIOB, GPIO_Pin_0);
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
 #endif
 
 	GPIO_SetBits(GPIOD, GPIO_Pin_3);
@@ -599,11 +591,8 @@ void __handleSMS(GsmTaskMessage *p) {
 	SMSDecodePdu(dat, sms);
 	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
-#if defined(__SPEAKER__)
-	XfsTaskSpeakGBK(sms->content, sms->contentLen);
-#elif defined(__LED__)
 	ProtocolHandlerSMS(sms);
-#endif
+
 	__gsmPortFree(sms);
 }
 

@@ -12,6 +12,7 @@ static unsigned char __channelsEnable;
 #define FM_PIN GPIO_Pin_10
 #define MP3_PIN GPIO_Pin_9
 #define ALL_PIN (GSM_PIN | XFS_PIN | FM_PIN | MP3_PIN)
+#define AMP_EN  GPIO_Pin_0
 
 static void initHardware(void) {
 	GPIO_InitTypeDef  GPIO_InitStructure;
@@ -29,12 +30,20 @@ static void initHardware(void) {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOD, &GPIO_InitStructure);
+	
+
+	GPIO_InitStructure.GPIO_Pin = AMP_EN;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	
+	GPIO_ResetBits(GPIOB, AMP_EN);
 }
 
 void SoundControlInit(void) {
+	initHardware();
 	if (__semaphore == NULL) {
 		vSemaphoreCreateBinary(__semaphore);
-		initHardware();
 	}
 }
 
@@ -68,11 +77,13 @@ static inline void __takeEffect(void) {
 
 	GPIO_ResetBits(GPIOF, FM_PIN | MP3_PIN | XFS_PIN);
 	GPIO_ResetBits(GPIOD, GSM_PIN);
+	GPIO_ResetBits(GPIOB, AMP_EN);
 }
 
 void SoundControlSetChannel(uint32_t channels, bool isOn) {
 	xSemaphoreTake(__semaphore, portMAX_DELAY);
 	if (isOn) {
+		GPIO_SetBits(GPIOB, AMP_EN);
 		__channelsEnable |= channels;
 	} else {
 		__channelsEnable &= ~channels;

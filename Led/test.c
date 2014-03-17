@@ -72,6 +72,11 @@ static void __ledTestTask(void *nouse) {
 		SevenSegLedSetContent(LED_INDEX_HUMI_H, humi / 10);
 		SevenSegLedSetContent(LED_INDEX_HUMI_L, humi % 10);
 		SevenSegLedDisplay();
+		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.second >= 0x00) && (dateTime.second <= 0x05)) {
+		   	printf("Reset From Default Configuration\n");
+				vTaskDelay(configTICK_RATE_HZ * 5);
+	      NVIC_SystemReset();
+		}
 #if defined(__LED_HUAIBEI__)
 		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.minute == 0x00)) {
 			color = SoftPWNLedColorNULL;

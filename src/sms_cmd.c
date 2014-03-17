@@ -652,7 +652,7 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	int i;
 	__restorUSERParam();
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
-		if (strncmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
+		if (strncasecmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
 			map->smsCommandFunc(sms);
 			return;
 		}

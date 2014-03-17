@@ -47,6 +47,27 @@ void SHT10Init(void) {
 	GPIO_InitStructure.GPIO_Pin = DAT_GPIO_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
 	GPIO_Init(DAT_GPIO_PORT, &GPIO_InitStructure);
+	
+	
+	GPIO_SetBits(GPIOG, GPIO_Pin_8);
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOG, &GPIO_InitStructure);				  
+	
+	GPIO_SetBits(GPIOG, GPIO_Pin_7);
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOG, &GPIO_InitStructure);				   
+	
+	GPIO_SetBits(GPIOB, GPIO_Pin_14);
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_14;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);				   
+	
+	GPIO_SetBits(GPIOB, GPIO_Pin_15);
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_15;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);				   
 
 	__clkSetLow();
 	__clkDataLow();

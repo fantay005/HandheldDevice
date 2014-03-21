@@ -649,6 +649,10 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 #if defined(__LED_LIXIN__)
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
+	const char *pnumber = sms->number;
+	const char *pcontent = sms->content;
+	int plen = sms->contentLen;
+	int index;
 	int i;
 	__restorUSERParam();
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
@@ -656,6 +660,22 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 			map->smsCommandFunc(sms);
 			return;
 		}
+	}
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
+	if (index == 0) {
+		return;
+	}
+	DisplayClear();
+	if (sms->encodeType == ENCODE_TYPE_UCS2) {
+		uint8_t *gbk = Unicode2GBK(&pcontent[0], plen);
+		XfsTaskSpeakUCS2(&pcontent[0], plen);
+		DisplayMessageRed(gbk);
+		Unicode2GBKDestroy(gbk);
+		__storeSMS1(gbk);
+	} else {
+		XfsTaskSpeakGBK(&pcontent[0], plen);
+		DisplayMessageRed(&pcontent[0]);
+		__storeSMS1(&pcontent[0]);
 	}
 }
 #endif

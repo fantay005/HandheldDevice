@@ -288,6 +288,8 @@ static void __initHardware() {
 }
 
 static void __xfsInitRuntime() {	
+	GPIO_SetBits(GPIOC, GPIO_Pin_8);
+	vTaskDelay(configTICK_RATE_HZ / 5);
 	GPIO_ResetBits(GPIOC, GPIO_Pin_8);
 	vTaskDelay(configTICK_RATE_HZ / 5);
 	GPIO_SetBits(GPIOC, GPIO_Pin_8);

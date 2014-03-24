@@ -245,7 +245,7 @@ void HandleSendSMS(ProtocolHeader *header, char *p) {
 #elif defined(__LED__)
 	gbk = Unicode2GBK(p, len);
 	DisplayClear();
-	SMS_Prompt();
+//	SMS_Prompt();
 	MessDisplay(gbk);
 	__storeSMS1(gbk);
 	Unicode2GBKDestroy(gbk);

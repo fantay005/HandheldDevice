@@ -452,10 +452,11 @@ static void __cmd_A_Handler(const SMSInfo *sms) {
 		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
 		Unicode2GBKDestroy(gbk);
 	} else {
+		SMS_Prompt();
 		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
 	}
 	DisplayClear();
-	SMS_Prompt();
+//	SMS_Prompt();
 	if (sms->encodeType == ENCODE_TYPE_UCS2) {
 		uint8_t *gbk = Unicode2GBK((const uint8_t *)(&pcontent[6]), (plen - 6));
 		MessDisplay(gbk);
@@ -479,7 +480,7 @@ static void __cmd_FMO_Handler(const SMSInfo *sms){
 }
 
 static void __cmd_VERSION_Handler(const SMSInfo *sms) {
-    char *pdu;
+   char *pdu;
 	int len;
 	const char *version = Version();
 	pdu = pvPortMalloc(300);
@@ -598,7 +599,7 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 
 	DisplayClear();
 	__storeSMS1(sms->content);
-	SMS_Prompt();
+//	SMS_Prompt();
 	if (sms->encodeType == ENCODE_TYPE_UCS2) {
 		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
 		MessDisplay(gbk);

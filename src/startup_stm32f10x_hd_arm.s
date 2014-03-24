@@ -71,15 +71,15 @@ __Vectors       DCD     __initial_sp               ; Top of Stack
                 DCD     MemManage_Handler          ; MPU Fault Handler
                 DCD     BusFault_Handler           ; Bus Fault Handler
                 DCD     UsageFault_Handler         ; Usage Fault Handler
-                DCD     0                          ; Reserved
-                DCD     0                          ; Reserved
-                DCD     0                          ; Reserved
-                DCD     0                          ; Reserved
-                DCD     vPortSVCHandler                ; SVCall Handler
+                DCD     __Vectors                  ; Reserved
+                DCD     __Vectors                  ; Reserved
+                DCD     __Vectors                  ; Reserved
+                DCD     __Vectors                  ; Reserved
+                DCD     vPortSVCHandler            ; SVCall Handler
                 DCD     DebugMon_Handler           ; Debug Monitor Handler
                 DCD     0                          ; Reserved
-                DCD     xPortPendSVHandler             ; PendSV Handler
-                DCD     xPortSysTickHandler            ; SysTick Handler
+                DCD     xPortPendSVHandler         ; PendSV Handler
+                DCD     xPortSysTickHandler        ; SysTick Handler
 
                 ; External Interrupts
                 DCD     WWDG_IRQHandler            ; Window Watchdog

@@ -592,7 +592,6 @@ void __handleSMS(GsmTaskMessage *p) {
 	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
 	ProtocolHandlerSMS(sms);
-
 	__gsmPortFree(sms);
 }
 
@@ -713,6 +712,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_NONE, NULL },
 };
 
+
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
@@ -732,7 +732,7 @@ static void __gsmTask(void *parameter) {
 
 	for (;;) {
 		printf("Gsm: loop again\n");
-		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 10);
+		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 8);
 		if (rc == pdTRUE) {
 			const MessageHandlerMap *map = __messageHandlerMaps;
 			for (; map->type != TYPE_NONE; ++map) {
@@ -745,6 +745,7 @@ static void __gsmTask(void *parameter) {
 		} else {
 			int curT;
 			if(__gsmRuntimeParameter.isonTCP == 0){
+//				SMS_Prompt();
 			   continue;
 			}
 			curT = xTaskGetTickCount();

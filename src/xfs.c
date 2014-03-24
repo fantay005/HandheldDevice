@@ -134,15 +134,24 @@ void WelcomeNote(void) {
 	}
 }
 
-void SMS_Prompt(void) {
+// static char com = '0';
+// static char comm = '0';
+void SMS_Prompt(void) {	
 	int i;
-	char prompt[12] = {0xFD, 0x00, 0x09, 0x01, 0x01, 's', 'o', 'u', 'n', 'd', 'b', ','};
+	char prompt[] = {0xFD, 0x00, 0x0A, 0x01, 0x00, 's', 'o', 'u', 'n', 'd', '2', '2', '4'};
+ // return;
 
-	for (i = 0; i < 12; i++) {
+//   prompt[12] = ++com;
+//   prompt[11] = comm;
+//   if(prompt[12] > 0x39){
+// 	  prompt[12] = '0';
+// 		com = '0';
+// 		prompt[11] = ++comm;
+//   }
+	for (i = 0; i < sizeof(prompt); i++) {
 		USART_SendData(USART3, prompt[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
-
 }
 
 static unsigned char __xfsChangePara(unsigned char type, unsigned char para) {
@@ -150,7 +159,7 @@ static unsigned char __xfsChangePara(unsigned char type, unsigned char para) {
 	char xfsCommand[7];
 
 	xfsCommand[0] = 0x01;
-	xfsCommand[1] = 0x01;
+	xfsCommand[1] = 0x00;
 	xfsCommand[2] = '[';
 	xfsCommand[3] = type;
 	if (type == 'm') {
@@ -226,8 +235,8 @@ static int __xfsWoken(void) {
 }
 
 static int __xfsSetup(void) {
-	char xfsCommand[] = {0x01, 0x01, '[', 'v', '5', ']', '[', 't', '5', ']',
-						 '[', 's', '5', ']', '[', 'm', '3', ']'
+	char xfsCommand[] = {0x01, 0x00, '[', 'v', '5', ']', '[', 't', '5', ']',
+						 '[', 's', '5', ']', '[', 'm', '3', ']', '[', 'h', '0', ']', '[', 'g', '1', ']'
 						};
 	xfsCommand[4] = speakParam.speakVolume;
 	xfsCommand[8] = speakParam.speakTone;
@@ -238,10 +247,16 @@ static int __xfsSetup(void) {
 }
 
 static int __xfsQueryState() {
-	const char xfsCommand[] = { 0x21 };
-	char ret = __xfsSendCommand(xfsCommand, sizeof(xfsCommand), configTICK_RATE_HZ);
-//	printf("xfsQueryState return %02X\n", ret);
-	return ret;
+	if(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_9) != 0) {
+		 printf("RDY = 1\n");
+	   return 0;
+  }
+	printf("RDY = 0\n");
+	return 1;  	
+// 	const char xfsCommand[] = { 0x21 };
+// 	char ret = __xfsSendCommand(xfsCommand, sizeof(xfsCommand), configTICK_RATE_HZ);
+// //	printf("xfsQueryState return %02X\n", ret);
+// 	return ret;
 }
 
 static void __initHardware() {
@@ -260,7 +275,7 @@ static void __initHardware() {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);					//Ñ¶·ÉÓïÒôÄ£¿éµÄ´®¿Ú
 
-	USART_InitStructure.USART_BaudRate = 9600;
+	USART_InitStructure.USART_BaudRate = 115200;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -289,11 +304,11 @@ static void __initHardware() {
 
 static void __xfsInitRuntime() {	
 	GPIO_SetBits(GPIOC, GPIO_Pin_8);
-	vTaskDelay(configTICK_RATE_HZ / 5);
+	vTaskDelay(configTICK_RATE_HZ);
 	GPIO_ResetBits(GPIOC, GPIO_Pin_8);
-	vTaskDelay(configTICK_RATE_HZ / 5);
+	vTaskDelay(configTICK_RATE_HZ * 2);
 	GPIO_SetBits(GPIOC, GPIO_Pin_8);
-	vTaskDelay(configTICK_RATE_HZ / 5);
+	vTaskDelay(configTICK_RATE_HZ);
 	__xfsWoken();
 	vTaskDelay(configTICK_RATE_HZ);
 	__xfsSetup();
@@ -301,7 +316,7 @@ static void __xfsInitRuntime() {
 }
 
 #define TYPE_GB2312 0x00
-#define TYPE_GBK  0x01
+#define TYPE_GBK  0x00
 #define TYPE_BIG5 0x02
 #define TYPE_UCS2 0x03
 
@@ -321,46 +336,34 @@ static int __xfsSpeakLowLevel(const char *p, int len, char type) {
 		__xfsSendByte(*p++);
 	}
 
-	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ);
+	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 2);
+//	vTaskDelay(configTICK_RATE_HZ );
 	if (rc != pdTRUE) {
 		return 0;
 	}
 	if (ret != 0x41) {
 		return 0;
 	}
-
 	ret = 0;
 	while (ret <= len) {
-		if (__xfsQueryState() == 0x4F) {
+		if (__xfsQueryState() != 0) {
 			return 1;
 		}
 		vTaskDelay(configTICK_RATE_HZ / 2);
 		++ret;
 	}
-	return 0;
+	return 1;
 }
 
 static int __xfsSpeakLowLevelWithTimes(const char *p, int len, char type) {
 	int i;
 
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-	// ÉùÒô--¡·Ñ¶·É
-	GPIO_SetBits(GPIOA, GPIO_Pin_6);
-#endif
 	for (i = 0; i < speakParam.speakTimes; ++i) {
 		if (!__xfsSpeakLowLevel(p, len, type)) {
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-			// ÉùÒô--¡·
-			GPIO_ResetBits(GPIOA, GPIO_Pin_6);
-#endif
 			return 0;
 		}
 		vTaskDelay(configTICK_RATE_HZ * speakParam.speakPause);
 	}
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-	// ÉùÒô--¡·
-	GPIO_ResetBits(GPIOA, GPIO_Pin_6);
-#endif
 	return 1;
 }
 
@@ -410,7 +413,10 @@ void __xfsTask(void *parameter) {
 	printf("Xfs start\n");
 	__restorSpeakParam();
 	__xfsInitRuntime();
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
 	WelcomeNote();
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+//	SMS_Prompt();
 	for (;;) {
 		printf("Xfs: loop again\n");
 		rc = xQueueReceive(__speakQueue, &pmsg, portMAX_DELAY);
@@ -418,6 +424,7 @@ void __xfsTask(void *parameter) {
 			__restorSpeakParam();
 			SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
 			__handleSpeakMessage(pmsg);
+			SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
 			vPortFree(pmsg);
 		}
 	}
@@ -498,7 +505,6 @@ void USART3_IRQHandler(void) {
 	}
 
 	data = USART_ReceiveData(USART3);
-	USART_SendData(USART1, data);
 	USART_ClearITPendingBit(USART3, USART_IT_RXNE);
 	if (pdTRUE == xQueueSendFromISR(__uartQueue, &data, &xHigherPriorityTaskWoken)) {
 		if (xHigherPriorityTaskWoken) {

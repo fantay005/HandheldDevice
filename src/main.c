@@ -89,11 +89,10 @@ int main(void) {
 	XfsInit();
 	GSMInit();
 	MP3Init();
-#if defined(__LED__)
 	DisplayInit();
 	SevenSegLedInit();
 	SHT10TestInit();
-#endif
+ // mp3TestInit();
 
 	printf("\n==================================\n");
 	printf("%s", Version());

@@ -12,5 +12,6 @@ typedef struct {
 bool GsmTaskSetGprsConnect(bool state);
 bool GsmTaskSendSMS(const char *pdu, int len);
 const char *GsmGetIMEI(void);
+const char *__gsmGetTUDE(char *p);
 
 #endif

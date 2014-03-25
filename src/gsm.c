@@ -97,6 +97,7 @@ typedef enum {
 	TYPE_SMS_DATA,
 	TYPE_RING,
 	TYPE_GPRS_DATA,
+	TYPE_TUDE_DATA,
 	TYPE_SEND_TCP_DATA,
 	TYPE_RESET,
 	TYPE_NO_CARRIER,
@@ -291,6 +292,7 @@ static int bufferIndex = 0;
 static char isIPD = 0;
 static char isSMS = 0;
 static char isRTC = 0;
+static char isTUDE = 0;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
@@ -350,6 +352,24 @@ static inline void __gmsReceiveRTCData(unsigned char data) {
 	}
 }
 
+static inline void __gmsReceiveTUDEData(unsigned char data) {
+	if (data == 0x0A) {
+		GsmTaskMessage *message;
+		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+		buffer[bufferIndex++] = 0;
+		message = __gsmCreateMessage(TYPE_TUDE_DATA, buffer, bufferIndex);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		}
+		isTUDE = 0;
+		bufferIndex = 0;
+	} else if (data != 0x0D) {
+		buffer[bufferIndex++] = data;
+	}
+}
+
 void USART2_IRQHandler(void) {
 	unsigned char data;
 	if (USART_GetITStatus(USART2, USART_IT_RXNE) == RESET) {
@@ -373,7 +393,11 @@ void USART2_IRQHandler(void) {
 		__gmsReceiveRTCData(data);
 		return;
 	}
-
+	
+	if (isTUDE) {
+		__gmsReceiveTUDEData(data);
+		return;
+	}
 
 	if (data == 0x0A) {
 		buffer[bufferIndex++] = 0;
@@ -405,9 +429,15 @@ void USART2_IRQHandler(void) {
 		if ((bufferIndex == 2) && (strncmp("#H", buffer, 2) == 0)) {
 			isIPD = 1;
 		}
+		
 		if (strncmp(buffer, "+QNITZ: ", 8) == 0) {
 			bufferIndex = 0;
 			isRTC = 1;
+		}
+		
+		if (strncmp(buffer, "+QGSMLOC: ", 10) == 0) {
+			bufferIndex = 0;
+			isTUDE = 1;
 		}
 	}
 }
@@ -762,6 +792,51 @@ void __handleM35RTC(GsmTaskMessage *msg) {
 	RtcSetTime(DateTimeToSecond(&dateTime));
 }
 
+static char longitude[12] = {0}, latitude[12] = {0};
+
+void __handleTUDE(GsmTaskMessage *msg) {
+	int i, j = 0, count = 0;
+	char date[12], time[10];
+	DateTime __dateTime;
+  char *p = __gsmGetMessageData(msg);
+	*p++;
+	*p++;
+	for(i = 0; i < 4; i++){
+		  count++;
+			while(*p != ','){
+				if (count == 1){
+					longitude[j++] = *p++;
+				}	else if (count == 2){ 
+				  latitude[j++] = *p++;
+        }	else if (count == 3){ 
+				  date[j++] = *p++;
+        }	else if (count == 4){					
+				    time[j++] = *p++;
+					if(*p == 0){
+					  break;
+          }
+        }	
+			}
+			*p++;
+			j = 0;
+	}
+  __dateTime.year = (date[2] - '0') * 10 + (date[3] - '0');
+	__dateTime.month = (date[5] - '0') * 10 + (date[6] - '0');
+	__dateTime.date = (date[8] - '0') * 10 + (date[9] - '0');
+	__dateTime.hour = (time[0] - '0') * 10 + (time[1] - '0') + 8;
+	__dateTime.minute = (time[3] - '0') * 10 + (time[4] - '0');
+	__dateTime.second = (time[6] - '0') * 10 + (time[7] - '0');
+	RtcSetTime(DateTimeToSecond(&__dateTime));	
+}
+
+const char *__gsmGetTUDE(char *p) {
+	p = pvPortMalloc(30);
+	memset(p, 0, 30);
+	strcpy(p, longitude);
+  strcat(p, ",");
+	strcat(p, latitude);
+	return p;
+}
 
 typedef struct {
 	GsmTaskMessageType type;
@@ -773,12 +848,13 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_RING, __handleRING },
 	{ TYPE_GPRS_DATA, __handleProtocol },
   { TYPE_RTC_DATA, __handleM35RTC},
+  { TYPE_TUDE_DATA, __handleTUDE},
 	{ TYPE_SEND_TCP_DATA, __handleSendTcpDataLowLevel },
 	{ TYPE_RESET, __handleReset },
 	{ TYPE_NO_CARRIER, __handleResetNoCarrier },
 	{ TYPE_SEND_AT, __handleSendAtCommand },
 	{ TYPE_SEND_SMS, __handleSendSMS },
-    { TYPE_SET_GPRS_CONNECTION, __handleGprsConnection },
+  { TYPE_SET_GPRS_CONNECTION, __handleGprsConnection },
 	{ TYPE_NONE, NULL },
 };
 

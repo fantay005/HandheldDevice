@@ -133,7 +133,7 @@ char *Protocol__Message(TypeChoose type, Classific class, const char *message, i
 	unsigned char sum = 0;
 	char ram[3];
 	unsigned char *p, *ret;
-	int len = message == NULL ? 0 : (strlen(message) - 8);
+	int len = message == NULL ? 0 : (strlen(message) - 6);
 
 	*size = sizeof(ProtocolHeader) + len + sizeof(ProtocolPadder);
 	ret = pvPortMalloc(*size);
@@ -208,7 +208,7 @@ char *TerminalFeedback(const char radom[4], int *size) {
   while(*p != 0) {
     r[8 + i++] = *p++;
   }
-	r[7 + i] = 0;
+	r[8 + i] = 0;
   vPortFree((void *)p);	
 	return Protocol__Message(TypeChooseReply, ClassificReply, r, size);
 }

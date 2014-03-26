@@ -567,10 +567,10 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+CFUN=1\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("AT+CFUN error\r");
-		return false;
-	}
+// 	if (!ATCommandAndCheckReply("AT+CFUN=1\r", "OK", configTICK_RATE_HZ * 2)) {
+// 		printf("AT+CFUN error\r");
+// 		return false;
+// 	}
 
 
 //	if (!ATCommandAndCheckReply("AT+CPIN=1\r", "OK", configTICK_RATE_HZ * 2)) {
@@ -588,15 +588,15 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("AT&W error\r");
-		return false;
-	}
+// 	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ * 2)) {
+// 		printf("AT&W error\r");
+// 		return false;
+// 	}
 
-	if (!ATCommandAndCheckReply("ATS0=3\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("ATS0=3 error\r");
-		return false;
-	}
+// 	if (!ATCommandAndCheckReply("ATS0=3\r", "OK", configTICK_RATE_HZ * 2)) {
+// 		printf("ATS0=3 error\r");
+// 		return false;
+// 	}
 
 	if (!ATCommandAndCheckReply("AT+CMGF=0\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+CMGF=0 error\r");
@@ -643,20 +643,24 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+QIFGCNT=0\r", "OK", configTICK_RATE_HZ / 5)) {
+	if (!ATCommandAndCheckReply("AT+QIFGCNT=0\r", "OK", configTICK_RATE_HZ / 2)) {
 		printf("AT+QIFGCNT error\r");
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+QICSGP=1,\"CMNET\"\r", "OK", configTICK_RATE_HZ / 5)) {
+	if (!ATCommandAndCheckReply("AT+QICSGP=1,\"CMNET\"\r", "OK", configTICK_RATE_HZ / 2)) {
 		printf("AT+QICSGP error\r");
 		return false;
 	}
-
-	if (!ATCommandAndCheckReply("AT+QIMUX=0\r", "OK", configTICK_RATE_HZ)) {
-		printf("AT+QIMUX error\r");
-		return false;
+	
+	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ)) {
+		printf("AT+QGSMLOC error\r");
 	}
+
+// 	if (!ATCommandAndCheckReply("AT+QIMUX=0\r", "OK", configTICK_RATE_HZ)) {
+// 		printf("AT+QIMUX error\r");
+// 		return false;
+// 	}
 
 //	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ)) {
 //		printf("AT&W error\r");

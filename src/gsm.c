@@ -623,7 +623,7 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+QIDEACT\r", "DEACT", configTICK_RATE_HZ / 5)) {
+	if (!ATCommandAndCheckReply("AT+QIDEACT\r", "DEACT", configTICK_RATE_HZ * 10)) {
 		printf("AT+QIDEACT error\r");
 		return false;
 	}

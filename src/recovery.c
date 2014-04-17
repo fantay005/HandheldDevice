@@ -47,7 +47,7 @@ void RecoveryToFactory(void) {
 	if (lastTick == 0xFFFFFFFF) {
 		return;
 	}
-	currentState = GPIO_ReadInputDataBit(GPIOG, GPIO_Pin_13);
+	currentState = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_2);
 	if (currentState == Bit_SET) {
 		lastTick = xTaskGetTickCount();
 	} else {

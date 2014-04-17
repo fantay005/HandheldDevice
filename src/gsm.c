@@ -694,7 +694,7 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+QIDEACT\r", "DEACT", configTICK_RATE_HZ / 5)) {
+	if (!ATCommandAndCheckReply("AT+QIDEACT\r", "DEACT", configTICK_RATE_HZ *10)) {
 		printf("AT+QIDEACT error\r");
 		return false;
 	}		   //¹Ø±ÕGPRS³¡¾°
@@ -726,7 +726,7 @@ bool __initGsmRuntime() {
 	
 	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 20)) {
 		printf("AT+QGSMLOC error\r");
-		return false;
+//		return false;
 	}
 
 // 	if (!ATCommandAndCheckReply("AT+QIMUX=0\r", "OK", configTICK_RATE_HZ)) {

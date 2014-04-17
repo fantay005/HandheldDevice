@@ -93,6 +93,7 @@ int main(void) {
 	GSMInit();
 	SHT10TestInit();
 //	mp3TestInit();
+	FMInit();
 
 #if defined(__LED__)
 	DisplayInit();

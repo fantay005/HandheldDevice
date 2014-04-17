@@ -151,7 +151,7 @@ static void VS1003_SPI_Init() {
 
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource1);	  
 
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 	
 	NVIC_InitStructure.NVIC_IRQChannel = EXTI1_IRQn;     //选择中断通道1
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //抢占式中断优先级设置为0

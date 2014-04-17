@@ -4,15 +4,17 @@
 #include "semphr.h"
 #include "task.h"
 #include "stm32f10x_gpio.h"
+#include "stm32f10x_usart.h"
 #include "stm32f10x_exti.h"
 #include "misc.h"
 #include "fm.h"
+#include "xfs.h"
 #include "soundcontrol.h"
 
-#define FM_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE + 16)
-
+#define FM_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE + 32)
+#define FM_SWITCH_TIME      (configTICK_RATE_HZ)
 static xQueueHandle __queue;
-static xSemaphoreHandle __semaphore = NULL;
+static xSemaphoreHandle __asemaphore = NULL;
 
 typedef enum{
     TYPE_FM_OPEN_CHANNEL,
@@ -405,84 +407,108 @@ static T_ERROR_OP Si4731_Set_Property_GPO_IEN(void) {
 }
 
 
-//static T_ERROR_OP Si4731_Get_INT_status(void)
-//{
-//	uint16_t loop_counter = 0;
-//	uint8_t Si4731_reg_data[32];	
-//	uint8_t error_ind = 0;
-//	uint8_t Si4731_Get_INT_status[] = {0x14};	
-//
-// 	error_ind = OperationSi4731_2w(WRITE, &(Si4731_Get_INT_status[0]), 1);
-//	if(error_ind)
-//		return I2C_ERROR;
-//	do
-//	{	
-//		error_ind = OperationSi4731_2w(READ, &(Si4731_reg_data[0]), 1);
-//		if(error_ind)
-//			return I2C_ERROR;	
-//		loop_counter++;
-//	}
-//	while(((Si4731_reg_data[0]) != 0x80) && (loop_counter < 0xff));
-//	if(loop_counter >= 0xff)
-//		return LOOP_EXP_ERROR;	
-//	return OK;
-//}
+static T_ERROR_OP Si4731_Get_INT_status(void)
+{
+	uint16_t loop_counter = 0;
+	uint8_t Si4731_reg_data[32];	
+	uint8_t error_ind = 0;
+	uint8_t Si4731_Get_INT_status[] = {0x14};	
 
-//static T_ERROR_OP Si4731_Set_Property_FM_Seek_Band_Bottom(void) {
-//	uint16_t loop_counter = 0;
-//	uint8_t Si4731_reg_data[32];
-//	uint8_t error_ind = 0;
-//	uint8_t Si4731_set_property[] = {0x12, 0x00, 0x14, 0x00, 0x22, 0x2E};	//0x222E = 8750
-//
-//	error_ind = OperationSi4731_2w(WRITE, &(Si4731_set_property[0]), 6);
-//	if (error_ind) {
-//		return I2C_ERROR;
-//	}
-//
-//	do {
-//		error_ind = OperationSi4731_2w(READ, &(Si4731_reg_data[0]), 1);
-//		if (error_ind) {
-//			return I2C_ERROR;
-//		}
-//		loop_counter++;
-//	} while (((Si4731_reg_data[0]) != 0x80) && (loop_counter < 0xff)); 
-//	if (loop_counter >= 0xff) {
-//		return LOOP_EXP_ERROR;
-//	}
-//	return OK;
-//}
+	error_ind = OperationSi4731_2w(WRITE, &(Si4731_Get_INT_status[0]), 1);
+	if(error_ind)
+		return I2C_ERROR;
+	do
+	{	
+		error_ind = OperationSi4731_2w(READ, &(Si4731_reg_data[0]), 1);
+		if(error_ind)
+			return I2C_ERROR;	
+		loop_counter++;
+	}
+	while(((Si4731_reg_data[0]) != 0x80) && (loop_counter < 0xff));
+	if(loop_counter >= 0xff)
+		return LOOP_EXP_ERROR;	
+	return OK;
+}
 
+static T_ERROR_OP Si4731_Set_Property_FM_Seek_Band_Bottom(void) {
+	uint16_t loop_counter = 0;
+	uint8_t Si4731_reg_data[32];
+	uint8_t error_ind = 0;
+	uint8_t Si4731_set_property[] = {0x12, 0x00, 0x14, 0x00, 0x22, 0x2E};	//0x222E = 8750
 
-//static T_ERROR_OP Si4731_Set_Property_FM_Seek_Space(void) {
-//	uint16_t loop_counter = 0;
-//	uint8_t Si4731_reg_data[32];
-//	uint8_t error_ind = 0;
-//	uint8_t Si4731_set_property[] = {0x12, 0x00, 0x14, 0x02, 0x00, 0x05};	//seek space = 0x0A = 10 = 100KHz
-//
-//	error_ind = OperationSi4731_2w(WRITE, &(Si4731_set_property[0]), 6);
-//	if (error_ind) {
-//		return I2C_ERROR;
-//	}
-//	do {
-//		error_ind = OperationSi4731_2w(READ, &(Si4731_reg_data[0]), 1);
-//		if (error_ind) {
-//			return I2C_ERROR;
-//		}
-//		loop_counter++;
-//	} while (((Si4731_reg_data[0]) != 0x80) && (loop_counter < 0xff));
-//	if (loop_counter >= 0xff) {
-//		return LOOP_EXP_ERROR;
-//	}
-//	return OK;
-//}
+	error_ind = OperationSi4731_2w(WRITE, &(Si4731_set_property[0]), 6);
+	if (error_ind) {
+		return I2C_ERROR;
+	}
+
+	do {
+		error_ind = OperationSi4731_2w(READ, &(Si4731_reg_data[0]), 1);
+		if (error_ind) {
+			return I2C_ERROR;
+		}
+		loop_counter++;
+	} while (((Si4731_reg_data[0]) != 0x80) && (loop_counter < 0xff)); 
+	if (loop_counter >= 0xff) {
+		return LOOP_EXP_ERROR;
+	}
+	return OK;
+}
+
+static T_ERROR_OP Si4731_Set_Property_FM_Seek_Band_Top(void) {
+	uint16_t loop_counter = 0;
+	uint8_t Si4731_reg_data[32];
+	uint8_t error_ind = 0;
+	uint8_t Si4731_set_property[] = {0x12, 0x00, 0x14, 0x01, 0x2A, 0x26};	//0x2A26 = 10790
+
+	error_ind = OperationSi4731_2w(WRITE, &(Si4731_set_property[0]), 6);
+	if (error_ind) {
+		return I2C_ERROR;
+	}
+
+	do {
+		error_ind = OperationSi4731_2w(READ, &(Si4731_reg_data[0]), 1);
+		if (error_ind) {
+			return I2C_ERROR;
+		}
+		loop_counter++;
+	} while (((Si4731_reg_data[0]) != 0x80) && (loop_counter < 0xff)); 
+	if (loop_counter >= 0xff) {
+		return LOOP_EXP_ERROR;
+	}
+	return OK;
+}
+
+static T_ERROR_OP Si4731_Set_Property_FM_Seek_Space(void) {
+	uint16_t loop_counter = 0;
+	uint8_t Si4731_reg_data[32];
+	uint8_t error_ind = 0;
+	uint8_t Si4731_set_property[] = {0x12, 0x00, 0x14, 0x02, 0x00, 0x0A};	//seek space = 0x0A = 10 = 100KHz
+
+	error_ind = OperationSi4731_2w(WRITE, &(Si4731_set_property[0]), 6);
+	if (error_ind) {
+		return I2C_ERROR;
+	}
+	do {
+		error_ind = OperationSi4731_2w(READ, &(Si4731_reg_data[0]), 1);
+		if (error_ind) {
+			return I2C_ERROR;
+		}
+		loop_counter++;
+	} while (((Si4731_reg_data[0]) != 0x80) && (loop_counter < 0xff));
+	if (loop_counter >= 0xff) {
+		return LOOP_EXP_ERROR;
+	}
+	return OK;
+}
 
 static T_ERROR_OP Si4731_Wait_STC(void) {
 	uint16_t loop_counter = 0, loop_counter_1 = 0;
 	uint8_t Si4731_reg_data[32];
 	uint8_t error_ind = 0;
-	uint8_t Si4731_get_int_status[] = {0x14};	//读中断位
+	uint8_t Si4731_get_int_status[] = {0x14, 0x00};	//读中断位
 
 	do {
+	//	vTaskDelay(configTICK_RATE_HZ);
 		error_ind = OperationSi4731_2w(WRITE, &(Si4731_get_int_status[0]), 1);
 
 		if (error_ind) {
@@ -573,7 +599,7 @@ static T_ERROR_OP Si4731_Set_Property_FM_SNR_Threshold(void)
 	uint16_t loop_counter = 0;
 	uint8_t Si4731_reg_data[32];	
 	uint8_t error_ind = 0;
-	uint8_t Si4731_set_property[] = {0x12,0x00,0x14,0x03,0x00,0x3C};	//SNR threshold = 0x0003 = 3dB
+	uint8_t Si4731_set_property[] = {0x12,0x00,0x14,0x03,0x00,0x02};	//SNR threshold = 0x0003 = 3dB
         //0x1403为FM_SEEK_TUNE_SNR_THERSHOLD的属性；缺省值为0x0003=3db
 	//send CMD
  	error_ind = OperationSi4731_2w(WRITE, &(Si4731_set_property[0]), 6);
@@ -602,7 +628,7 @@ static T_ERROR_OP Si4731_Set_Property_FM_RSSI_Threshold(void)
 	uint16_t loop_counter = 0;
 	uint8_t Si4731_reg_data[32];	
 	uint8_t error_ind = 0;
-	uint8_t Si4731_set_property[] = {0x12,0x00,0x14,0x04,0x00,0x20};	//RSSI threshold = 0x0014 = 20dBuV
+	uint8_t Si4731_set_property[] = {0x12,0x00,0x14,0x04,0x00,0x08};	//RSSI threshold = 0x0014 = 20dBuV
         //0x1404为FM_SEEK_TUNE_RSSI_TRESHOLD的属性；缺省值为0x0014=20dBuV
 	//send CMD
  	error_ind = OperationSi4731_2w(WRITE, &(Si4731_set_property[0]), 6);
@@ -769,8 +795,7 @@ T_ERROR_OP Si4731_FM_Seek(T_SEEK_MODE seek_mode, unsigned short *pChannel_Freq, 
 		if(Si4731_FM_Tune_Status(pChannel_Freq, SeekFail, &valid_channel) != OK) return ERROR;	
 		
 		loop_counter++;
-	}
-	while((valid_channel == 0) && (loop_counter < 0xff) && (*SeekFail == 0));  
+	}	while((valid_channel == 0) && (loop_counter < 0xff) && (*SeekFail == 0)); 
 
 	if(loop_counter >= 0xff)
 		return LOOP_EXP_ERROR;
@@ -792,13 +817,12 @@ T_ERROR_OP Si4731_FM_Seek_All(unsigned short *pChannel_All_Array, unsigned char 
 {
 	unsigned char SeekFail;
 	unsigned short Channel_Result, Last_Channel = 8750;
-		
-	*pReturn_Length = 0;
 	
 	if(Si4731_Set_FM_Frequency(8750) != OK) return ERROR;
 	
 	while(*pReturn_Length < Max_Length)
 	{
+		vTaskDelay(configTICK_RATE_HZ / 10);
 		if(Si4731_FM_Seek(SEEKUP_WRAP, &Channel_Result, &SeekFail) != OK) return ERROR;
 			
 		if(SeekFail)
@@ -828,49 +852,78 @@ void EXTI3_INTI(void){
 	EXTI_InitTypeDef EXTI_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2 ;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 ;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);		  //MP3_IRQ
+	GPIO_Init(GPIOG, &GPIO_InitStructure);		  
 
 
-	EXTI_InitStructure.EXTI_Line = EXTI_Line2; //选择中断线路2 3 5
-    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt; //设置为中断请求，非事件请求
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising; //设置中断触发方式为上下降沿触发
-    EXTI_InitStructure.EXTI_LineCmd = ENABLE;                                          //外部中断使能
+	EXTI_InitStructure.EXTI_Line = EXTI_Line13; 
+    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt; 
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling; 
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;                            
     EXTI_Init(&EXTI_InitStructure);
 
-	GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource2);	  
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOG, GPIO_PinSource13);	  
 
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 	
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI2_IRQn;     //选择中断通道1
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; //抢占式中断优先级设置为0
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;        //响应式中断优先级设置为0
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;     //选择中断通道1
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //抢占式中断优先级设置为0
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;        //响应式中断优先级设置为0
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;                                   //使能中断
     NVIC_Init(&NVIC_InitStructure);
 }
 
 static char NEXT = 0;
-void EXTI2_IRQHandler(void)
+static portTickType lastT = 0;
+static char choose = 0;
+static portTickType upT = 0;
+static portTickType downT = 0xFFFFFFFF;
+void EXTI15_10_IRQHandler (void)
 {
+	int curT;
 	portBASE_TYPE msg;
-	EXTI_ClearITPendingBit(EXTI_Line2);
-	if (pdTRUE == xSemaphoreGiveFromISR(__semaphore, &msg)) {
-		NEXT ++;
-		if(NEXT > 30){
-		   NEXT = 0;
-    }
-		if (msg) {
-			taskYIELD();
-		}
-	}			
+	EXTI_ClearITPendingBit(EXTI_Line13);
+	if (pdTRUE == xSemaphoreGiveFromISR(__asemaphore, &msg)) {
+		curT = xTaskGetTickCount();
+		if ((curT - lastT) >= FM_SWITCH_TIME){
+		   NEXT ++;
+		   if(NEXT > 30){
+		      NEXT = 0;
+       }
+			 
+			 if (msg) {
+			    taskYIELD();
+		   }
+		 }
+		 
+		 if(GPIO_ReadInputDataBit(GPIOG,GPIO_Pin_13) == 0){
+			  downT = xTaskGetTickCount();
+		 }
+
+		 if(GPIO_ReadInputDataBit(GPIOG,GPIO_Pin_13) == 1){
+			  upT = xTaskGetTickCount();
+			  if(upT > downT){
+					if ((upT - downT) >= FM_SWITCH_TIME){
+           choose = 1;					
+				  }
+				}
+        downT = 0xFFFFFFFF;					
+		 } 		 
+
+		lastT = curT;
+	}
 }
-void FM_INIT(void){
-  EXTI3_INTI();
+
+void SI4731Init(void){
 	RST_PIN_INIT;
 	SDIO_PIN_INIT;
 	SCLK_PIN_INIT;
 	RST_LOW;
+}
+
+
+void auto_seek_Property(void){
 	vTaskDelay(configTICK_RATE_HZ / 10);
 	RST_HIGH;
 	vTaskDelay(configTICK_RATE_HZ / 10);
@@ -882,27 +935,65 @@ void FM_INIT(void){
 	vTaskDelay(configTICK_RATE_HZ / 10);
   Si4731_Set_Property_FM_DEEMPHASIS();
   vTaskDelay(configTICK_RATE_HZ / 10);
+	Si4731_Set_Property_FM_Seek_Band_Bottom();
+	vTaskDelay(configTICK_RATE_HZ / 10);
+	Si4731_Set_Property_FM_Seek_Band_Top();
+	vTaskDelay(configTICK_RATE_HZ / 10);
+	Si4731_Set_Property_FM_Seek_Space();
+	vTaskDelay(configTICK_RATE_HZ / 10);
   Si4731_Set_Property_FM_SNR_Threshold();
   vTaskDelay(configTICK_RATE_HZ / 10);
   Si4731_Set_Property_FM_RSSI_Threshold();
 }
+	
 
+static  char memory = 0;
+
+void tune(void) {
+	int i, fm;
+	char tune[] = {0xFD, 0x00, 0x0F, 0x01, 0x03, 0x8C, 0x03, 0x98, 0x91, 0xFF, 0x0C,
+					          0xFF, 0x19, 0xFF, 0x10, 0x70, 0xB9, 0xFF, 0x18			  //调频90.8
+                   };							 
+	for (i = 0; i < 19; i++) {
+		USART_SendData(USART3, tune[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+}
 
 void __FMTask(void) {
-  unsigned short *pChannel;
-	unsigned char *pReturn_Length;
+  unsigned short pChannel[30];
+	unsigned char Return_Length = 0;
 	portBASE_TYPE rc;
-	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 1);
-	vTaskDelay(configTICK_RATE_HZ / 10);
-	Si4731_FM_Seek_All(&pChannel[0], 20, pReturn_Length);
+	__asemaphore = xQueueGenericCreate(1, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_BINARY_SEMAPHORE ); 
+	memset(&pChannel[0], 0, 30);
+	auto_seek_Property();
+	EXTI3_INTI();
+	Si4731_FM_Seek_All(&(pChannel[0]), 30, &Return_Length);
 	for (;;) {
-	  if (__semaphore != NULL) {
-	     if(NEXT < *pReturn_Length){
+	  if (__asemaphore != NULL) {
+			 xSemaphoreTake(__asemaphore, portMAX_DELAY);
+			 if(choose == 1){
+				 choose = 0;
+				 if(GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_2) == 0){
+			       SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 1);
+		     } else {
+				     SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 0);
+         }					 
+			 }
+			 if(GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_2) == 1){
+				 tune();
+			 }
+		   if(memory == NEXT) continue;
+	     if(NEXT < Return_Length){
+				  printf("%d=%5d\n", NEXT, pChannel[NEXT]);
 	        Si4731_Set_FM_Frequency(pChannel[NEXT]);
        } else {
 				  NEXT = 0;
+				  printf("%d=%5d\n", NEXT, pChannel[NEXT]);
 				  Si4731_Set_FM_Frequency(pChannel[NEXT]);
        }
+			 
+			 memory = NEXT;
 	  }
   }
 }
@@ -936,9 +1027,8 @@ void fmopen(int freq) {
 }
 
 void FMInit(void) {
-	FMInit();
-  vSemaphoreCreateBinary(__semaphore);
-	xTaskCreate(__FMTask, (signed portCHAR *) "FM", FM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 6, NULL);
+	SI4731Init();
+	xTaskCreate(__FMTask, (signed portCHAR *) "FM", FM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 10, NULL);
 }
 
 

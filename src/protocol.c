@@ -103,11 +103,11 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 	{
 		ProtocolHeader *h = (ProtocolHeader *)ret;
 		h->header[0] = '#';
-		h->header[1] = 'H';
-		h->lenH = 'E';
-		h->lenL = 'F';
+		h->header[1] = 'W';
+		h->lenH = 'A';
+		h->lenL = 'T';
 		h->type = 'E';
-		h->class = 'I';
+		h->class = 'R';
 		h->radom = 0x3231;
 		h->reserve = 0x3433;
 	}
@@ -135,7 +135,7 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 //	NVIC_SystemReset();	 //¸´Î»
 //}
 
-extern char *sensordat(void);
+//extern char *sensordat(void);
 
 char *ProtoclCreatLogin(char *imei, int *size) {
 	return ProtocolMessage(TermActive, Login, imei, size);

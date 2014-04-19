@@ -16,18 +16,17 @@
 #include "atcmd.h"
 #include "norflash.h"
 #include "unicode2gbk.h"
+#include "UltrasonicWave.h"
 
-#define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
+#define GSM_TASK_STACK_SIZE			      (configMINIMAL_STACK_SIZE + 256)
+#define GSM_GPRS_HEART_BEAT_TIME      (configTICK_RATE_HZ * 60 * 5)
+#define WATER_LEVEL_UPLOAD_TIME       (configTICK_RATE_HZ * 60 )
 #define GSM_IMEI_LENGTH              15
 
-#if defined(__SPEAKER__)
-#  define RESET_GPIO_GROUP           GPIOA
-#  define RESET_GPIO                 GPIO_Pin_11
-#elif defined(__LED__)
+
 #  define RESET_GPIO_GROUP           GPIOG
 #  define RESET_GPIO                 GPIO_Pin_10
-#endif
+
 
 #define __gsmAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)
 #define __gsmDeassertResetPin()      GPIO_ResetBits(RESET_GPIO_GROUP, RESET_GPIO)
@@ -704,6 +703,7 @@ static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
 	portTickType lastT = 0;
+	portTickType lastTime = 0;
 
 	while (1) {
 		printf("Gsm start\n");
@@ -719,7 +719,7 @@ static void __gsmTask(void *parameter) {
 
 	for (;;) {
 		printf("Gsm: loop again\n");
-		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 3);
+		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 20);
 		if (rc == pdTRUE) {
 			const MessageHandlerMap *map = __messageHandlerMaps;
 			for (; map->type != TYPE_NONE; ++map) {
@@ -743,6 +743,18 @@ static void __gsmTask(void *parameter) {
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
 				lastT = curT;
+			}
+			
+			if ((curT - lastTime) >= WATER_LEVEL_UPLOAD_TIME) {
+				unsigned int para, size;
+				const char *date;
+				char buffer[32];
+				para = measure();
+				sprintf(buffer, "_KSW%d_",para);
+				date = (const char *)ProtoclQueryMeteTim(buffer, &size);
+				__gsmSendTcpDataLowLevel(date, size);
+				ProtocolDestroyMessage(date);
+				lastTime = curT;
 			}
 		}
 	}

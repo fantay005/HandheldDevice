@@ -84,6 +84,7 @@ int main(void) {
 	//Uart3Init();
 //	RtcInit();
 	WatchdogInit();
+	Rainfall_Config();
 //	SoftPWMLedInit();
 //	RecoveryInit();
 #if defined(__SPKEAER__)

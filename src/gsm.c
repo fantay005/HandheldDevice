@@ -749,8 +749,8 @@ static void __gsmTask(void *parameter) {
 				unsigned int para, size;
 				const char *date;
 				char buffer[32];
-				para = measure();
-				sprintf(buffer, "_KSW%d_",para);
+				para = Rainfall_Read();
+				sprintf(buffer, "_YL%d_",para);
 				date = (const char *)ProtoclQueryMeteTim(buffer, &size);
 				__gsmSendTcpDataLowLevel(date, size);
 				ProtocolDestroyMessage(date);

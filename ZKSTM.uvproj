@@ -61,6 +61,8 @@
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
+            <nStopU1X>0</nStopU1X>
+            <nStopU2X>0</nStopU2X>
           </BeforeCompile>
           <BeforeMake>
             <RunUserProg1>0</RunUserProg1>
@@ -342,6 +344,7 @@
             <Rwpi>0</Rwpi>
             <wLevel>0</wLevel>
             <uThumb>0</uThumb>
+            <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls>--preinclude=led_huaibei_p10.h</MiscControls>
               <Define></Define>
@@ -357,6 +360,7 @@
             <SplitLS>0</SplitLS>
             <SwStkChk>0</SwStkChk>
             <NoWarn>0</NoWarn>
+            <uSurpInc>0</uSurpInc>
             <VariousControls>
               <MiscControls></MiscControls>
               <Define></Define>
@@ -635,6 +639,7 @@
                     <Rwpi>2</Rwpi>
                     <wLevel>0</wLevel>
                     <uThumb>2</uThumb>
+                    <uSurpInc>2</uSurpInc>
                     <VariousControls>
                       <MiscControls></MiscControls>
                       <Define></Define>
@@ -669,6 +674,16 @@
               <FileName>uart3.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\uart3.c</FilePath>
+            </File>
+            <File>
+              <FileName>UltrasonicWave.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\UltrasonicWave.c</FilePath>
+            </File>
+            <File>
+              <FileName>rainfall.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\rainfall.c</FilePath>
             </File>
           </Files>
         </Group>

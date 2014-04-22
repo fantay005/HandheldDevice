@@ -35,7 +35,7 @@ static const char *assistant = "淮北气象三农服务";
 
 
 #if defined(__LED_LIXIN__)
-static const char *host = "  ";
+static const char *host = "   ";
 #endif
 
 typedef struct {

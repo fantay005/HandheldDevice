@@ -12,7 +12,7 @@
 #include "soundcontrol.h"
 
 #define FM_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE + 32)
-#define FM_SWITCH_TIME      (configTICK_RATE_HZ)
+#define FM_SWITCH_TIME      (configTICK_RATE_HZ * 2)
 static xQueueHandle __queue;
 static xSemaphoreHandle __asemaphore = NULL;
 
@@ -949,15 +949,35 @@ void auto_seek_Property(void){
 
 static  char memory = 0;
 
-void tune(void) {
-	int i, fm;
-	char tune[] = {0xFD, 0x00, 0x0F, 0x01, 0x03, 0x8C, 0x03, 0x98, 0x91, 0xFF, 0x0C,
-					          0xFF, 0x19, 0xFF, 0x10, 0x70, 0xB9, 0xFF, 0x18			  //µ÷Æµ90.8
-                   };							 
-	for (i = 0; i < 19; i++) {
+void Broadcast(unsigned short para) {
+	int i;
+	char buf[8];
+	char tune[] = {0xFD, 0x00, 0x10, 0x01, 0x03, 0x03, 0x8C, 0x91, 0x98, 0x0C, 0xFF,
+					       0x39, 0x00, 0x30, 0x00, 0xB9, 0x70, 0x38, 0x00			  //µ÷Æµ90.8!
+                };
+  sprintf(buf, "%d", para);
+  if(para >= 10000){
+		tune[9] = buf[0];
+		tune[10] = 0x00;
+		tune[11] = buf[1];
+		tune[12] = 0x00;
+		tune[13] = buf[2];
+		tune[14] = 0x00;
+		tune[17] = buf[3];
+	}	else {
+		tune[11] = buf[0];
+		tune[12] = 0x00;
+		tune[13] = buf[1];
+		tune[14] = 0x00;
+		tune[17] = buf[2];
+	}
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+  for (i = 0; i < 19; i++) {
 		USART_SendData(USART3, tune[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
+	vTaskDelay(configTICK_RATE_HZ * 3);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
 }
 
 void __FMTask(void) {
@@ -980,15 +1000,18 @@ void __FMTask(void) {
 				     SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 0);
          }					 
 			 }
+       if(memory == NEXT) continue;
 			 if(GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_2) == 1){
-				 tune();
+				 if(pChannel[NEXT] != 0){
+					  Broadcast(pChannel[NEXT]);
+			   }
 			 }
-		   if(memory == NEXT) continue;
 	     if(NEXT < Return_Length){
 				  printf("%d=%5d\n", NEXT, pChannel[NEXT]);
 	        Si4731_Set_FM_Frequency(pChannel[NEXT]);
        } else {
 				  NEXT = 0;
+				  Broadcast(pChannel[NEXT]);
 				  printf("%d=%5d\n", NEXT, pChannel[NEXT]);
 				  Si4731_Set_FM_Frequency(pChannel[NEXT]);
        }

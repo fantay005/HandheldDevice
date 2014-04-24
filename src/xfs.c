@@ -129,15 +129,28 @@ void WelcomeNote(void) {
 	}
 }
 
-void SMS_Prompt(void) {
-	int i;
-	char prompt[12] = {0xFD, 0x00, 0x09, 0x01, 0x01, 's', 'o', 'u', 'n', 'd', 'b', ','};
+static char com = '0';
+static char comm = '0';
+static char count = 1;
 
-	for (i = 0; i < 12; i++) {
+void SMS_Prompt(void) {	
+	int i;
+	char prompt[] = {0xFD, 0x00, 0x0A, 0x01, 0x00, 's', 'o', 'u', 'n', 'd', '3', '0', '1'};
+
+  printf("%d\n", count);
+  count++;
+  prompt[12] = ++com;
+  prompt[11] = comm;
+  if(prompt[12] > 0x39){
+	  prompt[12] = '0';
+		com = '0';
+		prompt[11] = ++comm;
+  }
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < sizeof(prompt); i++) {
 		USART_SendData(USART3, prompt[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
-
 }
 
 static unsigned char __xfsChangePara(unsigned char type, unsigned char para) {

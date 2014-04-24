@@ -952,31 +952,26 @@ static  char memory = 0;
 void Broadcast(unsigned short para) {
 	int i;
 	char buf[8];
-	char tune[] = {0xFD, 0x00, 0x10, 0x01, 0x03, 0x03, 0x8C, 0x91, 0x98, 0x0C, 0xFF,
-					       0x39, 0x00, 0x30, 0x00, 0xB9, 0x70, 0x38, 0x00			  //µ÷Æµ90.8!
+	char tune[35] = {0xFD, 0x00, 0x20, 0x01, 0x03,0x73, 0x00, 0x6F, 0x00, 0x75, 0x00, 0x6E, 0x00, 0x64, 0x00, 0x31, 0x00, 0x31, 0x00, 0x34, 0x00,
+		0x03, 0x8C, 0x91, 0x98, 0x0C, 0xFF, 0x39, 0x00, 0x30, 0x00, 0xB9, 0x70, 0x38, 0x00			  //µ÷Æµ90.8!
                 };
   sprintf(buf, "%d", para);
   if(para >= 10000){
-		tune[9] = buf[0];
-		tune[10] = 0x00;
-		tune[11] = buf[1];
-		tune[12] = 0x00;
-		tune[13] = buf[2];
-		tune[14] = 0x00;
-		tune[17] = buf[3];
+		tune[25] = buf[0];
+		tune[27] = buf[1];
+		tune[29] = buf[2];
+		tune[33] = buf[3];
 	}	else {
-		tune[11] = buf[0];
-		tune[12] = 0x00;
-		tune[13] = buf[1];
-		tune[14] = 0x00;
-		tune[17] = buf[2];
+		tune[27] = buf[0];
+		tune[29] = buf[1];
+		tune[33] = buf[2];
 	}
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
-  for (i = 0; i < 19; i++) {
+  for (i = 0; i < 35; i++) {
 		USART_SendData(USART3, tune[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
-	vTaskDelay(configTICK_RATE_HZ * 3);
+	vTaskDelay(configTICK_RATE_HZ * 5);
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
 }
 

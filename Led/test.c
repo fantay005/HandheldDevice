@@ -8,6 +8,9 @@
 #include "second_datetime.h"
 #include "unicode2gbk.h"
 #include "softpwm_led.h"
+#include "stm32f10x_usart.h"
+#include "xfs.h"
+#include "soundcontrol.h"
 
 #define SHT_TASK_STACK_SIZE	( configMINIMAL_STACK_SIZE + 64 )
 
@@ -26,6 +29,25 @@
 #define LED_INDEX_HOUR_L 17
 #define LED_INDEX_MINUTE_H 18
 #define LED_INDEX_MINUTE_L 19
+
+void BKUI_Prompt(char para) {
+	int i;
+	char prompt[21] = {0xFD, 0x00, 0x12, 0x01, 0x03, 0x63, 0xF9, 0xAC, 0x4E, 0xF6, 0x65, 0xF4, 0x95, 
+                     0x21, 0x00, 0x38, 0x00, 0xB9, 0x70, 0x74, 0x65}; //北京时间十八点整
+	if(para >= 0x0A){
+		prompt[13] = 0x31;
+		prompt[15] = para + 0x26;
+	}	else {	
+	  prompt[15] = para + 0x30;	
+	}		
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 21; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 3);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+}
 
 static void __ledTestTask(void *nouse) {
 	DateTime dateTime;
@@ -90,9 +112,12 @@ static void __ledTestTask(void *nouse) {
 	       SecondToDateTime(&dateTime, second);
 		   if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.second >= 0x00) && (dateTime.second <= 0x05)) {
 		   		printf("Reset From Default Configuration\n");
-				vTaskDelay(configTICK_RATE_HZ * 5);
+				 vTaskDelay(configTICK_RATE_HZ * 5);
 	            NVIC_SystemReset();
 		   }
+			 if ((dateTime.hour >= 0x08) && (dateTime.hour <= 0x11) && (dateTime.minute == 0x00) && (dateTime.second == 0x00) && (dateTime.second == 0x00)){
+				  BKUI_Prompt(dateTime.hour);
+			 }
 	}
 }
 

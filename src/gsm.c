@@ -346,6 +346,7 @@ static char isIPD = 0;
 static char isSMS = 0;
 static char isRTC = 0;
 static char isTUDE = 0;
+static char CardisEXIST = 1;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
@@ -496,6 +497,16 @@ void USART2_IRQHandler(void) {
 			bufferIndex = 0;
 			isTUDE = 1;
 		}
+		
+		if (strncmp(buffer, "+CME ERROR: 3517", 16) == 0) {
+			bufferIndex = 0;
+			CardisEXIST = 0;
+		}
+		
+		if (strncmp(buffer, "CALL READY", 10) == 0) {
+			bufferIndex = 0;
+			CardisEXIST = 1;
+		}
 	}
 }
 
@@ -514,6 +525,23 @@ void __gsmModemStart() {
 	vTaskDelay(configTICK_RATE_HZ * 5);
 }
 
+
+static  char stamp = 0;
+static  char sign = 0;
+
+bool sound_Prompt(void) {
+	int i;
+	char prompt[13] = {0xFD, 0x00, 0x0A, 0x01, 0x03, 0xC6, 0x51, 0x07, 0x59, 0x31, 0x5C, 0xEA, 0x7E}; //准备就绪
+  if(stamp != 1) return false;
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 13; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 2);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
 /// Check if has the GSM modem connect to a TCP server.
 /// \return true   When the GSM modem has connect to a TCP server.
 /// \return false  When the GSM modem dose not connect to a TCP server.
@@ -525,7 +553,11 @@ bool __gsmIsTcpConnected() {
 			return false;
 		}
 		if (strncmp(&reply[7], "CONNECT OK", 10) == 0) {
+			stamp++;
+      sign = 0;			
+		  if(stamp >= 5) stamp = 5;
 			AtCommandDropReplyLine(reply);
+			sound_Prompt();
 			return true;
 		}
 		if (strncmp(&reply[7], "TCP CONNECTING", 12) == 0) {
@@ -596,9 +628,68 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 	return false;
 }
 
+bool sound1_Prompt(void) {
+	int i;
+	char prompt[17] = {0xFD, 0x00, 0x0E, 0x01, 0x03, 0x4B, 0x62,
+                     0x3A, 0x67, 0x61, 0x53, 0x2A, 0x67, 0xD2, 0x63, 0x65, 0x51}; //手机卡未插入
+	if(CardisEXIST == 1) return false;
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 17; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 3);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
+
+bool sound2_Prompt(void) {
+	int i;
+	char prompt[23] = {0xFD, 0x00, 0x14, 0x01, 0x03, 0x2A, 0x67, 0xFD, 0x80, 0xA5, 0x63, 0x65, 0x51, 
+                     0x0D, 0x67, 0xA1, 0x52, 0x68, 0x56, 0x73, 0x5E, 0xF0, 0x53}; //未能接入服务器平台
+	if(sign != 10) return false;
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 23; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 3);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
+
+bool sound3_Prompt(void) {
+	int i;
+	char prompt[23] = {0xFD, 0x00, 0x14, 0x01, 0x03, 0x4B, 0x62, 0x3A, 0x67, 0x21, 0x6A, 0x57, 0x57,
+                     0x1D, 0x52, 0xCB, 0x59, 0x16, 0x53, 0x10, 0x62, 0x9F, 0x52}; //手机模块初始化成功
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 23; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 3);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
+
+bool sound4_Prompt(void) {
+	int i;
+	char prompt[23] = {0xFD, 0x00, 0x14, 0x01, 0x03, 0x67, 0xF9, 0xFD, 0x80, 0x0E, 0x4E, 0x4B, 0x62,
+                     0x3A, 0x67, 0x21, 0x6A, 0x57, 0x57, 0x1A, 0x90, 0xAF, 0x8B}; //不能与手机模块通讯
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 23; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 3);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
+
 bool __initGsmRuntime() {
 	int i;
 	static const int bauds[] = {19200, 9600, 115200, 38400, 57600, 4800};
+  sound1_Prompt();
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// 设置波特率
 		printf("Init gsm baud: %d\n", bauds[i]);
@@ -612,6 +703,7 @@ bool __initGsmRuntime() {
 	}
 	if (i >= ARRAY_MEMBER_NUMBER(bauds)) {
 		printf("All baud error\n");
+		sound4_Prompt();
 		return false;
 	}
 
@@ -659,7 +751,6 @@ bool __initGsmRuntime() {
 //			break;
 //		}
 //	}
-
 	if (!ATCommandAndCheckReply(NULL, "Call Ready", configTICK_RATE_HZ * 30)) {
 		printf("Wait Call Realy timeout\n");
 	}
@@ -738,6 +829,7 @@ bool __initGsmRuntime() {
 //		printf("AT&W error\r");
 //		return false;
 //	}
+	sound3_Prompt();
 	return true;
 }
 
@@ -1085,6 +1177,11 @@ static void __gsmTask(void *parameter) {
 			}
 			curT = xTaskGetTickCount();
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
+				sign++;
+				if(sign > 10){
+					sign = 0;
+				}
+				sound2_Prompt();
 				printf("Gsm: Connect TCP error\n");
 			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				int size;

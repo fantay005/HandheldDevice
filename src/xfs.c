@@ -234,8 +234,8 @@ static int __xfsWoken(void) {
 }
 
 static int __xfsSetup(void) {
-	char xfsCommand[] = {0x01, 0x01, '[', 'v', '5', ']', '[', 't', '5', ']',
-						 '[', 's', '5', ']', '[', 'm', '3', ']'
+	char xfsCommand[] = {0x01, 0x00, '[', 'v', '5', ']', '[', 't', '5', ']',
+						 '[', 's', '5', ']', '[', 'm', '3', ']', '[', 'h', '0', ']', '[', 'g', '1', ']'
 						};
 	xfsCommand[4] = speakParam.speakVolume;
 	xfsCommand[8] = speakParam.speakTone;
@@ -245,12 +245,15 @@ static int __xfsSetup(void) {
 	return 0;
 }
 
-static int __xfsQueryState() {
-	const char xfsCommand[] = { 0x21 };
-	char ret = __xfsSendCommand(xfsCommand, sizeof(xfsCommand), configTICK_RATE_HZ);
-//	printf("xfsQueryState return %02X\n", ret);
-	return ret;
-}
+void recover(void){
+	int i;
+	char xfsCommand[29] = {0xFD, 0x00, 0x1A, 0x01, 0x00, '[', 'v', '5', ']', '[', 't', '5', ']',
+						 '[', 's', '5', ']', '[', 'm', '3', ']', '[', 'h', '0', ']', '[', 'g', '1', ']'};
+		for (i = 0; i < 29; i++) {
+		USART_SendData(USART3, xfsCommand[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+}	
 
 static void __initHardware() {
 	GPIO_InitTypeDef  GPIO_InitStructure;
@@ -331,12 +334,25 @@ static void __xfsInitRuntime() {
 }
 
 #define TYPE_GB2312 0x00
-#define TYPE_GBK  0x01
+#define TYPE_GBK  0x00
 #define TYPE_BIG5 0x02
 #define TYPE_UCS2 0x03
 
+static int __xfsQueryState() {
+	if(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_9) != 0) {
+		// printf("RDY = 1\n");
+	   return 0;
+  }
+	//printf("RDY = 0\n");
+	return 1;  	
+// 	const char xfsCommand[] = { 0x21 };
+// 	char ret = __xfsSendCommand(xfsCommand, sizeof(xfsCommand), configTICK_RATE_HZ);
+// //	printf("xfsQueryState return %02X\n", ret);
+// 	return ret;
+}
+
 static int __xfsSpeakLowLevel(const char *p, int len, char type) {
-	int i;
+	int i, ret = 0;
 	int thisLen;
 	portBASE_TYPE rc;
 	xQueueReset(__uartQueue);
@@ -361,22 +377,22 @@ static int __xfsSpeakLowLevel(const char *p, int len, char type) {
 			__xfsSendByte(*p++);
 		}
 
-		rc = xQueueReceive(__uartQueue, &i, configTICK_RATE_HZ * 2);
-		if (rc != pdTRUE) {
-			return 0;
+	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 5);
+//	vTaskDelay(configTICK_RATE_HZ );
+	if (rc != pdTRUE) {
+		return 0;
+	}
+	if (ret != 0x41) {
+		return 0;
+	}
+	ret = 0;
+	while (ret <= len) {
+		if (__xfsQueryState() != 0) {
+			return 1;
 		}
-		if (i != 0x41) {
-			return 0;
-		}
-	
-		rc = xQueueReceive(__uartQueue, &i, configTICK_RATE_HZ * 30);
-
-		if (rc != pdTRUE) {
-			return 0;
-		}
-		if (i != 0x4F) {
-			return 0;
-		}
+		vTaskDelay(configTICK_RATE_HZ / 2);
+		++ret;
+	}
 	} while (len > 0);
 
 	return 1;
@@ -391,6 +407,53 @@ static int __xfsSpeakLowLevel(const char *p, int len, char type) {
 //	}
 //	return 0;
 }
+
+
+// static int __xfsSpeakLowLevel(const char *p, int len, char type) {
+// 	int ret;
+// 	portBASE_TYPE rc;
+// 	xQueueReset(__uartQueue);
+
+// 	__xfsSendByte(0xFD);
+// 	ret = len + 2;
+// 	__xfsSendByte(ret >> 8);
+// 	__xfsSendByte(ret & 0xFF);
+// 	__xfsSendByte(0x01);
+// 	__xfsSendByte(type);
+
+// 	for (ret = 0; ret < len; ret++) {
+// 		__xfsSendByte(*p++);
+// 	}
+
+// 	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 2);
+// //	vTaskDelay(configTICK_RATE_HZ );
+// 	if (rc != pdTRUE) {
+// 		return 0;
+// 	}
+// 	if (ret != 0x41) {
+// 		return 0;
+// 	}
+// 	ret = 0;
+// 	while (ret <= len) {
+// 		if (__xfsQueryState() != 0) {
+// 			return 1;
+// 		}
+// 		vTaskDelay(configTICK_RATE_HZ / 2);
+// 		++ret;
+// 	}
+// 	return 1;
+// }
+
+//	ret = 0;
+//	while (ret <= len) {
+//		if (__xfsQueryState() == 0x4F) {
+//			return 1;
+//		}
+//		vTaskDelay(configTICK_RATE_HZ / 2);
+//		++ret;
+//	}
+//	return 0;
+
 
 static int __xfsSpeakLowLevelWithTimes(const char *p, int len, char type) {
 	int i;

@@ -32,29 +32,31 @@
 
 void BKUI_Prompt(char para) {
 	int i;
-	char prompt[37] = {0xFD, 0x00, 0x22, 0x01, 0x03, 0x73, 0x00, 0x6F, 0x00, 0x75, 0x00, 0x6E, 0x00, 0x64, 0x00, 0x31, 0x00, 0x32, 0x00, 0x33, 0x00,
-		0x63, 0xF9, 0xAC, 0x4E, 0xF6, 0x65, 0xF4, 0x95, 0x21, 0x00, 0x38, 0x00, 0xB9, 0x70, 0x74, 0x65}; //北京时间十八点整
+	char prompt[41] = {0xFD, 0x00, 0x26, 0x01, 0x01, '[', 'm', '5', '1', ']', 's', 'o', 'u', 'n', 'd', '1', '2', '3',//sound123
+		                 0xD5,0xFB,  0xB5,0xE3,  0xB1,0xA8,  0xCA,0xB1,  ',',  0xB1,0xBB,  0xBE,0xA9,  0xCA,0xB1,  0xBC,0xE4, 
+                     ',',  '8',  0xB5,0xE3,  0xD5,0xFB,}; //整点报时，北京时间八点整
 	if(para >= 0x0A){
-		prompt[29] = 0x31;
-		prompt[31] = para + 0x26;
+		prompt[35] = 0x31;
+		prompt[36] = para + 0x27;
 	}	else {	
-	  prompt[31] = para + 0x30;	
+	  prompt[36] = para + 0x31;	
 	}		
   SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
-	for (i = 0; i < 37; i++) {
+	for (i = 0; i < 41; i++) {
 		USART_SendData(USART3, prompt[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
-	vTaskDelay(configTICK_RATE_HZ * 3);
+	vTaskDelay(configTICK_RATE_HZ * 5);
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	recover();
 }
 
 void HALF_Prompt(void) {
 	int i;
-	char prompt[21] = {0xFD, 0x00, 0x12, 0x01, 0x03,
-		0x73, 0x00, 0x6F, 0x00, 0x75, 0x00, 0x6E, 0x00, 0x64, 0x00, 0x31, 0x00, 0x32, 0x00, 0x33, 0x00,}; //滴的一声
+	char prompt[25] = {0xFD, 0x00, 0x16, 0x01, 0x01, '[', 'm', '3', ']', 's', 'o', 'u', 'n', 'd', '1', '2', '3',//sound123
+		                 0xB0,0xEB,  0xB5,0xE3,  0xB1,0xA8,  0xCA,0xB1};  //半点报时
   SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
-	for (i = 0; i < 21; i++) {
+	for (i = 0; i < 25; i++) {
 		USART_SendData(USART3, prompt[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
@@ -128,11 +130,11 @@ static void __ledTestTask(void *nouse) {
 				 vTaskDelay(configTICK_RATE_HZ * 5);
 	            NVIC_SystemReset();
 		   }
-			 if ((dateTime.hour >= 0x08) && (dateTime.hour <= 0x15) && (dateTime.minute == 0x00) && (dateTime.second == 0x00) && (dateTime.second == 0x00)){
+			 if ((dateTime.hour >= 0x08) && (dateTime.hour <= 0x12) && (dateTime.minute == 0x3B) && (dateTime.second == 0x36)){
 				  BKUI_Prompt(dateTime.hour);
 			 }
 			 
-			 if ((dateTime.hour >= 0x08) && (dateTime.hour < 0x15) && (dateTime.minute == 0x30) && (dateTime.second == 0x00) && (dateTime.second == 0x00)){
+			 if ((dateTime.hour >= 0x08) && (dateTime.hour < 0x12) && (dateTime.minute == 0x1D) && (dateTime.second == 0x36)){
 				  HALF_Prompt();
 			 }
 	}

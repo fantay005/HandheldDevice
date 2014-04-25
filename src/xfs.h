@@ -17,6 +17,7 @@ void XfsTaskSetSpeakVolume(char Vol);
 void XfsTaskSetSpeakType(char Type);
 void XfsTaskSetSpeakTone(char Tone);
 void XfsTaskSetSpeakSpeed(char Speed);
-void SMS_Prompt(void);
+//void SMS_Prompt(void);
+void recover(void);
 
 #endif

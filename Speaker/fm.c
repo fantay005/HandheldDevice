@@ -952,34 +952,34 @@ static  char memory = 0;
 void Broadcast(unsigned short para) {
 	int i;
 	char buf[8];
-	char tune[35] = {0xFD, 0x00, 0x20, 0x01, 0x03,0x73, 0x00, 0x6F, 0x00, 0x75, 0x00, 0x6E, 0x00, 0x64, 0x00, 0x31, 0x00, 0x31, 0x00, 0x34, 0x00,
-		0x03, 0x8C, 0x91, 0x98, 0x0C, 0xFF, 0x39, 0x00, 0x30, 0x00, 0xB9, 0x70, 0x38, 0x00			  //µ÷Æµ90.8!
-                };
+	char tune[27] = {0xFD, 0x00, 0x18, 0x01, 0x01, '[', 'm', '5', '1', ']', 's', 'o', 'u', 'n', 'd', '1', '1', '4',//sound114
+	                	',', 'f', 'm', ',', '9', '0', 0xB5, 0xE3, '8'	};	  //FM90.8!
   sprintf(buf, "%d", para);
   if(para >= 10000){
-		tune[25] = buf[0];
-		tune[27] = buf[1];
-		tune[29] = buf[2];
-		tune[33] = buf[3];
+		tune[21] = buf[0];
+		tune[22] = buf[1];
+		tune[23] = buf[2];
+		tune[26] = buf[3];
 	}	else {
-		tune[27] = buf[0];
-		tune[29] = buf[1];
-		tune[33] = buf[2];
+		tune[22] = buf[0];
+		tune[23] = buf[1];
+		tune[26] = buf[2];
 	}
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
-  for (i = 0; i < 35; i++) {
+  for (i = 0; i < 27; i++) {
 		USART_SendData(USART3, tune[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
 	vTaskDelay(configTICK_RATE_HZ * 5);
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	recover();
 }
 
 void __FMTask(void) {
   unsigned short pChannel[30];
 	unsigned char Return_Length = 0;
 	portBASE_TYPE rc;
-	__asemaphore = xQueueGenericCreate(1, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_BINARY_SEMAPHORE ); 
+	__asemaphore = xQueueGenericCreate(1, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_BINARY_SEMAPHORE );
 	memset(&pChannel[0], 0, 30);
 	auto_seek_Property();
 	EXTI3_INTI();
@@ -993,7 +993,7 @@ void __FMTask(void) {
 			       SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 1);
 		     } else {
 				     SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 0);
-         }					 
+         }
 			 }
        if(memory == NEXT) continue;
 			 if(GPIO_ReadInputDataBit(GPIOE,GPIO_Pin_2) == 1){

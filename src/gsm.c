@@ -82,8 +82,7 @@ const char *GsmGetIMEI(void) {
 }
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 1, 1, "0620"};	  // 老平台服务器及端口："221.130.129.72",5555
-                                                                                      // 新平台服务器及端口: "61.190.61.78",5555
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, "221.130.129.72", 5555, 1, 1, "0620"};	   // 老平台服务器及端口："221.130.129.72",5555                                                                                    // 新平台服务器及端口: "61.190.61.78",5555
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
 void ATCmdSendChar(char c) {
@@ -346,6 +345,7 @@ static char isIPD = 0;
 static char isSMS = 0;
 static char isRTC = 0;
 static char isTUDE = 0;
+static char Which = 0;
 static char CardisEXIST = 1;
 static int lenIPD;
 
@@ -430,6 +430,7 @@ static inline void __gmsReceiveTUDEData(unsigned char data) {
 
 void USART2_IRQHandler(void) {
 	unsigned char data;
+	char buf[64];
 	if (USART_GetITStatus(USART2, USART_IT_RXNE) == RESET) {
 		return;
 	}
@@ -485,6 +486,18 @@ void USART2_IRQHandler(void) {
 		bufferIndex = 0;
 	} else if (data != 0x0D) {
 		buffer[bufferIndex++] = data;
+		sprintf(buf, "RECV FROM:%s:%d",__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT);
+		if (strncmp(buffer, (const char *)&buf, (12 + strlen(__gsmRuntimeParameter.serverIP))) == 0) {
+			bufferIndex = 0;
+			Which = 1;
+		}
+		
+		sprintf(buf, "RECV FROM:%s:%d",__gsmRuntimeParameter.detectionIP, __gsmRuntimeParameter.detectionPORT);
+		if (strncmp(buffer, (const char *)&buf, (12 + strlen(__gsmRuntimeParameter.detectionIP))) == 0) {
+			bufferIndex = 0;
+			Which = 2;
+		}
+		
 		if ((bufferIndex == 2) && (strncmp("#H", buffer, 2) == 0)) {
 			isIPD = 1;
 		}
@@ -549,50 +562,77 @@ bool sound_Prompt(void) {
 /// Check if has the GSM modem connect to a TCP server.
 /// \return true   When the GSM modem has connect to a TCP server.
 /// \return false  When the GSM modem dose not connect to a TCP server.
+static char Judge = 0;
+static char decideI = 0;
+static char decideII = 0;
 
-static char ConnectERROE = 0;
 bool __gsmIsTcpConnected() {
 	char *reply;
+	char buf[64];
+
 	while (1) {
-		reply = ATCommand("AT+QISTAT\r", "STATE:", configTICK_RATE_HZ * 2);
+		reply = ATCommand("AT+QISTATE\r", "OK", configTICK_RATE_HZ * 2);
 		if (reply == NULL) {
 			return false;
 		}
-		if (strncmp(&reply[7], "CONNECT OK", 10) == 0) {
-			stamp++;
-      sign = 0;			
-		  if(stamp >= 5) stamp = 5;
-			AtCommandDropReplyLine(reply);
-			sound_Prompt();
-			return true;
+		if (!ATCommandAndCheckReply(NULL, "STATE: IP PROCESSING", configTICK_RATE_HZ * 20)) {
+			return false;
 		}
-		if (strncmp(&reply[7], "TCP CONNECTING", 12) == 0) {
-			AtCommandDropReplyLine(reply);
-			vTaskDelay(configTICK_RATE_HZ * 5);
-			ConnectERROE++;
-			if (ConnectERROE >= 60){
-				ConnectERROE = 0;
-				NVIC_SystemReset();
-			}
-			continue;
-		}
+		if(Judge == 1){
+				sprintf(buf, "+QISTATE: 0, \"TCP\", \"%s\", %d,\"CONNECTED\"", __gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT);
+				if (ATCommandAndCheckReply(NULL, (const char*)&buf, configTICK_RATE_HZ * 10)){
+					stamp++;
+					sign = 0;			
+					if(stamp >= 5) stamp = 5;
+					AtCommandDropReplyLine(reply);
+					sound_Prompt();
+					Judge = 0;
+					decideI = 1;
+					return true;
+				}
+		} else if(Judge == 2){
+				sprintf(buf, "+QISTATE: 0, \"TCP\", \"%s\", %d,\"CONNECTED\"", __gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT);
+				if(ATCommandAndCheckReply(NULL, (const char*)&buf, configTICK_RATE_HZ * 20)){
+					decideI = 1;
+				} else {
+					decideI = 0;
+				}
+				sprintf(buf, "+QISTATE: 1, \"TCP\", \"%s\", %d,\"CONNECTED\"", __gsmRuntimeParameter.detectionIP, __gsmRuntimeParameter.detectionPORT);
+				if (ATCommandAndCheckReply(NULL, (const char*)&buf, configTICK_RATE_HZ * 10)){
+					AtCommandDropReplyLine(reply);
+					Judge = 0;
+					decideII = 1;
+					return true;
+		    } else {
+					decideII = 0;
+				}
+	  }
 		AtCommandDropReplyLine(reply);
 		break;
-	}
+  }
 	return false;
+
 }
 
 bool __gsmSendTcpDataLowLevel(const char *p, int len) {
 	int i;
 	char buf[16];
 	char *reply;
-
-	sprintf(buf, "AT+QISEND=%d\r", len);		  //len多大1460
-	ATCommand(buf, NULL, configTICK_RATE_HZ / 2);
-	for (i = 0; i < len; i++) {
-		ATCmdSendChar(*p++);
-	}
-
+	if (Which == 1) { 
+		sprintf(buf, "AT+QISEND=0,%d\r", len);		  //len多大1460
+		ATCommand(buf, NULL, configTICK_RATE_HZ / 2);
+		for (i = 0; i < len; i++) {
+			ATCmdSendChar(*p++);
+		}
+	} else if(Which == 2){
+		sprintf(buf, "AT+QISEND=1,%d\r", len);		  //len多大1460
+		ATCommand(buf, NULL, configTICK_RATE_HZ / 2);
+		for (i = 0; i < len; i++) {
+			ATCmdSendChar(*p++);
+		}
+	}	
+  Which = 0;
+	
 	while (1) {
 		reply = ATCommand(NULL, "SEND", configTICK_RATE_HZ * 3);
 		if (reply == NULL) {
@@ -615,19 +655,41 @@ bool __gsmSendTcpDataLowLevel(const char *p, int len) {
 
 bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 	char buf[44];
+	char buff[20];
 	char *reply;
 	if (__gsmIsTcpConnected()) {
 		return true;
 	}
-	ATCommand("AT+QIDEACT\r", NULL, configTICK_RATE_HZ * 2);
-	sprintf(buf, "AT+QIOPEN=\"TCP\",\"%s\",\"%d\"\r", ip, port);
-	reply = ATCommand(buf, "CONNECT", configTICK_RATE_HZ * 40);
+	
+	if((decideI == 0) && (decideII == 0) && (Judge == 1)){
+		ATCommand("AT+QIDEACT\r", NULL, configTICK_RATE_HZ * 2);
+		sprintf(buf, "AT+QIOPEN=0,\"TCP\",\"%s\",%d\r", ip, port);
+		reply = ATCommand(buf, "OK", configTICK_RATE_HZ * 40);
+		sprintf(buff, "0, CONNECT OK");
+		Which = 1;
+	} else if ((decideI == 0) && (decideII == 0) && (Judge == 2)){
+    ATCommand("AT+QIDEACT\r", NULL, configTICK_RATE_HZ * 2);
+		sprintf(buf, "AT+QIOPEN=1,\"TCP\",\"%s\",%d\r", ip, port);
+		reply = ATCommand(buf, "OK", configTICK_RATE_HZ * 40);
+		sprintf(buff, "1, CONNECT OK");
+		Which = 2;
+	}else if ((decideI == 1) && (decideII == 0)){
+		sprintf(buf, "AT+QIOPEN=1,\"TCP\",\"%s\",%d\r", ip, port);
+		reply = ATCommand(buf, "OK", configTICK_RATE_HZ * 40);
+		sprintf(buff, "1, CONNECT OK");
+		Which = 2;
+	} else if ((decideI == 0) && (decideII == 1)){
+		sprintf(buf, "AT+QIOPEN=0,\"TCP\",\"%s\",%d\r", ip, port);
+		reply = ATCommand(buf, "OK", configTICK_RATE_HZ * 40);
+		sprintf(buff, "0, CONNECT OK");
+		Which = 1;
+	}
 	if (reply == NULL) {
 		return false;
 	}
-
-	if (strncmp("CONNECT OK", reply, 10) == 0) {
-		int size;
+	
+  if (ATCommandAndCheckReply(NULL, (const char *)&buff, configTICK_RATE_HZ * 30)) {
+	 	int size;
 		const char *data;
 		AtCommandDropReplyLine(reply);
 		data = ProtoclCreatLogin(__imei, &size);
@@ -728,12 +790,6 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-
-//	if (!ATCommandAndCheckReply("AT+CPIN=1\r", "OK", configTICK_RATE_HZ * 2)) {
-//		printf("AT+CPIN=1 error\r");
-//		return false;
-//	}
-
 	if (!ATCommandAndCheckReply("AT+QNITZ=1\r", "OK", configTICK_RATE_HZ)) {
 		printf("AT+IFC error\r");
 		return false;
@@ -749,25 +805,22 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-
-//	if (!ATCommandAndCheckReply("AT+QINISTAT=?\r", "OK", configTICK_RATE_HZ * 2)) {
-//		printf("AT&W error\r");
-//		return false;
-//	}
-//	
-//	while(1){
-//		if (!ATCommandAndCheckReply("AT+QINISTAT\r", "+QINISTAT:3", configTICK_RATE_HZ * 2)) {
-//			continue;
-//		} else {
-//			break;
-//		}
-//	}
 	if (!ATCommandAndCheckReply(NULL, "Call Ready", configTICK_RATE_HZ * 30)) {
 		printf("Wait Call Realy timeout\n");
 	}
+	
+	if (!ATCommandAndCheckReply("AT+QIMUX=1\r", "OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+QIMUX error\r");
+		return false;
+	}
 
-	if (!ATCommandAndCheckReply("ATS0=5\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("ATS0=5 error\r");
+	if (!ATCommandAndCheckReply("AT+QCLIP=1\r", "OK", configTICK_RATE_HZ * 2)) {
+		printf("AT+QCLIP error\r");
+		return false;
+	}
+	
+	if (!ATCommandAndCheckReply("AT+CLIP=1\r", "OK", configTICK_RATE_HZ * 2)) {
+		printf("AT+CLIP error\r");
 		return false;
 	}
 
@@ -806,7 +859,7 @@ bool __initGsmRuntime() {
 		return false;
 	}		   //配置接受数据时是否显示IP头
 
-	if (!ATCommandAndCheckReply("AT+QISHOWRA=0\r", "OK", configTICK_RATE_HZ / 5)) {
+	if (!ATCommandAndCheckReply("AT+QISHOWRA=1\r", "OK", configTICK_RATE_HZ / 5)) {
 		printf("AT+QISHOWRA error\r");
 		return false;
 	}		  //配置接受数据时是否显示发送方的IP地址和端口号
@@ -830,16 +883,7 @@ bool __initGsmRuntime() {
 		printf("AT+QGSMLOC error\r");
 //		return false;
 	}
-
-// 	if (!ATCommandAndCheckReply("AT+QIMUX=0\r", "OK", configTICK_RATE_HZ)) {
-// 		printf("AT+QIMUX error\r");
-// 		return false;
-// 	}
-
-//	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ)) {
-//		printf("AT&W error\r");
-//		return false;
-//	}
+	
 	sound3_Prompt();
 	return true;
 }
@@ -1155,7 +1199,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0;
+	portTickType lastT = 0, lastTime = 0;
 	__storeGsmRuntimeParameter();
 	while (1) {
 		printf("Gsm start\n");
@@ -1189,19 +1233,33 @@ static void __gsmTask(void *parameter) {
 			}
 //			SMS_Prompt();
 			curT = xTaskGetTickCount();
+			Judge = 1;
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				sign++;
 				if(sign > 10){
 					sign = 0;
 				}
 				sound2_Prompt();
-				printf("Gsm: Connect TCP error\n");
+				printf("Gsm: Connect server error\n");
 			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				int size;
 				const char *dat = ProtoclCreateHeartBeat(&size);
+				Which = 1;
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
 				lastT = curT;
+			}
+			
+			Judge = 2;
+			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.detectionIP, __gsmRuntimeParameter.detectionPORT)) {
+				printf("Gsm: Connect detection error\n");
+			} else if ((curT - lastTime) >= GSM_GPRS_HEART_BEAT_TIME) {
+				int sizeI;
+				const char *date = ProtoclCreateHeartBeat(&sizeI);
+				Which = 2;
+				__gsmSendTcpDataLowLevel(date, sizeI);
+				ProtocolDestroyMessage(date);
+				lastTime = curT;
 			}
 		}
 	}

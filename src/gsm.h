@@ -6,6 +6,8 @@
 typedef struct {
 	char serverIP[16];
 	unsigned int serverPORT;
+	char detectionIP[16];
+	unsigned int detectionPORT;
 	bool isonTCP;
 	bool isonQUIET;
 	char time[4];

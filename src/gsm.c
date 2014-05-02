@@ -21,6 +21,7 @@
 #include "unicode2gbk.h"
 #include "soundcontrol.h"
 #include "second_datetime.h"
+#include "sms_cmd.h"
 
 #define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
@@ -332,7 +333,7 @@ typedef struct {
 
 static const GSMAutoReportMap __gsmAutoReportMaps[] = {
 //	{ "+CMT", TYPE_SMS_DATA },
-	{ "RING", TYPE_RING },
+//	{ "RING", TYPE_RING },
 	{ "NO CARRIER", TYPE_NO_CARRIER },
 	{ NULL, TYPE_NONE },
 };
@@ -346,6 +347,7 @@ static char isSMS = 0;
 static char isRTC = 0;
 static char isTUDE = 0;
 static char Which = 0;
+static char isRING = 0;
 static char CardisEXIST = 1;
 static int lenIPD;
 
@@ -392,6 +394,32 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 	}
 }
 
+static char tick = 0;
+static inline void __gmsReceiveRINGData(unsigned char data) {
+	if (data == 0x0A) {
+		tick++;
+		buffer[bufferIndex++] = 0;
+		if(tick >= 2){
+		    GsmTaskMessage *message;
+				portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+				message = __gsmCreateMessage(TYPE_RING, buffer, bufferIndex);
+				if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+					if (xHigherPriorityTaskWoken) {
+						taskYIELD();
+					}
+				}
+				isRING = 0;				
+				tick = 0;
+		}
+		bufferIndex = 0;
+	} else if (data != 0x0D) {
+		buffer[bufferIndex++] = data;
+	  if (strncmp(buffer, "+CLIP: \"", 8) == 0) {
+			bufferIndex = 0;
+		}
+	}
+}
+
 static inline void __gmsReceiveRTCData(unsigned char data) {
 	if (data == 0x0A) {
 		GsmTaskMessage *message;
@@ -410,6 +438,7 @@ static inline void __gmsReceiveRTCData(unsigned char data) {
 	}
 }
 
+
 static inline void __gmsReceiveTUDEData(unsigned char data) {
 	if (data == 0x0A) {
 		GsmTaskMessage *message;
@@ -427,6 +456,7 @@ static inline void __gmsReceiveTUDEData(unsigned char data) {
 		buffer[bufferIndex++] = data;
 	}
 }
+
 
 void USART2_IRQHandler(void) {
 	unsigned char data;
@@ -447,6 +477,11 @@ void USART2_IRQHandler(void) {
 		__gmsReceiveSMSData(data);
 		return;
 	}
+	
+	if (isRING) {
+		__gmsReceiveRINGData(data);
+		return;
+	}
 
 	if (isRTC) {
 		__gmsReceiveRTCData(data);
@@ -457,7 +492,7 @@ void USART2_IRQHandler(void) {
 		__gmsReceiveTUDEData(data);
 		return;
 	}
-
+	
 
 	if (data == 0x0A) {
 		buffer[bufferIndex++] = 0;
@@ -468,6 +503,12 @@ void USART2_IRQHandler(void) {
 				bufferIndex = 0;
 				isSMS = 1;
 			}
+			
+			if (strncmp(buffer, "RING", 4) == 0) {
+				bufferIndex = 0;
+				isRING = 1;
+			}
+		
 			for (p = __gsmAutoReportMaps; p->prefix != NULL; ++p) {
 				if (strncmp(p->prefix, buffer, strlen(p->prefix)) == 0) {
 					GsmTaskMessage *message = __gsmCreateMessage(p->type, buffer, bufferIndex);
@@ -590,6 +631,14 @@ bool __gsmIsTcpConnected() {
 					decideI = 1;
 					return true;
 				}
+				
+				sprintf(buf, "+QISTATE: 1, \"TCP\", \"%s\", %d,\"CONNECTED\"", __gsmRuntimeParameter.detectionIP, __gsmRuntimeParameter.detectionPORT);
+				if (ATCommandAndCheckReply(NULL, (const char*)&buf, configTICK_RATE_HZ * 10)){
+					AtCommandDropReplyLine(reply);
+					Judge = 0;
+					decideII = 1;
+					return true;
+		    }
 		} else if(Judge == 2){
 				sprintf(buf, "+QISTATE: 0, \"TCP\", \"%s\", %d,\"CONNECTED\"", __gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT);
 				if(ATCommandAndCheckReply(NULL, (const char*)&buf, configTICK_RATE_HZ * 20)){
@@ -799,6 +848,11 @@ bool __initGsmRuntime() {
 		printf("AT+QNITZ error\r");
 		return false;
 	}
+	
+	if (!ATCommandAndCheckReply("AT+CMEE=2\r", "OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+CMEE error\r");
+		return false;
+	}
 
 	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT&W error\r");
@@ -888,15 +942,6 @@ bool __initGsmRuntime() {
 	return true;
 }
 
-//void chooseTCP(bool state){
-//	__gsmRuntimeParameter.isonTCP = state;
-//    __storeGsmRuntimeParameter();
-//	if(state == 0){
-//	   	if (!ATCommandAndCheckReply("AT+QIDEACT\r", "DEACT", configTICK_RATE_HZ / 2)) {
-//		     printf("AT+QIDEACT error\r");
-//	    }
-//	}
-//}
 static 	char FlagII = 0;
 static 	char FlagIII = 0;
 
@@ -1045,15 +1090,17 @@ void __handleReset(GsmTaskMessage *msg) {
 void __handleResetNoCarrier(GsmTaskMessage *msg) {
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_GSM, 0);
 	GPIO_SetBits(GPIOG, RING_PIN);
-	if(GPIO_ReadInputDataBit(GPIOD, GPIO_Pin_7) == 1){
-	   SoundControlSetChannel(SOUND_CONTROL_CHANNEL_FM, 1);
-	   GPIO_ResetBits(GPIOD, GPIO_Pin_7);
-	}
 }
 
 void __handleRING(GsmTaskMessage *msg) {
-	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_GSM, 1);
-	GPIO_ResetBits(GPIOG, RING_PIN);
+	char *p = __gsmGetMessageData(msg);
+	if(Autho(p)){
+		ATCommandAndCheckReply("ATA\r", "OK", configTICK_RATE_HZ);
+		SoundControlSetChannel(SOUND_CONTROL_CHANNEL_GSM, 1);
+		GPIO_ResetBits(GPIOG, RING_PIN);
+	} else{
+		ATCommandAndCheckReply("ATH\r", "OK", configTICK_RATE_HZ * 30);
+	}
 }
 
 
@@ -1215,7 +1262,7 @@ static void __gsmTask(void *parameter) {
 
 	for (;;) {
 		printf("Gsm: loop again\n");
-		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 6);
+		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 10);
 		if (rc == pdTRUE) {
 			const MessageHandlerMap *map = __messageHandlerMaps;
 			for (; map->type != TYPE_NONE; ++map) {

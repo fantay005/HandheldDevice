@@ -615,6 +615,19 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{NULL, NULL},
 };
 
+bool Autho(char *number){
+   int index, i;
+	 char buf[15];
+	 memset(buf, 0, 15);
+	 for(i = 0; *number != '\"'; i++){
+	   buf[i] = *number++;
+	 }
+	 index = __userIndex(&buf[0]);
+	 if (index == 0) {
+		 return false;
+	 }
+	 return true;
+}
 
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;

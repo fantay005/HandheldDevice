@@ -875,10 +875,12 @@ void EXTI3_INTI(void){
 }
 
 static char NEXT = 0;
+static unsigned short pChannel[30];
 static portTickType lastT = 0;
 static char choose = 0;
 static portTickType upT = 0;
 static portTickType downT = 0xFFFFFFFF;
+
 void EXTI15_10_IRQHandler (void)
 {
 	int curT;
@@ -975,8 +977,11 @@ void Broadcast(unsigned short para) {
 	recover();
 }
 
+void ServerCMD(char *p){
+	
+}
+
 void __FMTask(void) {
-  unsigned short pChannel[30];
 	unsigned char Return_Length = 0;
 	portBASE_TYPE rc;
 	__asemaphore = xQueueGenericCreate(1, semSEMAPHORE_QUEUE_ITEM_LENGTH, queueQUEUE_TYPE_BINARY_SEMAPHORE );

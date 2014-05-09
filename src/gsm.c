@@ -23,7 +23,7 @@
 #include "second_datetime.h"
 #include "sms_cmd.h"
 
-#define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 256)
+#define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 512)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
 #define GSM_IMEI_LENGTH              15
 
@@ -878,6 +878,16 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
+// 	if (!ATCommandAndCheckReply("AT+CMGF=1\r", "OK", configTICK_RATE_HZ * 2)) {
+// 		printf("AT+CMGF=0 error\r");
+// 		return false;
+// 	}
+// 	
+// 	if (!ATCommandAndCheckReply("AT+CSCS=\"GSM\"\r", "OK", configTICK_RATE_HZ * 2)) {
+// 		printf("AT+CNMI error\r");
+// 		return false;
+// 	}
+	
 	if (!ATCommandAndCheckReply("AT+CMGF=0\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+CMGF=0 error\r");
 		return false;
@@ -971,6 +981,10 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
+	if(sms->contentLen == 0) {
+		__gsmPortFree(sms);
+		return;
+	}
 #if defined(__LED__)
 	__gsmSMSEncodeConvertToGBK(sms);
 #endif
@@ -1274,6 +1288,7 @@ static void __gsmTask(void *parameter) {
 			__gsmDestroyMessage(message);
 		} else {
 			int curT;
+			continue;
 			if(__gsmRuntimeParameter.isonTCP == 0){
 				 sound2_Prompt();
 			   continue;

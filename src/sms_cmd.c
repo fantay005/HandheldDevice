@@ -633,24 +633,10 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
 	int index;
 	const char *pnumber = (const char *)sms->number;
-  const char *pcontent = (const char *)sms->content;
+  char *pcontent = pvPortMalloc(sizeof(sms->content) + 1);
 	int plen = sms->contentLen;		
-	
-//	const char *p = sms->time;
-//	DateTime dateTime;
-//
-//	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
-//	dateTime.month = (p[2] - '0') * 10 + (p[3] - '0');
-//	dateTime.date = (p[4] - '0') * 10 + (p[5] - '0');
-//	dateTime.hour = (p[6] - '0') * 10 + (p[7] - '0');
-//	dateTime.minute = (p[8] - '0') * 10 + (p[9] - '0');
-//	if (p[10] != 0 && p[11] != 0) {
-//		dateTime.second = (p[10] - '0') * 10 + (p[11] - '0');
-//	} else {
-//		dateTime.second = 0;
-//	}
-//	RtcSetTime(DateTimeToSecond(&dateTime));
-	
+
+	memcpy(pcontent, sms->content, plen);
   __restorUSERParam();
 	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
@@ -665,7 +651,6 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 			return;
 		}
 	}
-#if defined(__SPEAKER__)
 //	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
 //	GPIO_ResetBits(GPIOG, GPIO_Pin_14);
 // 	if(pcontent[2] > 0x32){
@@ -673,24 +658,6 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 //   }
 // 	XfsTaskSpeakUCS2((const char *)&pcontent[6], (plen - 6));
 	
-	XfsTaskSpeakUCS2((const char *)&pcontent[0], plen);
-#endif
-
-#if defined(__LED_HUAIBEI__)
-	if (index == 0) {
-		return;
-	}
-
-	DisplayClear();
-	__storeSMS1(sms->content);
-	SMS_Prompt();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
-		MessDisplay(gbk);
-	} else {
-		MessDisplay((char *)(&pcontent[3]));
-	}
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-#endif
+	XfsTaskSpeakUCS2((const char *)pcontent, plen);
 }
 

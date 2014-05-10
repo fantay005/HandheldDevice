@@ -979,6 +979,7 @@ void __handleSMS(GsmTaskMessage *p) {
 	uint32_t second;
 	DateTime dateTime;
 	const char *dat = __gsmGetMessageData(p);
+	if(sms->contentLen == 0) return;
 	if(__gsmRuntimeParameter.isonQUIET){
 	   second = RtcGetTime();
 	   SecondToDateTime(&dateTime, second);

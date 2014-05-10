@@ -129,29 +129,29 @@ void WelcomeNote(void) {
 	}
 }
 
-static char com = '0';
-static char comm = '0';
-static char count = 1;
+// static char com = '0';
+// static char comm = '0';
+// static char count = 1;
 
-void SMS_Prompt(void) {	
-	int i;
-	char prompt[] = {0xFD, 0x00, 0x0A, 0x01, 0x00, 's', 'o', 'u', 'n', 'd', '3', '0', '1'};
+// void SMS_Prompt(void) {	
+// 	int i;
+// 	char prompt[] = {0xFD, 0x00, 0x0A, 0x01, 0x00, 's', 'o', 'u', 'n', 'd', '3', '0', '1'};
 
-  printf("%d\n", count);
-  count++;
-  prompt[12] = ++com;
-  prompt[11] = comm;
-  if(prompt[12] > 0x39){
-	  prompt[12] = '0';
-		com = '0';
-		prompt[11] = ++comm;
-  }
-	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
-	for (i = 0; i < sizeof(prompt); i++) {
-		USART_SendData(USART3, prompt[i]);
-		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
-	}
-}
+//   printf("%d\n", count);
+//   count++;
+//   prompt[12] = ++com;
+//   prompt[11] = comm;
+//   if(prompt[12] > 0x39){
+// 	  prompt[12] = '0';
+// 		com = '0';
+// 		prompt[11] = ++comm;
+//   }
+// 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+// 	for (i = 0; i < sizeof(prompt); i++) {
+// 		USART_SendData(USART3, prompt[i]);
+// 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+// 	}
+// }
 
 static unsigned char __xfsChangePara(unsigned char type, unsigned char para) {
 	int len;
@@ -234,8 +234,9 @@ static int __xfsWoken(void) {
 }
 
 static int __xfsSetup(void) {
-	char xfsCommand[] = {0x01, 0x00, '[', 'v', '5', ']', '[', 't', '5', ']',
-						 '[', 's', '5', ']', '[', 'm', '3', ']', '[', 'h', '0', ']', '[', 'g', '1', ']'
+	char xfsCommand[] = {0x01, 0x03, '[', 'v', '5', ']', '[', 't', '5', ']',
+						 '[', 's', '5', ']', '[', 'm', '3', ']', '[', 'h', '0', ']', '[', 'g', '1', ']',
+		         '[', 'x', '1', ']', 
 						};
 	xfsCommand[4] = speakParam.speakVolume;
 	xfsCommand[8] = speakParam.speakTone;
@@ -410,31 +411,53 @@ static int __xfsQueryState() {
 
 
 static int __xfsSpeakLowLevel(const char *p, int len, char type) {
-	int ret, reply = 0;
+	int ret;
 	portBASE_TYPE rc;
+	char buf[9] = {'s', 'o', 'u', 'n', 'd', '1', '1', '3', ':'}; 
 	xQueueReset(__uartQueue);
 
 	__xfsSendByte(0xFD);
-	ret = len + 2;
-	if(ret > 200){
-	   rc = 0;
-  }
+  if(type == 3){
+		ret = len + 38;
+	} else {
+		ret = len + 20;
+	}
 	__xfsSendByte(ret >> 8);
 	__xfsSendByte(ret & 0xFF);
 	__xfsSendByte(0x01);
 	__xfsSendByte(type);
+	
+	for(ret = 0; ret < 9; ret++){
+		vTaskDelay(configTICK_RATE_HZ / 100);
+		__xfsSendByte(buf[ret]);
+		if(type == 3){
+			vTaskDelay(configTICK_RATE_HZ / 100);
+		  __xfsSendByte(0);
+		}
+	}
+	
+	buf[6] = '0';
+	buf[7] = '5';
+	for(ret = 0; ret < 9; ret++){
+		vTaskDelay(configTICK_RATE_HZ / 100);
+		__xfsSendByte(buf[ret]);
+		if(type == 3){
+			vTaskDelay(configTICK_RATE_HZ / 100);
+		  __xfsSendByte(0);
+		}
+	}
 
 	for (ret = 0; ret < len; ret++) {
 		vTaskDelay(configTICK_RATE_HZ / 100);
 		__xfsSendByte(*p++);
 	}
 
-	rc = xQueueReceive(__uartQueue, &reply, configTICK_RATE_HZ * 10);
+	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 10);
 //	vTaskDelay(configTICK_RATE_HZ );
 	if (rc != pdTRUE) {
 		return 0;
 	}
-	if (reply != 0x41) {
+	if (ret != 0x41) {
 		return 0;
 	}
 	ret = 0;

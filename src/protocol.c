@@ -173,12 +173,17 @@ char *Protocol__Message(TypeChoose type, Classific class, const char *message, i
 	return (char *)ret;
 }
 
+
 char *ProtoclCreatLogin(char *imei, int *size) {
 	return ProtocolMessage(TermActive, Login, imei, size);
 }
 
+extern int GsmTaskSendAtCommand(const char * atcmd);
+
 char *ProtoclCreateHeartBeat(int *size) {
-	return ProtocolMessage(TermActive, Heart, NULL, size);
+	const char *csq;
+	csq = (const char *)__GobackCSQ();
+	return ProtocolMessage(TermActive, Heart, csq, size);
 }
 
 char *TerminalCreateFeedback(const char radom[4], int *size) {

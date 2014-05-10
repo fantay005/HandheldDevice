@@ -13,8 +13,8 @@
 
 #define FM_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE + 32)
 #define FM_SWITCH_TIME      (configTICK_RATE_HZ * 2)
-static xQueueHandle __queue;
-static xSemaphoreHandle __asemaphore = NULL;
+static xQueueHandle          __queue;
+static xSemaphoreHandle      __asemaphore = NULL;
 
 typedef enum{
     TYPE_FM_OPEN_CHANNEL,

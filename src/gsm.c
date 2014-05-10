@@ -123,6 +123,7 @@ typedef enum {
 	TYPE_SEND_SMS,
 	TYPE_SET_GPRS_CONNECTION,
 	TYPE_SETIP,
+	TYPE_CSQ_DATA,
 	TYPE_HTTP_DOWNLOAD,
 	TYPE_SET_NIGHT_QUIET,
 	TYPE_QUIET_TIME,
@@ -350,7 +351,7 @@ static char Which = 0;
 static char isRING = 0;
 static char CardisEXIST = 1;
 static int lenIPD;
-
+static char Signal = 0;
 static inline void __gmsReceiveIPDData(unsigned char data) {
 	if (isIPD == 1) {
 		lenIPD = data << 8;
@@ -458,6 +459,25 @@ static inline void __gmsReceiveTUDEData(unsigned char data) {
 }
 
 
+static inline void __gmsReceiveCSQSignal(unsigned char data) {
+	if (data == 0x0A) {
+		GsmTaskMessage *message;
+		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+		buffer[bufferIndex++] = 0;
+		message = __gsmCreateMessage(TYPE_CSQ_DATA, buffer, bufferIndex);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		}
+		Signal = 0;
+		bufferIndex = 0;
+	} else if (data != 0x0D) {
+		buffer[bufferIndex++] = data;
+	}
+}
+
+
 void USART2_IRQHandler(void) {
 	unsigned char data;
 	char buf[64];
@@ -493,6 +513,10 @@ void USART2_IRQHandler(void) {
 		return;
 	}
 	
+	if (Signal) {
+		__gmsReceiveCSQSignal(data);
+		return;
+	}
 
 	if (data == 0x0A) {
 		buffer[bufferIndex++] = 0;
@@ -560,6 +584,11 @@ void USART2_IRQHandler(void) {
 		if (strncmp(buffer, "CALL READY", 10) == 0) {
 			bufferIndex = 0;
 			CardisEXIST = 1;
+		}
+		
+		if (strncmp(buffer, "+CSQ: ", 6) == 0) {
+			bufferIndex = 0;
+			Signal = 1;
 		}
 	}
 }
@@ -877,16 +906,6 @@ bool __initGsmRuntime() {
 		printf("AT+CLIP error\r");
 		return false;
 	}
-
-// 	if (!ATCommandAndCheckReply("AT+CMGF=1\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("AT+CMGF=0 error\r");
-// 		return false;
-// 	}
-// 	
-// 	if (!ATCommandAndCheckReply("AT+CSCS=\"GSM\"\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("AT+CNMI error\r");
-// 		return false;
-// 	}
 	
 	if (!ATCommandAndCheckReply("AT+CMGF=0\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+CMGF=0 error\r");
@@ -908,7 +927,7 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+CSQ\r", "+CSQ:", configTICK_RATE_HZ / 5)) {
+	if (!ATCommandAndCheckReply("AT+CSQ\r", "OK", configTICK_RATE_HZ * 5)) {
 		printf("AT+CSQ error\r");
 		return false;
 	}
@@ -1097,6 +1116,19 @@ void __handleReset(GsmTaskMessage *msg) {
 	}
 }
 
+static char CurrentCSQ[3];
+
+void __handleCSQSignal(GsmTaskMessage *msg){
+	char *p = __gsmGetMessageData(msg);
+	CurrentCSQ[0] = *p++;
+	CurrentCSQ[1] = *p++;
+	CurrentCSQ[2] = 0;
+}
+
+char *__GobackCSQ(void){
+	return &CurrentCSQ[0];
+}
+
 void __handleResetNoCarrier(GsmTaskMessage *msg) {
 	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_GSM, 0);
 	GPIO_SetBits(GPIOG, RING_PIN);
@@ -1244,6 +1276,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_NO_CARRIER, __handleResetNoCarrier },
 	{ TYPE_SEND_AT, __handleSendAtCommand },
 	{ TYPE_SEND_SMS, __handleSendSMS },
+  { TYPE_CSQ_DATA, __handleCSQSignal},
   { TYPE_TUDE_DATA, __handleTUDE},
 	{ TYPE_SET_GPRS_CONNECTION, __handleGprsConnection },
 	{ TYPE_SETIP, __handleSetIP },
@@ -1256,7 +1289,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0, lastTime = 0;
+	portTickType lastT = 0, lastTime = 0, countT = 0;
 	__storeGsmRuntimeParameter();
 	while (1) {
 		printf("Gsm start\n");
@@ -1284,13 +1317,18 @@ static void __gsmTask(void *parameter) {
 			__gsmDestroyMessage(message);
 		} else {
 			int curT;
-			continue;
 			if(__gsmRuntimeParameter.isonTCP == 0){
 				 sound2_Prompt();
 			   continue;
 			}
 //			SMS_Prompt();
 			curT = xTaskGetTickCount();
+			
+			if ((curT - countT) >= GSM_GPRS_HEART_BEAT_TIME){
+				GsmTaskSendAtCommand("AT+CSQ");
+				countT = curT;
+			}
+			
 			Judge = 1;
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				sign++;

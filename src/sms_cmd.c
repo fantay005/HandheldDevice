@@ -659,5 +659,6 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 // 	XfsTaskSpeakUCS2((const char *)&pcontent[6], (plen - 6));
 	
 	XfsTaskSpeakUCS2((const char *)pcontent, plen);
+	vPortFree(pcontent);
 }
 

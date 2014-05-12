@@ -178,12 +178,12 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 		0x96, 0x50, //限
 	};
 
-	if (strncasecmp(p->content, "<alock>", 7) == 0) {
+	if (strncasecmp((char *)p->content, "<alock>", 7) == 0) {
 		isAlock = true;
-		pcontent = &p->content[7];
-	} else {
+		pcontent = (const char *)&p->content[7];
+	} else if (strncasecmp((char *)p->content, "<lock>", 6) == 0){
 		isAlock = false;
-		pcontent = &p->content[6];
+		pcontent = (const char *)&p->content[6];
 	}
 
 	index = pcontent[0] - '0';
@@ -194,11 +194,7 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 		return;
 	}
 
-	if (index < 2 && !isAlock) {
-		return;
-	}
-
-	if (pcontent[1] != '1') {
+	if (index < 2 && !isAlock) {              //<alock>后只能跟1，<lock>后接2,3,4,5,6
 		return;
 	}
 
@@ -207,6 +203,10 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 	}
 	__setUser(index, &pcontent[1]);
 	__storeUSERParam();
+	
+	if (pcontent[1] != '1') {
+		return;
+	}
 
 	sms = pvPortMalloc(60);
 

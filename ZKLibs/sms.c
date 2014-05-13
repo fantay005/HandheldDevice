@@ -47,7 +47,7 @@ static inline unsigned char sms_serializeNumbers(char *pd, const char *ps, unsig
 	return len;
 }
 
-static inline unsigned char sms_decode7bit(char *pd, const char *pdu_ud, unsigned char len) {
+static inline unsigned char sms_decode7bit(char *pd, const char *pdu_ud, int len) {
 	unsigned char ch, ch_p;
 	unsigned char cnt;
 	unsigned char rc;
@@ -85,13 +85,13 @@ static inline unsigned char sms_decode7bit(char *pd, const char *pdu_ud, unsigne
 	return rc;
 }
 
-static inline unsigned char sms_decode8bit(char *pd, const char *pdu_ud, unsigned char len) {
+static inline unsigned char sms_decode8bit(char *pd, const char *pdu_ud, int len) {
 	len = string2bytes((unsigned char *)pd, pdu_ud, len * 2);
 	pd[len] = 0;
 	return len;
 }
 
-static inline unsigned char sms_decodeucs2(char *pd, const char *pdu_ud, unsigned char len) {
+static inline unsigned char sms_decodeucs2(char *pd, const char *pdu_ud, int len) {
 	unsigned char ch0, ch1, temp;
 	unsigned char i, rc = 0;
 
@@ -133,14 +133,23 @@ static inline unsigned char sms_decodeucs2(char *pd, const char *pdu_ud, unsigne
 
 //07917238010010F5040BC87238880900F100009930925161958003C16010
 //07 917238010010F5 04 0B C8 7238880900F1 0000 99309251619580 03C16010
+static unsigned char n;
+static char buffer[1340];
+static char lenth = 0;
+
 void SMSDecodePdu(const char *pdu, SMSInfo *psms) {
-	unsigned char temp;
-	unsigned char dcs;
+	unsigned char temp, dcs, F0, Total, Sequence, i, LONGSMS = 0;
 
 	string2bytes(&temp, pdu, 2);	//获取SMSC长度
-	pdu += temp * 2 + 4;				// pdu = "0BC8....."
+	pdu += temp * 2 + 2;				// pdu = "0BC8....."
 
-	string2bytes(&temp, pdu, 2);	//获取发送端号码
+	string2bytes(&F0, pdu, 2);   //获取FO信息第一字节
+	if(F0 & 0x40) {
+		LONGSMS = 1;
+	}
+	pdu += 2;
+	
+	string2bytes(&temp, pdu, 2);	//获取发送端号码长度
 	if (temp & 1) {
 		temp += 1;
 	}
@@ -149,26 +158,63 @@ void SMSDecodePdu(const char *pdu, SMSInfo *psms) {
 	string2bytes(&(psms->numberType), pdu, 2);
 	pdu += 2;						// pdu = "723888..."
 
-	sms_serializeNumbers(psms->number, pdu, temp);
+	sms_serializeNumbers((char *)psms->number, pdu, temp);
 	pdu += temp;					// pdu = "0000993..."
 	pdu += 2;						// pdu = "009930...."
 
 	string2bytes(&dcs, pdu, 2);	//获取编码方式
 	pdu += 2;						// pdu = "993092...."
-	sms_serializeNumbers(psms->time, pdu, 14);	//获取时间
+	sms_serializeNumbers((char *)psms->time, pdu, 14);	//获取时间
 	pdu += 14;						//pdu = "03C16010"
 	string2bytes(&temp, pdu, 2);	//信息长度
 	pdu += 2;						//pdu = "C16010"
-
-	if (dcs == GSM_SMS_ENCODE_7BIT) {
-		psms->encodeType = ENCODE_TYPE_GBK;
-		psms->contentLen = sms_decode7bit(psms->content, pdu, temp);
-	} else if (dcs == GSM_SMS_ENCODE_8BIT) {
-		psms->encodeType = ENCODE_TYPE_GBK;
-		psms->contentLen = sms_decode8bit(psms->content, pdu, temp);
-	} else if (dcs == GSM_SMS_ENCODE_UCS2) {
-		psms->encodeType = ENCODE_TYPE_UCS2;
-		psms->contentLen = sms_decodeucs2(psms->content, pdu, temp);
+	
+	if(LONGSMS == 1){
+		pdu += 8;
+		
+		string2bytes(&Total, pdu, 2);  //获取长短信包含几条短信
+		pdu += 2;
+		
+		string2bytes(&Sequence, pdu, 2);  //获取长短信 各短信顺序
+		pdu += 2;
+		
+		if(Sequence == Total){
+			lenth = temp;
+		}
+		
+		for(i = 0; i < Total; i++){
+			if(Sequence == (i + 1)){
+				memcpy(&buffer[134 * i * 2], pdu, (temp - 6) * 2);
+			}
+		}
+    n++;
+		if(n != Total){
+			psms->encodeType = ENCODE_TYPE_UCS2;
+			psms->contentLen = 0;
+		} else {
+				if (dcs == GSM_SMS_ENCODE_7BIT) {
+					psms->encodeType = ENCODE_TYPE_GBK;
+					psms->contentLen = sms_decode7bit((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + lenth - 6));
+				} else if (dcs == GSM_SMS_ENCODE_8BIT) {
+					psms->encodeType = ENCODE_TYPE_GBK;
+					psms->contentLen = sms_decode8bit((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + lenth - 6));
+				} else if (dcs == GSM_SMS_ENCODE_UCS2) {
+					psms->encodeType = ENCODE_TYPE_UCS2;
+					psms->contentLen = sms_decodeucs2((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + lenth - 6));
+				}
+				n = 0;
+    }
+	} else {
+			if (dcs == GSM_SMS_ENCODE_7BIT) {
+				psms->encodeType = ENCODE_TYPE_GBK;
+				psms->contentLen = sms_decode7bit((char *)psms->content, pdu, temp);
+			} else if (dcs == GSM_SMS_ENCODE_8BIT) {
+				psms->encodeType = ENCODE_TYPE_GBK;
+				psms->contentLen = sms_decode8bit((char *)psms->content, pdu, temp);
+			} else if (dcs == GSM_SMS_ENCODE_UCS2) {
+				psms->encodeType = ENCODE_TYPE_UCS2;
+				psms->contentLen = sms_decodeucs2((char *)psms->content, pdu, temp);
+			}
 	}
 }
 

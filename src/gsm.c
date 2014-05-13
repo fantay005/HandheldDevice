@@ -62,7 +62,7 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12121, 1};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -326,7 +326,11 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		buffer[bufferIndex++] = 0;
 		message = __gsmCreateMessage(TYPE_SMS_DATA, buffer, bufferIndex);
-		xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		}
 		isSMS = 0;
 		bufferIndex = 0;
 	} else if (data != 0x0D) {
@@ -588,16 +592,6 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-// 	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("AT&W error\r");
-// 		return false;
-// 	}
-
-// 	if (!ATCommandAndCheckReply("ATS0=3\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("ATS0=3 error\r");
-// 		return false;
-// 	}
-
 	if (!ATCommandAndCheckReply("AT+CMGF=0\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+CMGF=0 error\r");
 		return false;
@@ -652,20 +646,7 @@ bool __initGsmRuntime() {
 		printf("AT+QICSGP error\r");
 		return false;
 	}
-	
-	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ)) {
-		printf("AT+QGSMLOC error\r");
-	}
 
-// 	if (!ATCommandAndCheckReply("AT+QIMUX=0\r", "OK", configTICK_RATE_HZ)) {
-// 		printf("AT+QIMUX error\r");
-// 		return false;
-// 	}
-
-//	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ)) {
-//		printf("AT&W error\r");
-//		return false;
-//	}
 	return true;
 }
 
@@ -675,6 +656,10 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
+	if(sms->contentLen == 0) {
+		__gsmPortFree(sms);
+		return;
+	}
 	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
 #if defined(__SPEAKER__)
@@ -905,7 +890,7 @@ static void __gsmTask(void *parameter) {
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
 				lastT = curT;
-			}
+			} 
 		}
 	}
 }

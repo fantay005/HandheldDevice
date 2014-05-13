@@ -33,13 +33,6 @@ static void __ledTestTask(void *nouse) {
 	enum SoftPWNLedColor color;
 	uint32_t second;
 	DateTime dateTime;
-//	static const char *const weekDayStringTable[] = {
-//		"一", "二", "三", "四", "五", "六", "日",
-//	};
-
-//	unsigned short unicode = 0x4E2D;
-//	Unicode2GBKDestroy(Unicode2GBK((const uint8_t *)&unicode, 2));
-
 	while (1) {
 		if (!RtcWaitForSecondInterruptOccured(portMAX_DELAY)) {
 			continue;
@@ -77,15 +70,16 @@ static void __ledTestTask(void *nouse) {
 				vTaskDelay(configTICK_RATE_HZ * 5);
 	      NVIC_SystemReset();
 		}
-#if defined(__LED_HUAIBEI__)
-		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.minute == 0x00)) {
-			color = SoftPWNLedColorNULL;
-			SoftPWNLedSetColor(color);
-			LedDisplayGB2312String162(2 * 4, 0, "淮北气象三农服务");
-			LedDisplayToScan2(16 * 4, 0, 16 * 12 - 1, 15);
-			__storeSMS2("淮北气象三农服务");
+		
+		if ((dateTime.hour == 0x12) && (dateTime.minute == 0x38) && (dateTime.second == 0x00) && (dateTime.second == 0x00)) {
+			  int size;
+				char *dat = (char *)ProtoclAchieveWeather(GsmGetIMEI());
+			  size = strlen(GsmGetIMEI()) + 2;
+				__gsmSendTcpDataLowLevel(dat, size);
+				vPortFree(dat);
 		}
-#endif
+		
+		
 	}
 }
 

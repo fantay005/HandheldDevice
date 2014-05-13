@@ -78,6 +78,7 @@ extern void NorFlashInit(void);
 extern void WatchdogInit(void);
 extern void SoftPWMLedInit(void);
 extern void MP3Init(void);
+extern void ADCInit(void);
 int main(void) {
 	PreSetupHardware();
 	NorFlashInit();
@@ -95,6 +96,7 @@ int main(void) {
 	SHT10TestInit();
 //	mp3TestInit();
 	FMInit();
+	ADCInit();
 
 #if defined(__LED__)
 	DisplayInit();

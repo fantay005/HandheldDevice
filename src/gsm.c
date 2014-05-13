@@ -24,7 +24,7 @@
 #include "sms_cmd.h"
 
 #define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 512)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 6)
 #define GSM_IMEI_LENGTH              15
 
 #define  RING_PIN  GPIO_Pin_15
@@ -979,7 +979,6 @@ void __handleSMS(GsmTaskMessage *p) {
 	uint32_t second;
 	DateTime dateTime;
 	const char *dat = __gsmGetMessageData(p);
-	if(sms->contentLen == 0) return;
 	if(__gsmRuntimeParameter.isonQUIET){
 	   second = RtcGetTime();
 	   SecondToDateTime(&dateTime, second);
@@ -1001,6 +1000,10 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
+	if(sms->contentLen == 0) {
+		__gsmPortFree(sms);
+		return;
+	}
 #if defined(__LED__)
 	__gsmSMSEncodeConvertToGBK(sms);
 #endif

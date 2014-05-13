@@ -177,6 +177,15 @@ char *ProtoclCreatLogin(char *imei, int *size) {
 	return ProtocolMessage(TermActive, Login, imei, size);
 }
 
+char *ProtoclAchieveWeather(char *imei) {
+	int len;
+	char *p = pvPortMalloc(30);
+	memset(p, 0, 30);
+	len = sprintf(p, "#H");
+	sprintf(&p[len], imei);
+	return p;
+}
+
 char *ProtoclCreateHeartBeat(int *size) {
 	return ProtocolMessage(TermActive, Heart, NULL, size);
 }
@@ -393,6 +402,10 @@ void HandleLongSMS(ProtocolHeader *header, char *p) {
 }
 
 
+void HandleHeFeiWeath(ProtocolHeader *header, char *p) {
+	MessDisplay(p);
+}
+
 void ProtocolHandler(char *p) {
 //	if (strncmp(p, "#H", 2) != 0) return;
 	int i;
@@ -415,6 +428,7 @@ void ProtocolHandler(char *p) {
 		{'4', '3', HandleRecordPromptSound},
 		{'4', '4', HandleMP3Music},
 		{'4', '5', HandleLongSMS},
+		{'5', '5', HandleHeFeiWeath},
 	};
 	ProtocolHeader *header = (ProtocolHeader *)p;
 

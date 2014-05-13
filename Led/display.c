@@ -227,6 +227,7 @@ void __handlerDisplayMessageYellow(DisplayTaskMessage *msg) {
 //	__displayMessageLowlevel();
 }
 const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, const unsigned char *gbString);
+
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 

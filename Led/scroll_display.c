@@ -6,7 +6,7 @@
 #include "stm32f10x_tim.h"
 #include "misc.h"
 #include "FreeRTOS.h"
-#include "queue.h""
+#include "queue.h"
 #include "semphr.h"
 #include "task.h"
 #include "ledconfig.h"
@@ -28,8 +28,7 @@ void __scrollDisplayTask(void *helloString) {
 	int xContentEnd = LED_VIR_DOT_WIDTH-1;
 	int xScan = LED_PHY_DOT_WIDTH-1;
 	int xDisp = 0;
-	printf("ScrollDisplayTask:
-		   start->\n");
+	printf("ScrollDisplayTask: start->\n");
 	while(1) {
 		if (xSemaphoreTake(__scrollSemaphore, portMAX_DELAY) == pdTRUE) {
 			LedScrollDisplayToScan(xDisp, 0, xScan, 0);

@@ -542,21 +542,11 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<TEST>", __cmd_TEST_Handler, UP_ALL},
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
-#if defined(__LED__)
+
 	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#endif
 
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#endif
 
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-	{"1", __cmd_RED_Display, UP_ALL},
-	{"2", __cmd_GREEN_Display, UP_ALL},
-	{"3", __cmd_YELLOW_Display, UP_ALL},
-#endif
-
-	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
+	{"<VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{"<CTCP>",  __cmd_CTCP_Handler, UP_ALL},
 	{NULL, NULL}
 };
@@ -581,8 +571,7 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 			return;
 		}
 	}
-#if defined(__LED_HUAIBEI__)
-
+	
 	if (index == 0) {
 		return;
 	}
@@ -597,6 +586,5 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 		MessDisplay((char *)(sms->content));
 	}
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-#endif
 }
 

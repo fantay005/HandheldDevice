@@ -653,7 +653,7 @@ bool __initGsmRuntime() {
 		return false;
 	}
 	
-	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ)) {
+	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 20)) {
 		printf("AT+QGSMLOC error\r");
 	}
 
@@ -675,6 +675,7 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
+	if(sms->contentLen == 0)  return;
 	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
 #if defined(__SPEAKER__)

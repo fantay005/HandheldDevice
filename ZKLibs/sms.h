@@ -31,7 +31,7 @@ typedef struct {
 	unsigned char contentLen;
 	char number[15];
 	char time[15];
-	char content[162];
+	char content[700];
 } SMSInfo;
 
 /// \brief  ½âÂëPDU¶ÌĞÅ.

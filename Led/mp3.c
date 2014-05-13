@@ -23,13 +23,13 @@
 #define TCS   (1<<4)  // PA4-CS													    
 #define TCS_SET(x)  GPIOA->ODR=(GPIOA->ODR&~TCS)|(x ? TCS:0)
 
-#define RST   (1<<7)  // PB7-RST   
-#define TRST_SET(x)  GPIOB->ODR=(GPIOC->ODR&~RST)|(x ? RST:0)
+#define RST   (1<<6)  // PC6-RST   
+#define TRST_SET(x)  GPIOC->ODR=(GPIOC->ODR&~RST)|(x ? RST:0)
 
 #define XDCS   (1<<8)  // PB8-SYNC  
 #define TXDCS_SET(x)  GPIOB->ODR=(GPIOB->ODR&~XDCS)|(x ? XDCS:0)
 
-#define DREQ  GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_6)  //MP3_IRQ
+#define DREQ  GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_13)  //MP3_IRQ
 
 /* VS1003(音频解码芯片) 命令宏定义 */
 #define VS_WRITE_COMMAND 			0x02
@@ -126,31 +126,31 @@ static void VS1003_SPI_Init() {
 	SPI_Init(SPI1, &SPI_InitStructure);
 	SPI_Cmd(SPI1, ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6 ;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 ;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);		  //MP3_IRQ
+	GPIO_Init(GPIOC, &GPIO_InitStructure);		  //MP3_IRQ
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);		   //MP3_SYNC
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);		   //MP3_RST
+	GPIO_Init(GPIOC, &GPIO_InitStructure);		   //MP3_RST
 
-	EXTI_InitStructure.EXTI_Line = EXTI_Line6; //选择中断线路2 3 5
+	EXTI_InitStructure.EXTI_Line = EXTI_Line13; //选择中断线路2 3 5
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt; //设置为中断请求，非事件请求
   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising; //设置中断触发方式为上下降沿触发
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;                                          //外部中断使能
   EXTI_Init(&EXTI_InitStructure);
 
-	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource6);	  
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource13);	  
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	
-	NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;     //选择中断通道1
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;     //选择中断通道1
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0; //抢占式中断优先级设置为0
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;        //响应式中断优先级设置为0
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;                                   //使能中断
@@ -396,10 +396,10 @@ void Vs1003Idle(void) {
 }
 
 
-void EXTI9_5_IRQHandler (void)
+void EXTI15_10_IRQHandler (void)
 {
 	portBASE_TYPE n;
-	EXTI_ClearITPendingBit(EXTI_Line6);
+	EXTI_ClearITPendingBit(EXTI_Line13);
 	if (pdTRUE == xSemaphoreGiveFromISR(__semaphore, &n)) {
 		if (n) {
 			taskYIELD();

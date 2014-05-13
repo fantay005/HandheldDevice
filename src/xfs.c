@@ -128,10 +128,15 @@ void WelcomeNote(void) {
 	char welcome[] = {0xFD, 0x00, 0x12, 0x01, 0x03, 0x89, 0x5B,  0xBD, 0x5F, 0x14, 0x6C,
 					  0x61, 0x8C, 0x22, 0x6B, 0xCE, 0x8F, 0xA8, 0x60, 0x21, 0x00			 //安徽气象欢迎您！
                      };
+	GPIO_SetBits(GPIOB, GPIO_Pin_0);
+	GPIO_SetBits(GPIOF, GPIO_Pin_11);
 	for (i = 0; i < 21; i++) {
 		USART_SendData(USART3, welcome[i]);
 		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
 	}
+	vTaskDelay(configTICK_RATE_HZ * 3);
+	GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+	GPIO_ResetBits(GPIOF, GPIO_Pin_11);
 }
 
 // static char com = '0';
@@ -247,16 +252,16 @@ static int __xfsSetup(void) {
 }
 
 static int __xfsQueryState() {
-	if(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_9) != 0) {
-		 printf("RDY = 1\n");
-	   return 0;
-  }
-	printf("RDY = 0\n");
-	return 1;  	
-// 	const char xfsCommand[] = { 0x21 };
-// 	char ret = __xfsSendCommand(xfsCommand, sizeof(xfsCommand), configTICK_RATE_HZ);
-// //	printf("xfsQueryState return %02X\n", ret);
-// 	return ret;
+// 	if(GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_9) != 0) {
+// 		 printf("RDY = 1\n");
+// 	   return 0;
+//   }
+// 	printf("RDY = 0\n");
+// 	return 1;  	
+	const char xfsCommand[] = { 0x21 };
+	char ret = __xfsSendCommand(xfsCommand, sizeof(xfsCommand), configTICK_RATE_HZ);
+//	printf("xfsQueryState return %02X\n", ret);
+	return ret;
 }
 
 static void __initHardware() {
@@ -264,18 +269,18 @@ static void __initHardware() {
 	USART_InitTypeDef   USART_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	GPIO_PinRemapConfig(GPIO_PartialRemap_USART3, ENABLE);
+//	GPIO_PinRemapConfig(GPIO_PartialRemap_USART3, ENABLE);
 
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);					//讯飞语音模块的串口
+	GPIO_Init(GPIOB, &GPIO_InitStructure);					//讯飞语音模块的串口
 
-	USART_InitStructure.USART_BaudRate = 115200;
+	USART_InitStructure.USART_BaudRate = 9600;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -333,11 +338,12 @@ static int __xfsSpeakLowLevel(const char *p, int len, char type) {
 	__xfsSendByte(type);
 
 	for (ret = 0; ret < len; ret++) {
+		vTaskDelay(configTICK_RATE_HZ / 100);
 		__xfsSendByte(*p++);
 	}
 
-	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 2);
-//	vTaskDelay(configTICK_RATE_HZ );
+	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 10);
+	vTaskDelay(configTICK_RATE_HZ * 5);
 	if (rc != pdTRUE) {
 		return 0;
 	}
@@ -403,6 +409,7 @@ static void __handleSpeakMessage(XfsTaskMessage *msg) {
 		break;
 	}
 }
+static char n = 0;
 
 void __xfsTask(void *parameter) {
 	portBASE_TYPE rc;
@@ -413,13 +420,11 @@ void __xfsTask(void *parameter) {
 	printf("Xfs start\n");
 	__restorSpeakParam();
 	__xfsInitRuntime();
-	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
 	WelcomeNote();
-	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
 //	SMS_Prompt();
 	for (;;) {
 		printf("Xfs: loop again\n");
-		rc = xQueueReceive(__speakQueue, &pmsg, portMAX_DELAY);
+		rc = xQueueReceive(__speakQueue, &pmsg, portMAX_DELAY);	
 		if (rc == pdTRUE) {
 			__restorSpeakParam();
 			SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);

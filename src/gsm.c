@@ -569,6 +569,10 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
+	if(sms->contentLen == 0) {
+		__gsmPortFree(sms);
+		return;
+	}
 	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
 #if defined(__SPEAKER__)

@@ -150,18 +150,17 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 	const char *pcontent;
 	char *sms;
 	int index;
-	const char *num = p->number;
 	// 已将2号用户授权与13800000000
 	static const char __toUser1[] = {
-		0X5D, 0XF2,  //已
-		0x5C, 0x06,  //将
-		0x00, 0x00,	 //0
-		0x53, 0xF7,	 //号
-		0x75, 0x28,	 //用
-		0x62, 0x37,	 //户
-		0x63, 0x88,	 //授
-		0x67, 0x43,	 //权
-		0x4E, 0x0E,	 //与
+		0X5D, 0XF2, //已
+		0x5C, 0x06, //将
+		0x00, 0x00,
+		0x53, 0xF7,
+		0x75, 0x28,
+		0x62, 0x37,
+		0x63, 0x88,
+		0x67, 0x43,
+		0x4E, 0x0E,
 	};
 
 	static const char __toUser[] = {
@@ -178,12 +177,12 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 		0x96, 0x50, //限
 	};
 
-	if (strncasecmp(p->content, "<alock>", 7) == 0) {
+	if (strncasecmp((char *)p->content, "<alock>", 7) == 0) {
 		isAlock = true;
-		pcontent = &p->content[7];
-	} else {
+		pcontent = (const char *)&p->content[7];
+	} else if (strncasecmp((char *)p->content, "<lock>", 6) == 0){
 		isAlock = false;
-		pcontent = &p->content[6];
+		pcontent = (const char *)&p->content[6];
 	}
 
 	index = pcontent[0] - '0';
@@ -194,11 +193,7 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 		return;
 	}
 
-	if (index < 2 && !isAlock) {
-		return;
-	}
-
-	if (pcontent[1] != '1') {
+	if (index < 2 && !isAlock) {              //<alock>后只能跟1，<lock>后接2,3,4,5,6
 		return;
 	}
 
@@ -207,6 +202,10 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 	}
 	__setUser(index, &pcontent[1]);
 	__storeUSERParam();
+	
+	if (pcontent[1] != '1') {
+		return;
+	}
 
 	sms = pvPortMalloc(60);
 
@@ -568,12 +567,6 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
 #if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
 	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#endif
-
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-	{"<1>", __cmd_RED_Display, UP_ALL},
-	{"<2>", __cmd_GREEN_Display, UP_ALL},
-	{"<3>", __cmd_YELLOW_Display, UP_ALL},
 #endif
 
 	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},

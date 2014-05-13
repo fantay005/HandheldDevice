@@ -55,7 +55,7 @@ static char __displayMessageColor = 1;
 static const uint8_t *__displayMessage = NULL;
 static const uint8_t *__displayCurrentPoint = NULL;
 
-static const char *const __message_space = "      ";
+static const char *const __message_space = "    ";
 void MessDisplay(char *message) {
 	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
 	DisplayTaskMessage msg;

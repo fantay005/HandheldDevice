@@ -92,7 +92,6 @@ int main(void) {
 	DisplayInit();
 	SevenSegLedInit();
 	SHT10TestInit();
- // mp3TestInit();
 
 	printf("\n==================================\n");
 	printf("%s", Version());

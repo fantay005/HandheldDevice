@@ -336,7 +336,11 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		buffer[bufferIndex++] = 0;
 		message = __gsmCreateMessage(TYPE_SMS_DATA, buffer, bufferIndex);
-		xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		}
 		isSMS = 0;
 		bufferIndex = 0;
 	} else if (data != 0x0D) {
@@ -582,11 +586,16 @@ bool __initGsmRuntime() {
 		printf("AT+IFC error\r");
 		return false;
 	}
-
-	if (!ATCommandAndCheckReply("ATS0=3\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("ATS0=3 error\r");
+	
+	if (!ATCommandAndCheckReply("AT+CMEE=2\r", "OK", configTICK_RATE_HZ * 5)) {
+		printf("AT+CMEE error\r");
 		return false;
 	}
+
+// 	if (!ATCommandAndCheckReply("ATS0=3\r", "OK", configTICK_RATE_HZ * 2)) {
+// 		printf("ATS0=3 error\r");
+// 		return false;
+// 	}
 
 	if (!ATCommandAndCheckReply("AT+CMGF=0\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+CMGF=0 error\r");
@@ -643,9 +652,8 @@ bool __initGsmRuntime() {
 		return false;
 	}
 	
-	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 20)) {
+	if (!ATCommandAndCheckReplyUntilOK("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 3, 10)) {
 		printf("AT+QGSMLOC error\r");
-		return false;
 	}
 
 // 	if (!ATCommandAndCheckReply("AT+QIMUX=0\r", "OK", configTICK_RATE_HZ)) {
@@ -666,6 +674,10 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
+	if(sms->contentLen == 0) {
+		__gsmPortFree(sms);
+		return;
+	}
 	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
 	ProtocolHandlerSMS(sms);

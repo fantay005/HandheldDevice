@@ -17,7 +17,7 @@ static xQueueHandle          __queue;
 static xSemaphoreHandle      __asemaphore = NULL;
 
 typedef enum{
-    TYPE_FM_OPEN_CHANNEL,
+  TYPE_FM_OPEN_CHANNEL,
 	TYPE_FM_CLOSE,
 	TYPE_FM_NEXT_CHANNEL,
 }FMTaskMessageType;
@@ -37,31 +37,6 @@ typedef enum{
 #define DURATION_HIGH		1000
 #define DURATION_LOW		2000
 #define POWER_SETTLING		66
-
-typedef enum OPERA_MODE {
-	READ = 1,
-	WRITE = 2
-} T_OPERA_MODE;
-
-typedef enum ERROR_OP {
-	Si_ERROR = 1,
-	I2C_ERROR ,
-	LOOP_EXP_ERROR ,
-	OK
-} T_ERROR_OP;
-
-typedef enum POWER_UP_TYPE {
-	FM_RECEIVER = 1,
-	FM_TRNSMITTER = 2,
-	AM_RECEIVER = 3
-} T_POWER_UP_TYPE;
-
-typedef enum SEEK_MODE {
-	SEEKDOWN_HALT = 1,
-	SEEKDOWN_WRAP = 2,
-	SEEKUP_HALT = 3,
-	SEEKUP_WRAP = 4
-} T_SEEK_MODE;
 
 
 #define WRITE_ADDR 0xC6
@@ -162,7 +137,7 @@ static void __initGpio() {
 	GPIO_ResetBits(GPIOB, RST_PIN);
 }
 
-static  void ResetSi4731_2w(void) {
+void ResetSi4731_2w(void) {
 	__initGpio();
 	SDIO_LOW;	
 	SDIO_HIGH;
@@ -203,7 +178,7 @@ static bool __waitAck() {
 	return ret == 0;
 }
 
-static u8 OperationSi4731_2w(T_OPERA_MODE operation, u8 *data, u8 numBytes) {
+uint8_t OperationSi4731_2w(T_OPERA_MODE operation, uint8_t *data, uint8_t numBytes) {
 	uint8_t controlWord,  j, error = 0;
 	int i;
 
@@ -305,38 +280,7 @@ static T_ERROR_OP Si4731_Power_Down(void) {
 	return OK;
 }
 
-#if 0
 
-static  T_ERROR_OP Si4731_Power_Up(T_POWER_UP_TYPE power_up_type) {
-	uint8_t Si4731_power_up[] = {0x01, 0xC1, 0x05};
-
-	switch (power_up_type) {
-	case FM_RECEIVER: {
-		Si4731_power_up[1] = 0xD0;
-		Si4731_power_up[2] = 0x05;
-		break;
-	}
-	case FM_TRNSMITTER: {
-		Si4731_power_up[1] = 0xC2;
-		Si4731_power_up[2] = 0x50;
-		break;
-	}
-	case AM_RECEIVER: {
-		Si4731_power_up[1] = 0xC1;
-		Si4731_power_up[2] = 0x05;
-		break;
-	}
-	}
-
-	ResetSi4731_2w();
-	vTaskDelay(configTICK_RATE_HZ / 5);
-	if (__command(Si4731_power_up, 3)) {
-		return OK;
-	}
-	return LOOP_EXP_ERROR;
-}
-
-#else
 
 static  T_ERROR_OP Si4731_Power_Up(T_POWER_UP_TYPE power_up_type) {
 	uint16_t loop_counter = 0;
@@ -381,7 +325,7 @@ static  T_ERROR_OP Si4731_Power_Up(T_POWER_UP_TYPE power_up_type) {
 	}
 	return OK;
 }
-#endif
+
 
 static T_ERROR_OP Si4731_Set_Property_GPO_IEN(void) {
 	uint16_t loop_counter = 0;
@@ -847,6 +791,13 @@ T_ERROR_OP Si4731_FM_Seek_All(unsigned short *pChannel_All_Array, unsigned char 
 	return OK;
 }
 
+void SI4731Init(void){
+	RST_PIN_INIT;
+	SDIO_PIN_INIT;
+	SCLK_PIN_INIT;
+	RST_LOW;
+}
+/*
 void EXTI3_INTI(void){
 	GPIO_InitTypeDef GPIO_InitStructure;
 	EXTI_InitTypeDef EXTI_InitStructure;
@@ -916,14 +867,6 @@ void EXTI15_10_IRQHandler (void)
 		lastT = curT;
 	}
 }
-
-void SI4731Init(void){
-	RST_PIN_INIT;
-	SDIO_PIN_INIT;
-	SCLK_PIN_INIT;
-	RST_LOW;
-}
-
 
 void auto_seek_Property(void){
 	vTaskDelay(configTICK_RATE_HZ / 10);
@@ -1021,6 +964,14 @@ void __FMTask(void) {
   }
 }
 
+
+
+void FMInit(void) {
+	SI4731Init();
+	xTaskCreate(__FMTask, (signed portCHAR *) "FM", FM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 10, NULL);
+}
+*/
+
 void fmopen(int freq) {
 	if ((freq < 875) || (freq > 1080)) {
 		return;
@@ -1048,10 +999,3 @@ void fmopen(int freq) {
 	vTaskDelay(configTICK_RATE_HZ / 10);
 	Si4731_Set_FM_Frequency(freq);
 }
-
-void FMInit(void) {
-	SI4731Init();
-	xTaskCreate(__FMTask, (signed portCHAR *) "FM", FM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 10, NULL);
-}
-
-

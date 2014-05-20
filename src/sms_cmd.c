@@ -135,7 +135,6 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 	const char *pcontent;
 	char *sms;
 	int index;
-	const char *num = p->number;
 	// 已将2号用户授权与13800000000
 	static const char __toUser1[] = {
 		0X5D, 0XF2, //已
@@ -163,12 +162,12 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 		0x96, 0x50, //限
 	};
 
-	if (strncasecmp(p->content, "<alock>", 7) == 0) {
+	if (strncasecmp((char *)p->content, "<alock>", 7) == 0) {
 		isAlock = true;
-		pcontent = &p->content[7];
-	} else {
+		pcontent = (const char *)&p->content[7];
+	} else if (strncasecmp((char *)p->content, "<lock>", 6) == 0){
 		isAlock = false;
-		pcontent = &p->content[6];
+		pcontent = (const char *)&p->content[6];
 	}
 
 	index = pcontent[0] - '0';
@@ -179,11 +178,7 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 		return;
 	}
 
-	if (index < 2 && !isAlock) {
-		return;
-	}
-
-	if (pcontent[1] != '1') {
+	if (index < 2 && !isAlock) {              //<alock>后只能跟1，<lock>后接2,3,4,5,6
 		return;
 	}
 
@@ -192,6 +187,10 @@ static void __cmd_LOCK_Handler(const SMSInfo *p) {
 	}
 	__setUser(index, &pcontent[1]);
 	__storeUSERParam();
+	
+	if (pcontent[1] != '1') {
+		return;
+	}
 
 	sms = pvPortMalloc(60);
 
@@ -539,22 +538,22 @@ const static SMSModifyMap __SMSModifyMap[] = {
 
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
-	DateTime dateTime;
+//	DateTime dateTime;
 	int index;
 	const char *p = sms->time;
 	const char *pnumber = sms->number;
 	__restorUSERParam();
-	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
-	dateTime.month = (p[2] - '0') * 10 + (p[3] - '0');
-	dateTime.date = (p[4] - '0') * 10 + (p[5] - '0');
-	dateTime.hour = (p[6] - '0') * 10 + (p[7] - '0');
-	dateTime.minute = (p[8] - '0') * 10 + (p[9] - '0');
-	if (p[10] != 0 && p[11] != 0) {
-		dateTime.second = (p[10] - '0') * 10 + (p[11] - '0');
-	} else {
-		dateTime.second = 0;
-	}
-	RtcSetTime(DateTimeToSecond(&dateTime));
+// 	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
+// 	dateTime.month = (p[2] - '0') * 10 + (p[3] - '0');
+// 	dateTime.date = (p[4] - '0') * 10 + (p[5] - '0');
+// 	dateTime.hour = (p[6] - '0') * 10 + (p[7] - '0');
+// 	dateTime.minute = (p[8] - '0') * 10 + (p[9] - '0');
+// 	if (p[10] != 0 && p[11] != 0) {
+// 		dateTime.second = (p[10] - '0') * 10 + (p[11] - '0');
+// 	} else {
+// 		dateTime.second = 0;
+// 	}
+// 	RtcSetTime(DateTimeToSecond(&dateTime));
 
 	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {

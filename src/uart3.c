@@ -12,6 +12,22 @@
 
 static xQueueHandle __uart3Queue;
 
+typedef enum {
+	directionI  = 0x00,
+	directionII,
+	waterLevelI,
+	waterLevelII,
+} addressType;
+
+
+typedef struct {
+	unsigned char station;
+	unsigned char function;
+	unsigned char origin[2];
+	unsigned char readbyte[2];
+	uint16_t crc;
+} Info_frame;
+
 static inline void __uart3HardwareInit(void) {
 	GPIO_InitTypeDef    GPIO_InitStructure;
 	USART_InitTypeDef   USART_InitStructure;
@@ -26,7 +42,7 @@ static inline void __uart3HardwareInit(void) {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);				
 
-	USART_InitStructure.USART_BaudRate = 115200;
+	USART_InitStructure.USART_BaudRate = 9600;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
 	USART_InitStructure.USART_Parity = USART_Parity_No;
@@ -43,6 +59,34 @@ static inline void __uart3HardwareInit(void) {
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
+}
+
+
+char *Modbusdat (addressType type){
+	uint16_t p;
+	char i, j;
+	Info_frame *h ;
+	h->station = 0x01;
+	h->function = 0x03;
+	h->origin[0] = 0x00;
+	h->origin[1] = type;
+	h->readbyte[0] = 0x00;
+	h->readbyte[1] = 0x02;
+	
+	unsigned char *dat = (unsigned char *)h;
+	for(j=0; j<6; j++) {
+		p = 0xffff ^ ((char *)dat++);
+		for (i=0; i<8; i++) {
+			if (p & 0x01) {
+				p = p >> 1;
+				p = p ^ 0xA001;
+			} else {
+				p = p >> 1;
+			}
+		}
+	}
+	h->crc = p;
+	
 }
 
 void USART3_Send_Byte(unsigned char byte){
@@ -109,34 +153,7 @@ void USART3_IRQHandler(void)
 					portYIELD();
 				}
 			}
-	     	Hot = 0;
-			Index = 0;
-			Sensor = 0;
-
-		} else if (dat == '#'){
-			Hot = 1;
-		} else if (Hot == 1){
-			if (dat == 'H'){
-			   Hot = 2;
-			}else{
-			   Hot = 0;
-			}
-		} else if (Hot == 2) {
-			if (dat == 'O'){
-			   Hot = 3;
-			}else{
-			   Hot = 0;
-			}
-		} else if (Hot == 3) {
-	    	if (dat == 'T'){
-			   Hot = 4;
-			   Sensor = 1;
-			}else{
-			   Hot = 0;
-			}
-		} else if (Hot == 4) {
-			Buffer[Index++] = dat;
-		}
+		} 
 	}
 }
 

@@ -675,16 +675,6 @@
               <FileType>1</FileType>
               <FilePath>.\src\uart3.c</FilePath>
             </File>
-            <File>
-              <FileName>UltrasonicWave.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\UltrasonicWave.c</FilePath>
-            </File>
-            <File>
-              <FileName>rainfall.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\rainfall.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

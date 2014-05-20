@@ -16,11 +16,10 @@
 #include "atcmd.h"
 #include "norflash.h"
 #include "unicode2gbk.h"
-#include "UltrasonicWave.h"
+
 
 #define GSM_TASK_STACK_SIZE			      (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME      (configTICK_RATE_HZ * 60 * 5)
-#define WATER_LEVEL_UPLOAD_TIME       (configTICK_RATE_HZ * 60 )
 #define GSM_IMEI_LENGTH              15
 
 
@@ -743,18 +742,6 @@ static void __gsmTask(void *parameter) {
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
 				lastT = curT;
-			}
-			
-			if ((curT - lastTime) >= WATER_LEVEL_UPLOAD_TIME) {
-				unsigned int para, size;
-				const char *date;
-				char buffer[32];
-				para = Rainfall_Read();
-				sprintf(buffer, "_YL%d_",para);
-				date = (const char *)ProtoclQueryMeteTim(buffer, &size);
-				__gsmSendTcpDataLowLevel(date, size);
-				ProtocolDestroyMessage(date);
-				lastTime = curT;
 			}
 		}
 	}

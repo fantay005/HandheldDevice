@@ -5,18 +5,18 @@
 #include "task.h"
 #include "stm32f10x_usart.h"
 #include "stm32f10x_gpio.h"
-#include "misc.h"
+ 
 
 #define UART_TASK_STACK_SIZE		( configMINIMAL_STACK_SIZE + 256 )
-#define UART_GET_DATA_TIME           (configTICK_RATE_HZ * 60 * 15)
+#define UART_GET_DATA_TIME      (configTICK_RATE_HZ * 30)
+#define TERM_UPLOAD_DATA_TIME   (configTICK_RATE_HZ * 60 )
+#include "misc.h" 
 
 static xQueueHandle __uart3Queue;
 
 typedef enum {
-	directionI  = 0x00,
-	directionII,
-	waterLevelI,
-	waterLevelII,
+	direction  = 0x01,
+	waterLevel = 0x03,
 } addressType;
 
 
@@ -25,7 +25,7 @@ typedef struct {
 	unsigned char function;
 	unsigned char origin[2];
 	unsigned char readbyte[2];
-	uint16_t crc;
+	unsigned char crc[2];
 } Info_frame;
 
 static inline void __uart3HardwareInit(void) {
@@ -51,6 +51,13 @@ static inline void __uart3HardwareInit(void) {
 	USART_Init(USART3, &USART_InitStructure);
 	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 	USART_Cmd(USART3, ENABLE);
+	
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_13;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
+	
+	GPIO_ResetBits(GPIOB, GPIO_Pin_13);
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 
@@ -62,10 +69,11 @@ static inline void __uart3HardwareInit(void) {
 }
 
 
-char *Modbusdat (addressType type){
-	uint16_t p;
+char *Modbusdat (addressType type, Info_frame *h){
+	uint16_t p = 0xffff;
 	char i, j;
-	Info_frame *h ;
+	uint8_t tmp;
+	unsigned char *dat;
 	h->station = 0x01;
 	h->function = 0x03;
 	h->origin[0] = 0x00;
@@ -73,9 +81,13 @@ char *Modbusdat (addressType type){
 	h->readbyte[0] = 0x00;
 	h->readbyte[1] = 0x02;
 	
-	unsigned char *dat = (unsigned char *)h;
+	dat = (unsigned char *)h;
+	
 	for(j=0; j<6; j++) {
-		p = 0xffff ^ ((char *)dat++);
+		tmp = p & 0xff;
+		tmp = tmp ^ (*dat++);
+		p = (p & 0xff00) | tmp;
+		
 		for (i=0; i<8; i++) {
 			if (p & 0x01) {
 				p = p >> 1;
@@ -85,8 +97,9 @@ char *Modbusdat (addressType type){
 			}
 		}
 	}
-	h->crc = p;
-	
+	h->crc[0] = p & 0xff;
+	h->crc[1] = p >> 8;	
+	return (char *)h;
 }
 
 void USART3_Send_Byte(unsigned char byte){
@@ -96,31 +109,66 @@ void USART3_Send_Byte(unsigned char byte){
 
 void UART3_Send_Str(unsigned char *s, int size){
     unsigned char i=0; 
-    for(; i < size; ++i) 
+    for(; i < size; i++) 
     {
        USART3_Send_Byte(s[i]); 
     }
 }
 
+static char Buffer[7];
+static int Index = 0;
+static unsigned char KG[2];
+static unsigned char KSW[2];
+
 static void __uart3Task(void *nouse) {
 	portBASE_TYPE rc;
 	char *msg;
-	static portTickType lastTDAT = 0;
-
+	static portTickType lastTDAT = 0, lastTime;
+	Info_frame frame;
 	__uart3Queue = xQueueCreate(3, sizeof(char *));
 	while (1) {
 		rc = xQueueReceive(__uart3Queue, &msg, configTICK_RATE_HZ * 5);
 		if (rc == pdTRUE) {
-		    int size;
-			const char *dat = (const char *)ProtoclQueryMeteTim(msg, &size);
-		    GsmTaskSendTcpData(dat, size);
-			vPortFree(msg);
+			if(Buffer[2] = direction){
+				KG[0] = Buffer[3];
+				KG[1] = Buffer[4];
+			} else if (Buffer[2] = waterLevel){
+				KSW[0] = Buffer[3];
+				KSW[1] = Buffer[4];
+			}
 		} else {
 		    portTickType curT; 
-			curT = xTaskGetTickCount();
+			  curT = xTaskGetTickCount();
 		  	if ((curT - lastTDAT) >= UART_GET_DATA_TIME){
-				UART3_Send_Str("QT\r", 3);
+				unsigned char *dat = Modbusdat(direction, &frame);
+				GPIO_SetBits(GPIOB, GPIO_Pin_13);
+					vTaskDelay(configTICK_RATE_HZ / 500);
+				UART3_Send_Str(dat, 9);
+				GPIO_ResetBits(GPIOB, GPIO_Pin_13);
+				vTaskDelay(configTICK_RATE_HZ / 5);
+				GPIO_SetBits(GPIOB, GPIO_Pin_13);
+					vTaskDelay(configTICK_RATE_HZ / 500);
+					
+			  dat = Modbusdat(waterLevel, &frame);
+     		UART3_Send_Str(dat, 9);
+				GPIO_ResetBits(GPIOB, GPIO_Pin_13);
+				vTaskDelay(configTICK_RATE_HZ / 500);
 				lastTDAT = curT;
+			}
+			
+			if((curT - lastTime) >= TERM_UPLOAD_DATA_TIME){
+				uint16_t m, n;
+				int size;
+				char *buf = pvPortMalloc(16);
+				const char *dat;
+				m = KG[0] << 8 + KG[1];
+				n = KSW[0] << 8 + KSW[1];
+				sprintf(buf, "_KG%d_KSW%d", m, n);
+				dat = (const char *)ProtoclQueryMeteTim(buf, &size);
+				__gsmSendTcpDataLowLevel(dat, size);
+				ProtocolDestroyMessage(dat);
+				vPortFree((void *)buf);
+				lastTime = curT;
 			}
 		}
 	}
@@ -132,33 +180,29 @@ static uint8_t *__uart3CreateMessage(const uint8_t *dat, int len) {
 	return r;
 }
 
-static char Buffer[210];
 
 void USART3_IRQHandler(void)
-{
-    static int Index = 0, Hot = 0, Sensor = 0;
+{ 
 	uint8_t dat;
 	if (USART_GetITStatus(USART3, USART_IT_RXNE) != RESET) {
 		dat = USART_ReceiveData(USART3);
 		USART_SendData(USART1, dat);
 		USART_ClearITPendingBit(USART3, USART_IT_RXNE);
-		if ((dat == '\r' || dat == '\n') && (Sensor == 1)) {
-		  
+		if (Index >= 6) {		  
 			uint8_t *msg;
 			portBASE_TYPE xHigherPriorityTaskWoken;
-			Buffer[Index++] = 0;
+			Buffer[Index++] = dat;
 			msg = __uart3CreateMessage(Buffer, Index);		
 			if (pdTRUE == xQueueSendFromISR(__uart3Queue, &msg, &xHigherPriorityTaskWoken)) {
 				if (xHigherPriorityTaskWoken) {
 					portYIELD();
 				}
 			}
-		} 
+			Index = 0;
+		} else {
+			Buffer[Index++] = dat;
+		}
 	}
-}
-
-char *sensordat(void){
-	 return &Buffer[0];
 }
 
 static inline void __uart3CreateTask(void) {

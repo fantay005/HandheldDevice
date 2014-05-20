@@ -103,11 +103,11 @@ char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int
 	{
 		ProtocolHeader *h = (ProtocolHeader *)ret;
 		h->header[0] = '#';
-		h->header[1] = 'W';
-		h->lenH = 'A';
-		h->lenL = 'T';
-		h->type = 'E';
-		h->class = 'R';
+		h->header[1] = 'C';
+		h->lenH = 'H';
+		h->lenL = 'A';
+		h->type = 'N';
+		h->class = 'G';
 		h->radom = 0x3231;
 		h->reserve = 0x3433;
 	}

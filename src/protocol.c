@@ -282,10 +282,16 @@ void HandleRecoverFactory(ProtocolHeader *header, char *p) {
 	GsmTaskSendTcpData(p, len);
 	ProtocolDestroyMessage(p);
 }
+extern char *current(char *p);
 
-void HandleBasicParameter(ProtocolHeader *header, char *p) {
-
-	ProtocolDestroyMessage(p);
+void HandleBasicParameter(void) {
+	int size;
+	char *p;
+	const char *dat;
+	dat = (const char *)ProtoclQueryMeteTim(current(p), &size);
+	__gsmSendTcpDataLowLevel(dat, size);
+	ProtocolDestroyMessage(dat);
+	vPortFree((void *)p);
 }
 
 void HandleCoordinate(ProtocolHeader *header, char *p) {
@@ -348,7 +354,7 @@ void ProtocolHandler(char *p) {
 //		{'2', '6', HandleSendSMS},
 //		{'2', '7', HandleRestart},
 //		{'2', '8', HandleRecoverFactory},
-//		{'3', '1', HandleBasicParameter},
+		{'3', '1', HandleBasicParameter},
 //		{'3', '2', HandleCoordinate},
 //		{'4', '1', HandleRecordMP3},
 //		{'4', '2', HandleSMSPromptSound},

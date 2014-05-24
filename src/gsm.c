@@ -158,6 +158,7 @@ bool GsmTaskSendTcpData(const char *dat, int len) {
 
 static void __gsmInitUsart(int baud) {
 	USART_InitTypeDef USART_InitStructure;
+	
 	USART_InitStructure.USART_BaudRate = baud;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
@@ -165,10 +166,10 @@ static void __gsmInitUsart(int baud) {
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	USART_Init(USART3, &USART_InitStructure);
-	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
-	USART_Cmd(USART3, ENABLE);
 	
-	USART_SendData(USART3, 0x55);//向外发数据
+	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+	
+	USART_Cmd(USART3, ENABLE);
 }
 
 /// Init the CPU on chip hardware for the GSM modem.
@@ -218,7 +219,7 @@ static void __gsmInitHardware(void) {
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 }

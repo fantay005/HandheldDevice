@@ -570,12 +570,6 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
 #endif
 
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-	{"<1>", __cmd_RED_Display, UP_ALL},
-	{"<2>", __cmd_GREEN_Display, UP_ALL},
-	{"<3>", __cmd_YELLOW_Display, UP_ALL},
-#endif
-
 	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{NULL, NULL}
 };

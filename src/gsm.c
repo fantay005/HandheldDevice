@@ -19,7 +19,6 @@
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
-#define GSM_GPRS_SEND_DATA_TIME      (configTICK_RATE_HZ * 60 * 2)
 #define GSM_IMEI_LENGTH              15
 
 #define RESET_GPIO_GROUP           GPIOG

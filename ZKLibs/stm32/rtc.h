@@ -11,5 +11,6 @@ bool RtcWaitForSecondInterruptOccured(uint32_t time);
 static inline uint32_t RtcGetTime(void) {
 	return RTC_GetCounter();
 }
+void get_fattime(void);
 
 #endif

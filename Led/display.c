@@ -246,9 +246,6 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 		if (y == yorg){
 			__displayCurrentPoint = __displayMessage;
 		}
-//		if (yorg >= LED_VIR_DOT_HEIGHT) {
-//			yorg -= LED_VIR_DOT_HEIGHT;
-//		}		
 	}
 	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
@@ -259,13 +256,7 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	} else {
 		dy = y - yorg;
 	}
-//
-//	if (x < xorg) {
-//		if ((LED_VIR_DOT_WIDTH - xorg + x) < 96) return;
-//		dx = 96;
-//	} else {
-//		dx = x - xorg;
-//	}
+
 
 	tmp = LedDisplayGB2312String32ScrollUp(0, &yorg, dy, __displayCurrentPoint);
 	if (tmp == __displayCurrentPoint) {
@@ -304,22 +295,6 @@ void DisplayClear(void) {
 }
 #endif
 
-#if defined(__LED_HUAIBEI__)
-void DisplayClear(void) {
-	LedDisplayClearAll();
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-}
-
-void Display2Clear(void) {
-	char clear[24];
-	int i;
-	for (i = 0; i < 24; i++) {
-		clear[i] = ' ';
-	}
-	LedDisplayGB2312String162(0, 0, (const uint8_t *)clear);
-	LedDisplayToScan2(2 * 4, 0, LED_DOT_XEND, LED_DOT_YEND);
-}
-#endif
 
 #if defined(__LED_LIXIN__)
 void DisplayTask(void *helloString) {
@@ -353,49 +328,6 @@ void DisplayTask(void *helloString) {
 			}
 		} else {
 				__displayMessageLowlevel();
-		}
-	}
-}
-
-#endif
-
-#if defined(__LED_HUAIBEI__)
-void DisplayTask(void *helloString) {
-	portBASE_TYPE rc;
-	DisplayTaskMessage msg;
-
-	printf("DisplayTask: start-> %s\n", (const char *)helloString);
-	__displayQueue = xQueueCreate(5, sizeof(DisplayTaskMessage));
-	{
-		const char *p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
-		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-			host = p;
-		} else if (isAsciiStart(p[0])) {
-			host = p;
-		}
-		p = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
-		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-			assistant = p;
-		} else if (isAsciiStart(p[0])) {
-			assistant = p;
-		}
-	}
-	LedScanOnOff(1);
-	while (1) {
-		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
-		if (rc == pdTRUE) {
-			int i;
-			for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
-				if (__messageHandlerFunctions[i].cmd == msg.cmd) {
-					__messageHandlerFunctions[i].handlerFunc(&msg);
-					if (__messageHandlerFunctions[i].destroyFunc != NULL) {
-						__messageHandlerFunctions[i].destroyFunc(&msg);
-					}
-					break;
-				}
-			}
-		} else {
-//			__displayMessageLowlevel();
 		}
 	}
 }

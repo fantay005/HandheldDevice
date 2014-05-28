@@ -517,6 +517,11 @@ static void __cmd_A_Handler(const SMSInfo *sms) {
 	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 }
 
+static void __cmd_FORECAST_Handler(const SMSInfo *sms) {
+		const char *pcontent = sms->content;
+    MessDisplay((char *)&pcontent[3]);
+}
+
 static void __cmd_VERSION_Handler(const SMSInfo *sms) {
 	const char *version = Version();
 	// send this string to sms->number;
@@ -566,10 +571,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
 	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#endif
-
+  {"<2>", __cmd_FORECAST_Handler, UP_ALL},
 	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{NULL, NULL}
 };

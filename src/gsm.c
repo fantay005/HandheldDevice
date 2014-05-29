@@ -19,7 +19,7 @@
 
 
 #define GSM_TASK_STACK_SIZE			      (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME      (configTICK_RATE_HZ * 60 * 5)
+#define GSM_GPRS_HEART_BEAT_TIME      (configTICK_RATE_HZ * 270)
 #define GSM_IMEI_LENGTH                15
 
 
@@ -736,13 +736,13 @@ static void __gsmTask(void *parameter) {
 				printf("Gsm: Connect TCP error\n");
 			}
 																		
-			if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
-				int size;
-				const char *dat = ProtoclCreateHeartBeat(&size);
-				__gsmSendTcpDataLowLevel(dat, size);
-				ProtocolDestroyMessage(dat);
-				lastT = curT;
-			}
+// 			if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
+// 				int size;
+// 				const char *dat = ProtoclCreateHeartBeat(&size);
+// 				__gsmSendTcpDataLowLevel(dat, size);
+// 				ProtocolDestroyMessage(dat);
+// 				lastT = curT;
+//			}
 		}
 	}
 }

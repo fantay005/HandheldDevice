@@ -9,7 +9,7 @@
 
 #define UART_TASK_STACK_SIZE		( configMINIMAL_STACK_SIZE + 256 )
 #define UART_GET_DATA_TIME      (configTICK_RATE_HZ * 30)
-#define TERM_UPLOAD_DATA_TIME   (configTICK_RATE_HZ * 60 * 60)
+#define TERM_UPLOAD_DATA_TIME   (configTICK_RATE_HZ * 60 * 5)
 #include "misc.h" 
 
 static xQueueHandle __uart3Queue;
@@ -108,11 +108,14 @@ void USART3_Send_Byte(unsigned char byte){
 }
 
 void UART3_Send_Str(unsigned char *s, int size){
+	
     unsigned char i=0; 
-    for(; i < size; i++) 
+
+	for(; i < size; i++) 
     {
        USART3_Send_Byte(s[i]); 
     }
+	USART3_Send_Byte(0X00);
 }
 
 static char Buffer[7];
@@ -128,7 +131,7 @@ static void __uart3Task(void *nouse) {
 	Info_frame frame;
 	__uart3Queue = xQueueCreate(3, sizeof(char *));
 	while (1) {
-		rc = xQueueReceive(__uart3Queue, &msg, configTICK_RATE_HZ * 5);
+		rc = xQueueReceive(__uart3Queue, &msg, configTICK_RATE_HZ * 2);
 		if (rc == pdTRUE) {
 		
 		} else {
@@ -137,19 +140,18 @@ static void __uart3Task(void *nouse) {
 		  	if ((curT - lastTDAT) >= UART_GET_DATA_TIME){
 				unsigned char *dat = Modbusdat(direction, &frame);
 				GPIO_SetBits(GPIOB, GPIO_Pin_13);
-				vTaskDelay(configTICK_RATE_HZ / 500);
+				vTaskDelay(configTICK_RATE_HZ / 100);
 	      flag = 1;
-				UART3_Send_Str(dat, 9);
+				UART3_Send_Str(dat, 8);
 				GPIO_ResetBits(GPIOB, GPIO_Pin_13);
-				vTaskDelay(configTICK_RATE_HZ * 5);
+				vTaskDelay(configTICK_RATE_HZ / 5);
 				GPIO_SetBits(GPIOB, GPIO_Pin_13);
-					vTaskDelay(configTICK_RATE_HZ / 500);
+				vTaskDelay(configTICK_RATE_HZ / 100);
 					
 			  dat = Modbusdat(waterLevel, &frame);
 				flag = 2;
-     		UART3_Send_Str(dat, 9);
+     		UART3_Send_Str(dat, 8);
 				GPIO_ResetBits(GPIOB, GPIO_Pin_13);
-				vTaskDelay(configTICK_RATE_HZ / 500);
 				lastTDAT = curT;
 			}
 			
@@ -160,7 +162,7 @@ static void __uart3Task(void *nouse) {
 				const char *dat;
 				m = (KG[0] << 8) + KG[1];
 				n = (KSW[0] << 8) + KSW[1];
-				sprintf(buf, "_KGH%d_KSWH%d", m, n);
+				sprintf(buf, "_KGF%d_KSWF%d", m, n);
 				dat = (const char *)ProtoclQueryMeteTim(buf, &size);
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
@@ -204,7 +206,19 @@ void USART3_IRQHandler(void)
 			}
 			Index = 0;
 		} else {
-			Buffer[Index++] = dat;
+			if(Index == 0) {
+				if(dat == 0x01) {
+			    Buffer[Index++] = dat;
+				}
+			} else if (Index == 1) {
+				if(dat == 0x03) {
+			    Buffer[Index++] = dat;
+				} else {
+					Index = 0;
+				}
+			} else {
+				Buffer[Index++] = dat;
+			}
 		}
 	}
 }

@@ -124,6 +124,15 @@ static char flag = 0;
 static unsigned char KG[2];
 static unsigned char KSW[2];
 
+char *reservoir(char *dat){
+  uint16_t i, j;
+	dat = pvPortMalloc(20);
+
+	i = (KG[0] << 8) + KG[1];
+	j = (KSW[0] << 8) + KSW[1];
+	sprintf(dat, "KG%dKSW%d", i, j);
+	return dat;
+}
 static void __uart3Task(void *nouse) {
 	portBASE_TYPE rc;
 	char *msg;
@@ -162,7 +171,7 @@ static void __uart3Task(void *nouse) {
 				const char *dat;
 				m = (KG[0] << 8) + KG[1];
 				n = (KSW[0] << 8) + KSW[1];
-				sprintf(buf, "_KGF%d_KSWF%d", m, n);
+				sprintf(buf, "_KGI%d_KSWI%d", m, n);
 				dat = (const char *)ProtoclQueryMeteTim(buf, &size);
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
@@ -212,6 +221,12 @@ void USART3_IRQHandler(void)
 				}
 			} else if (Index == 1) {
 				if(dat == 0x03) {
+			    Buffer[Index++] = dat;
+				} else {
+					Index = 0;
+				}
+			} else if (Index == 2) {
+				if(dat == 0x02) {
 			    Buffer[Index++] = dat;
 				} else {
 					Index = 0;

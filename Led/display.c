@@ -26,15 +26,7 @@
 #define	MSG_DATA_DISPLAY_CONTROL_OFF 0
 #define	MSG_DATA_DISPLAY_CONTROL_ON 1
 
-#if defined(__LED_HUAIBEI__)
 static const char *host = "安徽气象欢迎您！";
-static const char *assistant = "淮北气象三农服务";
-#endif
-
-
-#if defined(__LED_LIXIN__)
-static const char *host = "安徽气象欢迎您！";
-#endif
 
 typedef struct {
 	uint32_t cmd;
@@ -352,12 +344,6 @@ void DisplayTask(void *helloString) {
 			host = p;
 		} else if (isAsciiStart(p[0])) {
 			host = p;
-		}
-		p = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
-		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-			assistant = p;
-		} else if (isAsciiStart(p[0])) {
-			assistant = p;
 		}
 	}
 	MessDisplay((char *)host);

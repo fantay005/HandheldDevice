@@ -8,6 +8,7 @@
 #include "second_datetime.h"
 #include "unicode2gbk.h"
 #include "softpwm_led.h"
+#include "norflash.h"
 
 #define SHT_TASK_STACK_SIZE	( configMINIMAL_STACK_SIZE + 64 )
 
@@ -30,7 +31,6 @@
 static void __ledTestTask(void *nouse) {
 	int temp;
 	int humi;
-	enum SoftPWNLedColor color;
 	uint32_t second;
 	DateTime dateTime;
 //	static const char *const weekDayStringTable[] = {
@@ -77,15 +77,22 @@ static void __ledTestTask(void *nouse) {
 				vTaskDelay(configTICK_RATE_HZ * 5);
 	      NVIC_SystemReset();
 		}
-#if defined(__LED_HUAIBEI__)
-		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.minute == 0x00)) {
-			color = SoftPWNLedColorNULL;
-			SoftPWNLedSetColor(color);
-			LedDisplayGB2312String162(2 * 4, 0, "淮北气象三农服务");
-			LedDisplayToScan2(16 * 4, 0, 16 * 12 - 1, 15);
-			__storeSMS2("淮北气象三农服务");
+
+		if ((dateTime.hour == 0x01) && (dateTime.minute == 0x00) && (dateTime.minute == 0x00) && (dateTime.second == 0x00)) {
+				FSMC_NOR_EraseSector(SMS2_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 10);
+				FSMC_NOR_EraseSector(SMS3_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 10);
+				FSMC_NOR_EraseSector(SMS4_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 10);
+				FSMC_NOR_EraseSector(SMS5_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 10);
+				FSMC_NOR_EraseSector(SMS6_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 10);
+				FSMC_NOR_EraseSector(SMS7_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 10);
 		}
-#endif
+
 	}
 }
 

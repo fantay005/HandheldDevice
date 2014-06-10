@@ -22,6 +22,10 @@
 #include "gsm.h"
 
 
+static xQueueHandle __smsQueue;
+
+#define SMS_TASK_STACK_SIZE			configMINIMAL_STACK_SIZE
+
 typedef struct {
 	char user[6][12];
 } USERParam;
@@ -38,6 +42,25 @@ void __storeSMS2(const char *sms) {
 	NorFlashWrite(SMS2_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
 }
 
+void __storeSMS3(const char *sms) {
+	NorFlashWrite(SMS3_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS4(const char *sms) {
+	NorFlashWrite(SMS4_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS5(const char *sms) {
+	NorFlashWrite(SMS5_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS6(const char *sms) {
+	NorFlashWrite(SMS6_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS7(const char *sms) {
+	NorFlashWrite(SMS7_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
 
 static inline bool __isValidUser(const char *p) {
 	int i;
@@ -374,85 +397,25 @@ static void __cmd_UPDATA_Handler(const SMSInfo *p) {
 	vPortFree(mark);
 }
 
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-static void __cmd_ALARM_Handler(const SMSInfo *p) {
-	const char *pcontent = p->content;
-	enum SoftPWNLedColor color;
-	switch (pcontent[7]) {
-	case '3':
-		color = SoftPWNLedColorYellow;
-		break;
-	case '2':
-		color = SoftPWNLedColorOrange;
-		break;
-	case '4':
-		color = SoftPWNLedColorBlue;
-		break;
-	case '1':
-		color = SoftPWNLedColorRed;
-		break;
-	default :
-		color =	SoftPWNLedColorNULL;
-		break;
-	}
-	Display2Clear();
-	SoftPWNLedSetColor(color);
-	LedDisplayGB2312String162(2 * 4, 0, &pcontent[8]);
-	LedDisplayToScan2(2 * 4, 0, 16 * 12 - 1, 15);
-	__storeSMS2((char *)&pcontent[8]);
-}
-#endif
-
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-
-static void __cmd_RED_Display(const SMSInfo *sms) {
+static void __cmd_SMS_Handler(const SMSInfo *sms) {
 	const char *pcontent = sms->content;
 	int plen = sms->contentLen;
-
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[2], (plen - 2));
-		XfsTaskSpeakUCS2(&pcontent[2], (plen - 2));
-		DisplayMessageRed(gbk);
-		Unicode2GBKDestroy(gbk);
-	} else {
-		XfsTaskSpeakGBK(&pcontent[1], (plen - 1));
-		DisplayMessageRed(&pcontent[1]);
+	if(pcontent[1] == 0x31){
+		__storeSMS2(&pcontent[3]);
+	} else if (pcontent[1] == 0x32){
+		__storeSMS3(&pcontent[3]);
+	} else if (pcontent[1] == 0x33){
+		__storeSMS4(&pcontent[3]);
+	} else if (pcontent[1] == 0x34){
+		__storeSMS5(&pcontent[3]);
+	} else if (pcontent[1] == 0x35){
+		__storeSMS6(&pcontent[3]);
+	} else if (pcontent[1] == 0x36){
+		__storeSMS7(&pcontent[3]);
 	}
+	SMS_Prompt();
+	MessDisplay((char *)&pcontent[3]);
 }
-
-static void __cmd_GREEN_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[2], (plen - 2));
-		XfsTaskSpeakUCS2(&pcontent[2], (plen - 2));
-		DisplayMessageGreen(gbk);
-		Unicode2GBKDestroy(gbk);
-	} else {
-		XfsTaskSpeakGBK(&pcontent[1], (plen - 1));
-		DisplayMessageGreen(&pcontent[1]);
-
-	}
-}
-
-static void __cmd_YELLOW_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[2], (plen - 2));
-		XfsTaskSpeakUCS2(&pcontent[2], (plen - 2));
-		DisplayMessageYELLOW(gbk);
-		Unicode2GBKDestroy(gbk);
-	} else {
-		XfsTaskSpeakGBK(&pcontent[1], (plen - 1));
-		DisplayMessageYELLOW(&pcontent[1]);
-	}
-}
-
-#endif
 
 #if defined (__LED__)
 static void __cmd_A_Handler(const SMSInfo *sms) {
@@ -541,8 +504,13 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<RST>", __cmd_RST_Handler, UP_ALL},
 	{"<TEST>", __cmd_TEST_Handler, UP_ALL},
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
+	{"<1>", __cmd_SMS_Handler, UP_ALL},
+  {"<2>", __cmd_SMS_Handler, UP_ALL},
+	{"<3>", __cmd_SMS_Handler, UP_ALL},
+	{"<4>", __cmd_SMS_Handler, UP_ALL},
+	{"<5>", __cmd_SMS_Handler, UP_ALL},
+	{"<6>", __cmd_SMS_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
-
 	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
 
 
@@ -589,3 +557,119 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 
 }
 
+static char n = 1;
+
+static void __smsTask(void *nouse) {
+	portBASE_TYPE rc;
+	char *msg;
+
+	__smsQueue = xQueueCreate(3, sizeof(char *));
+	while (1) {
+		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 30);
+		if (rc == pdTRUE) {
+		} else {
+			
+			if(n > 7){
+				n = 1;
+			}
+			
+			if (n == 1) {
+				const char *messageA = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);				
+				char * p = pvPortMalloc(strlen(messageA) + 1);
+				strcpy(p, messageA);
+				if (p[0] == 0xff) {
+					n = 2;
+					vPortFree(p);
+				} else {			
+					MessDisplay(p);
+					vPortFree(p);
+				}
+			} 
+			
+			if (n == 2) {
+				const char *messageB = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
+				char * v = pvPortMalloc(strlen(messageB) + 1);
+				strcpy(v, messageB);
+				if (v[0] == 0xff) {
+					n = 3;
+					vPortFree(v);
+				} else {
+					MessDisplay(v);
+					vPortFree(v);
+				}
+			} 
+			
+			if (n == 3) {
+				const char *messageC = (const char *)(Bank1_NOR2_ADDR + SMS3_PARAM_STORE_ADDR);
+				char * t = pvPortMalloc(strlen(messageC) + 1);
+				strcpy(t, messageC);
+				if (t[0] == 0xff) {
+					n = 4;
+					vPortFree(t);
+				} else {
+					MessDisplay(t);
+					vPortFree(t);
+				}
+			} 
+			
+			if (n == 4) {
+				const char *messageD = (const char *)(Bank1_NOR2_ADDR + SMS4_PARAM_STORE_ADDR);
+				char * q = pvPortMalloc(strlen(messageD) + 1);
+				strcpy(q, messageD);
+				if (q[0] == 0xff) {
+					n = 5;
+					vPortFree(q);
+				} else {
+					MessDisplay(q);
+					vPortFree(q);
+				}
+			} 
+
+			if (n == 5) {
+				const char *messageE = (const char *)(Bank1_NOR2_ADDR + SMS5_PARAM_STORE_ADDR);
+				char * h = pvPortMalloc(strlen(messageE) + 1);
+				strcpy(h, messageE);
+				if (h[0] == 0xff) {
+					n = 6;
+					vPortFree(h);
+				} else {
+					MessDisplay(h);
+					vPortFree(h);
+				}
+			} 
+			
+			if (n == 6) {
+				const char *messageF = (const char *)(Bank1_NOR2_ADDR + SMS6_PARAM_STORE_ADDR);
+				char * m = pvPortMalloc(strlen(messageF) + 1);
+				strcpy(m, messageF);
+				if (m[0] == 0xff) {
+					n = 7;
+					vPortFree(m);
+				} else {
+					MessDisplay(m);
+					vPortFree(m);
+				}
+			} 
+
+			if (n == 7) {
+				const char *messageG = (const char *)(Bank1_NOR2_ADDR + SMS7_PARAM_STORE_ADDR);
+				char * k = pvPortMalloc(strlen(messageG) + 1);
+				strcpy(k, messageG);
+				if (k[0] == 0xff) {
+					vPortFree(k);
+					n++;
+					continue;
+				} else {
+					MessDisplay(k);
+					vPortFree(k);
+				}
+			}
+			
+			n++;
+		}
+	}
+}
+
+ void __smsCreateTask(void) {
+	xTaskCreate(__smsTask, (signed portCHAR *) "SMS", SMS_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+}

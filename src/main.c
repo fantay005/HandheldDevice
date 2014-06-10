@@ -76,6 +76,7 @@ extern void RecoveryInit(void);
 extern void NorFlashInit(void);
 extern void WatchdogInit(void);
 extern void SoftPWMLedInit(void);
+extern void __smsCreateTask(void);
 
 int main(void) {
 	PreSetupHardware();
@@ -95,6 +96,8 @@ int main(void) {
 	SevenSegLedInit();
 	SHT10TestInit();
 #endif
+	
+	__smsCreateTask();
 
 	printf("\n==============================\n");
 	printf("%s", Version());

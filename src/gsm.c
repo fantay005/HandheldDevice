@@ -440,6 +440,10 @@ bool __gsmInitRuntime() {
 		__gsmInitUsart(bauds[i]);
 		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
 		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
 
 		if (ATCommandAndCheckReply("ATE0\r", "OK", configTICK_RATE_HZ)) {
 			break;

@@ -198,11 +198,11 @@ typedef struct       /* Card Specific Data */
   __IO uint8_t  ECC;                  /* ECC code */
   __IO uint8_t  CSD_CRC;              /* CSD CRC */
   __IO uint8_t  Reserved4;            /* always 1*/
-} SD_CSD;
+} SD_CSD;                             /*卡描述数据:卡操作条件相关的信息数据*/
 
 typedef struct      /*Card Identification Data*/
 {
-  __IO uint8_t  ManufacturerID;       /* ManufacturerID */
+  __IO uint8_t  ManufacturerID;       /* ManufacturerID */    /*制造厂商ID*/
   __IO uint16_t OEM_AppliID;          /* OEM/Application ID */
   __IO uint32_t ProdName1;            /* Product Name part1 */
   __IO uint8_t  ProdName2;            /* Product Name part2*/
@@ -216,11 +216,11 @@ typedef struct      /*Card Identification Data*/
 
 typedef struct
 {
-  SD_CSD SD_csd;
-  SD_CID SD_cid;
-  uint32_t CardCapacity; /* Card Capacity */
-  uint32_t CardBlockSize; /* Card Block Size */
-  uint16_t RCA;
+  SD_CSD SD_csd;        /*卡的具体位置*/
+  SD_CID SD_cid;        /*存储卡标识数据*/
+  uint32_t CardCapacity; /* Card Capacity */      /*卡片容量*/
+  uint32_t CardBlockSize; /* Card Block Size */   /*卡的块大小*/
+  uint16_t RCA;           /*相对卡地址（Relative card address）寄存器*/
   uint8_t CardType;
 } SD_CardInfo;
 

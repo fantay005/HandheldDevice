@@ -65,13 +65,9 @@ static void PreSetupHardware(void) {
 
 extern void UartDebugInit(void);
 extern void RtcInit(void);
-
-
 extern void GSMInit(void);
-
-
 extern void WatchdogInit(void);
-
+extern void SDInit(void);
 
 int main(void) {
 	PreSetupHardware();
@@ -80,7 +76,7 @@ int main(void) {
 //	WatchdogInit();
 
 	GSMInit();
-
+  SDInit();
 	printf("\n==============================\n");
 	printf("%s", Version());
 	printf("\n==============================\n");

@@ -24,6 +24,16 @@
 #include "integer.h"
 #include "diskio.h"	
 
+#include <stdio.h>
+#include "FreeRTOS.h"
+#include "queue.h"
+#include "task.h"
+
+
+#define SD_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE + 512)
+
+static xQueueHandle __SDqueue;
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 #define NULL 0
@@ -2870,8 +2880,7 @@ static void GPIO_Configuration(void)
   GPIO_InitTypeDef  GPIO_InitStructure;
 
   /* GPIOC and GPIOD Periph clock enable */
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD, ENABLE);
-
+	
   /* Configure PC.08, PC.09, PC.10, PC.11, PC.12 pin: D0, D1, D2, D3, CLK pin */
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11 | GPIO_Pin_12;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -2953,4 +2962,40 @@ static void DMA_RxConfiguration(uint32_t *BufferDST, uint32_t BufferSize)
   DMA_Cmd(DMA2_Channel4, ENABLE);
 }
 
-/*********** (C) COPYRIGHT 2009 STMicroelectronics *****END OF FILE****/
+/*********** (C) COPYRIGHT 2009 STMicroelectronics *****END OF *******/
+
+SD_CardInfo  SDCardInfo;
+SD_CID SD_cid;
+
+static void __sdTask(void *parameter) {
+  SD_Error Status;
+	portBASE_TYPE rc;
+	char *message;
+	Status = SD_Init();
+	
+	if(Status == SD_OK) {
+	  printf("SD Init OK.\r");
+		SD_GetCardInfo(&SDCardInfo);
+	} else {
+		printf("SD Init ERROR.\r");
+	}
+	
+	printf("CardType is : %d.\r", SDCardInfo.CardType);
+	printf("CardCapacity is : %d.\r", SDCardInfo.CardCapacity);
+	printf("CardBlockSize is : %d.\r", SDCardInfo.CardBlockSize);
+	printf("CardRCA is : %d.\r", SDCardInfo.RCA);
+	printf("ManufacturerID is : %d.\r", SD_cid.ManufacturerID);
+	for (;;) {
+		rc = xQueueReceive(__SDqueue, &message, configTICK_RATE_HZ * 10);
+		if (rc == pdTRUE) {
+		}
+	}
+}
+
+void SDInit(void) {
+// 	DMA_TxConfiguration();
+// 	DMA_RxConfiguration();
+	__SDqueue = xQueueCreate(3, sizeof(char *));
+	xTaskCreate(__sdTask, (signed portCHAR *) "SD", SD_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 8, NULL);
+}
+

@@ -230,16 +230,16 @@ static void __initHardware() {
 	USART_InitTypeDef   USART_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	GPIO_PinRemapConfig(GPIO_PartialRemap_USART3, ENABLE);
+//	GPIO_PinRemapConfig(GPIO_PartialRemap_USART3, ENABLE);
 
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_10;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
+	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_11;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);					//讯飞语音模块的串口
+	GPIO_Init(GPIOB, &GPIO_InitStructure);					//讯飞语音模块的串口
 
 	USART_InitStructure.USART_BaudRate = 9600;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -251,7 +251,6 @@ static void __initHardware() {
 	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 	USART_Cmd(USART3, ENABLE);
 
-#if defined(__SPEAKER__)
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_7;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
@@ -260,7 +259,6 @@ static void __initHardware() {
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);					  //讯飞语音模块的RDY
-#endif
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;

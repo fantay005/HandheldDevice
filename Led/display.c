@@ -82,39 +82,12 @@ void DisplayMessageRed(const char *message) {
 	}
 }
 
-void DisplayMessageGreen(const char *message) {
-	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
-	DisplayTaskMessage msg;
-	strcpy(p, message);
-	strcat(p, __message_space);
-	msg.cmd = MSG_CMD_DISPLAY_MESSAGE_GREEN;
-	msg.data.pointData = p;
-
-	if (pdTRUE != xQueueSend(__displayQueue, &msg, configTICK_RATE_HZ)) {
-		vPortFree(p);
-	}
-}
-
 void DisplayScrollNotify(int x) {
 	DisplayTaskMessage msg;
 	msg.cmd = MSG_CMD_DISPLAY_SCROLL_NOTIFY;
 	msg.data.wordData = x;
 	xQueueSend(__displayQueue, &msg, configTICK_RATE_HZ);
 }
-
-void DisplayMessageYELLOW(const char *message) {
-	char *p = pvPortMalloc(strlen(message) + 1 + strlen(__message_space));
-	DisplayTaskMessage msg;
-	strcpy(p, message);
-	strcat(p, __message_space);
-	msg.cmd = MSG_CMD_DISPLAY_MESSAGE_YELLOW;
-	msg.data.pointData = p;
-
-	if (pdTRUE != xQueueSend(__displayQueue, &msg, configTICK_RATE_HZ)) {
-		vPortFree(p);
-	}
-}
-
 
 void DisplayOnOff(int isOn) {
 	DisplayTaskMessage msg;
@@ -143,30 +116,6 @@ void __displayMessageLowlevel(void) {
 	}
 	__displayCurrentPoint = tmp;
 	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
-}
-#endif
-
-#if defined(__LED_HUAIBEI__)
-void __displayMessageLowlevel(void) {
-	const uint8_t *tmp;
-	if (__displayMessage == NULL) {
-		return;
-	}
-	if (__displayCurrentPoint == NULL) {
-		__displayCurrentPoint = __displayMessage;
-	}
-	LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT / 2 - 1);
-	LedDisplayClear(0, LED_DOT_HEIGHT / 2, LED_DOT_XEND, LED_DOT_HEIGHT - 1);
-	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String16(0, 0, __displayCurrentPoint);
-	}
-
-//	if (__displayMessageColor & 2) {
-//		tmp = LedDisplayGB2312String16(0, 4, __displayCurrentPoint);
-//	}
-	__displayCurrentPoint = tmp;
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-
 }
 #endif
 
@@ -205,27 +154,6 @@ void __handlerDisplayMessageRed(DisplayTaskMessage *msg) {
 	//__displayMessageLowlevel();
 }
 
-void __handlerDisplayMessageGreen(DisplayTaskMessage *msg) {
-	if (__displayMessage) {
-		vPortFree((void *)__displayMessage);
-	}
-	__displayMessage = msg->data.pointData;
-	__displayCurrentPoint = __displayMessage;
-	__displayMessageColor = 2;
-	DisplayClear();
-	//__displayMessageLowlevel();
-}
-
-void __handlerDisplayMessageYellow(DisplayTaskMessage *msg) {
-	if (__displayMessage) {
-		vPortFree((void *)__displayMessage);
-	}
-	__displayMessage = msg->data.pointData;
-	__displayCurrentPoint = __displayMessage;
-	__displayMessageColor = 3;
-	DisplayClear();
-//	__displayMessageLowlevel();
-}
 const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, const unsigned char *gbString);
 
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
@@ -280,8 +208,6 @@ static const struct {
 
 #if defined(__LED_LIXIN__)
 	{ MSG_CMD_DISPLAY_MESSAGE_RED, __handlerDisplayMessageRed, NULL },
-	{ MSG_CMD_DISPLAY_MESSAGE_GREEN, __handlerDisplayMessageGreen, NULL },
-	{ MSG_CMD_DISPLAY_MESSAGE_YELLOW, __handlerDisplayMessageYellow, NULL },
 	{ MSG_CMD_DISPLAY_SCROLL_NOTIFY, __handlerDisplayScrollNotify, NULL },
 #endif
 
@@ -303,7 +229,7 @@ void DisplayTask(void *helloString) {
 	const char *p;
 
 //	printf("DisplayTask: start-> %s\n", (const char *)helloString);
-	__displayQueue = xQueueCreate(5, sizeof(DisplayTaskMessage));
+	__displayQueue = xQueueCreate(8, sizeof(DisplayTaskMessage));
 	p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
 	if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
 		host = p;
@@ -314,7 +240,7 @@ void DisplayTask(void *helloString) {
 	DisplayMessageRed((char*)host);
 	ScrollDisplayInit();
 	while (1) {
-		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
+		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 10);
 		if (rc == pdTRUE) {
 			int i;
 			for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
@@ -327,7 +253,7 @@ void DisplayTask(void *helloString) {
 				}
 			}
 		} else {
-				__displayMessageLowlevel();
+//				__displayMessageLowlevel();
 		}
 	}
 }

@@ -402,123 +402,9 @@ static void __cmd_UPDATA_Handler(const SMSInfo *p) {
 	vPortFree(mark);
 }
 
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-static void __cmd_ALARM_Handler(const SMSInfo *p) {
-	const char *pcontent = p->content;
-	enum SoftPWNLedColor color;
-	switch (pcontent[7]) {
-	case '3':
-		color = SoftPWNLedColorYellow;
-		break;
-	case '2':
-		color = SoftPWNLedColorOrange;
-		break;
-	case '4':
-		color = SoftPWNLedColorBlue;
-		break;
-	case '1':
-		color = SoftPWNLedColorRed;
-		break;
-	default :
-		color =	SoftPWNLedColorNULL;
-		break;
-	}
-	Display2Clear();
-	SoftPWNLedSetColor(color);
-	LedDisplayGB2312String162(2 * 4, 0, &pcontent[8]);
-	LedDisplayToScan2(2 * 4, 0, 16 * 12 - 1, 15);
-	__storeSMS2((char *)&pcontent[8]);
-}
-#endif
-
-#if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
-
-static void __cmd_RED_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
-		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
-		DisplayMessageRed(gbk);
-		Unicode2GBKDestroy(gbk);
-		__storeSMS1(gbk);
-	} else {
-		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
-		DisplayMessageRed(&pcontent[3]);
-		__storeSMS1(&pcontent[3]);
-	}
-}
-
-static void __cmd_GREEN_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
-		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
-		DisplayMessageGreen(gbk);
-		Unicode2GBKDestroy(gbk);
-		__storeSMS1(gbk);
-	} else {
-		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
-		DisplayMessageGreen(&pcontent[3]);
-		__storeSMS1(&pcontent[3]);
-
-	}
-}
-
-static void __cmd_YELLOW_Display(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-	DisplayClear();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
-		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
-		DisplayMessageYELLOW(gbk);
-		Unicode2GBKDestroy(gbk);
-		__storeSMS1(gbk);
-	} else {
-		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
-		DisplayMessageYELLOW(&pcontent[3]);
-		__storeSMS1(&pcontent[3]);
-	}
-}
-
-#endif
-
-static void __cmd_A_Handler(const SMSInfo *sms) {
-	const char *pcontent = sms->content;
-	int plen = sms->contentLen;
-	const char *pnumber = sms->number;
-	int index;
-	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
-	if (index == 0) {
-		return;
-	}
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK(&pcontent[6], (plen - 6));
-		XfsTaskSpeakUCS2(&pcontent[6], (plen - 6));
-		Unicode2GBKDestroy(gbk);
-	} else {
-		XfsTaskSpeakGBK(&pcontent[3], (plen - 3));
-	}
-	DisplayClear();
-	SMS_Prompt();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK((const uint8_t *)(&pcontent[6]), (plen - 6));
-		MessDisplay(gbk);
-		__storeSMS1(gbk);
-	} else {
-		MessDisplay((char *)&pcontent[3]);
-		__storeSMS1(&pcontent[3]);
-	}
-	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
-}
-
 static void __cmd_FORECAST_Handler(const SMSInfo *sms) {
 		const char *pcontent = sms->content;
+	__storeSMS1(sms->content);
     MessDisplay((char *)&pcontent[3]);
 }
 
@@ -570,7 +456,6 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<TEST>", __cmd_TEST_Handler, UP_ALL},
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
-	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
   {"<2>", __cmd_FORECAST_Handler, UP_ALL},
 	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{NULL, NULL}

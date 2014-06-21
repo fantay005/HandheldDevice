@@ -1438,7 +1438,7 @@ unsigned portBASE_TYPE uxSavedInterruptStatus;
 	More information (albeit Cortex-M specific) is provided on the following
 	link: http://www.freertos.org/RTOS-Cortex-M3-M4.html */
 	portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
-
+	
 	uxSavedInterruptStatus = portSET_INTERRUPT_MASK_FROM_ISR();
 	xReturn = xTickCount;
 	portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );

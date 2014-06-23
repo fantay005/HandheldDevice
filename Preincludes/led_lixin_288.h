@@ -11,7 +11,7 @@
 
 #define USE_QIANGLI_P10_1R1G             1
 #define QIANGLI_UNIT_X_NUM               5
-#define QIANGLI_UNIT_Y_NUM               2
+#define QIANGLI_UNIT_Y_NUM               5
 
 #else
 #  error "Preinclude file can only be included once in command line with --preinclude=xxxx"

@@ -63,8 +63,6 @@ void MessDisplay(char *message) {
 //	strcat(p, __message_space);
 	msg.cmd = MSG_CMD_DISPLAY_MESSAGE;
 	msg.data.pointData = p;
-	__displayMessage = msg.data.pointData;
-	__displayCurrentPoint = __displayMessage;
 
 	if (pdTRUE != xQueueSend(__displayQueue, &msg, configTICK_RATE_HZ)) {
 		vPortFree(p);
@@ -233,7 +231,7 @@ void DisplayTask(void *helloString) {
 	const char *p;
 
 //	printf("DisplayTask: start-> %s\n", (const char *)helloString);
-	__displayQueue = xQueueCreate(8, sizeof(DisplayTaskMessage));
+	__displayQueue = xQueueCreate(5, sizeof(DisplayTaskMessage));
 	p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
 	if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
 		host = p;
@@ -244,7 +242,7 @@ void DisplayTask(void *helloString) {
 	MessDisplay((char*)host);
 	ScrollDisplayInit();
 	while (1) {
-		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 10);
+		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
 		if (rc == pdTRUE) {
 			int i;
 			for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {

@@ -72,7 +72,7 @@ static inline bool __isValidUser(const char *p) {
 static int __userIndex(const char *user) {
 	int i;
 
-	if (!__isValidUser(__userParam.user[0])) {
+	if (__isValidUser(__userParam.user[0])) {
 		return 1;
 	}
 
@@ -404,7 +404,7 @@ static void __cmd_UPDATA_Handler(const SMSInfo *p) {
 
 static void __cmd_FORECAST_Handler(const SMSInfo *sms) {
 		const char *pcontent = sms->content;
-	__storeSMS1(sms->content);
+    __storeSMS1(&pcontent[3]);
     MessDisplay((char *)&pcontent[3]);
 }
 
@@ -461,81 +461,16 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{NULL, NULL}
 };
 
-#if defined(__LED_HUAIBEI__)
-void ProtocolHandlerSMS(const SMSInfo *sms) {
-	const SMSModifyMap *map;
-	DateTime dateTime;
-	int index;
-	const char *p = sms->time;
-	const char *pnumber = sms->number;
-	__restorUSERParam();
-	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
-	dateTime.month = (p[2] - '0') * 10 + (p[3] - '0');
-	dateTime.date = (p[4] - '0') * 10 + (p[5] - '0');
-	dateTime.hour = (p[6] - '0') * 10 + (p[7] - '0');
-	dateTime.minute = (p[8] - '0') * 10 + (p[9] - '0');
-	if (p[10] != 0 && p[11] != 0) {
-		dateTime.second = (p[10] - '0') * 10 + (p[11] - '0');
-	} else {
-		dateTime.second = 0;
-	}
-	RtcSetTime(DateTimeToSecond(&dateTime));
-
-	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
-	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
-		if (strncasecmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
-			if (map->permission != UP_ALL) {
-				if ((map->permission & (1 << (index))) == 0) {
-					return;
-				}
-			}
-
-			map->smsCommandFunc(sms);
-			return;
-		}
-	}
-#if defined(__LED_HUAIBEI__)
-
-	if (index == 0) {
-		return;
-	}
-
-	DisplayClear();
-	switch (index) {
-	case 1:
-		__storeSMS1(sms->content);
-	case 2:
-		__storeSMS2(sms->content);
-	case 3:
-		__storeSMS3(sms->content);
-	case 4:
-		__storeSMS4(sms->content);
-	case 5:
-		__storeSMS5(sms->content);
-	case 6:
-		__storeSMS6(sms->content);
-	}
-	SMS_Prompt();
-	if (sms->encodeType == ENCODE_TYPE_UCS2) {
-		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
-		MessDisplay(gbk);
-	} else {
-		MessDisplay((char *)(sms->content));
-	}
-#endif
-}
-#endif
-
 #if defined(__LED_LIXIN__)
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
 	const char *pnumber = sms->number;
 	int index;
 	int i;
-	__restorUSERParam();
+	
 	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {
-		if (strncmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
+		if (strncasecmp(sms->content, map->cmd, strlen(map->cmd)) == 0) {
 			map->smsCommandFunc(sms);
 			return;
 		}
@@ -544,7 +479,8 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	if (index == 0) {
 		return;
 	}
-		SMS_Prompt();
+	SMS_Prompt();
+	__storeSMS1(sms->content);
 	if (sms->encodeType == ENCODE_TYPE_UCS2) {
 		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);
 		MessDisplay(gbk);

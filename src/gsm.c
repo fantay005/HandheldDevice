@@ -575,11 +575,14 @@ void __handleSMS(GsmTaskMessage *p) {
 	sms = __gsmPortMalloc(sizeof(SMSInfo));
 	printf("Gsm: got sms => %s\n", dat);
 	SMSDecodePdu(dat, sms);
+	
 	if(sms->contentLen == 0) {
 		__gsmPortFree(sms);
 		return;
 	}
+	
 	__gsmSMSEncodeConvertToGBK(sms);
+
 	printf("Gsm: sms_content=> %s\n", sms->content);
 #if defined(__SPEAKER__)
 		XfsTaskSpeakGBK(sms->content, sms->contentLen);
@@ -746,6 +749,6 @@ static void __gsmTask(void *parameter) {
 void GSMInit(void) {
 	ATCommandRuntimeInit();
 	__gsmInitHardware();
-	__queue = xQueueCreate(5, sizeof(GsmTaskMessage *));
+	__queue = xQueueCreate(6, sizeof(GsmTaskMessage *));
 	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
 }

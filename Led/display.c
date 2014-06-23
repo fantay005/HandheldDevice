@@ -63,6 +63,8 @@ void MessDisplay(char *message) {
 //	strcat(p, __message_space);
 	msg.cmd = MSG_CMD_DISPLAY_MESSAGE;
 	msg.data.pointData = p;
+	__displayMessage = msg.data.pointData;
+	__displayCurrentPoint = __displayMessage;
 
 	if (pdTRUE != xQueueSend(__displayQueue, &msg, configTICK_RATE_HZ)) {
 		vPortFree(p);
@@ -179,6 +181,8 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 
 	if (yorg >= LED_VIR_DOT_HEIGHT){
 		yorg = yorg - LED_VIR_DOT_HEIGHT;
+	} else if(y == 0){
+		yorg = LED_VIR_DOT_HEIGHT;
 	} else if (yorg > y) {
 		return;
 	} else {
@@ -237,7 +241,7 @@ void DisplayTask(void *helloString) {
 		host = p;
 	}
 	LedScanOnOff(1);
-	DisplayMessageRed((char*)host);
+	MessDisplay((char*)host);
 	ScrollDisplayInit();
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 10);

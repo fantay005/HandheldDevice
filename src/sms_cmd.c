@@ -24,7 +24,7 @@
 
 static xQueueHandle __smsQueue;
 
-#define SMS_TASK_STACK_SIZE			configMINIMAL_STACK_SIZE
+#define SMS_TASK_STACK_SIZE			(configMINIMAL_STACK_SIZE + 256)
 
 typedef struct {
 	char user[6][12];
@@ -563,7 +563,7 @@ static void __smsTask(void *nouse) {
 	portBASE_TYPE rc;
 	char *msg;
 
-	__smsQueue = xQueueCreate(3, sizeof(char *));
+	__smsQueue = xQueueCreate(1, sizeof(char *));
 	while (1) {
 		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 30);
 		if (rc == pdTRUE) {
@@ -575,12 +575,11 @@ static void __smsTask(void *nouse) {
 			
 			if (n == 1) {
 				const char *messageA = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);				
-				char * p = pvPortMalloc(strlen(messageA) + 1);
-				strcpy(p, messageA);
-				if (p[0] == 0xff) {
+				if (messageA[0] == 0xff) {
 					n = 2;
-					vPortFree(p);
-				} else {			
+				} else {
+				  char * p = pvPortMalloc(strlen(messageA) + 1);
+				  strcpy(p, messageA);					
 					MessDisplay(p);
 					vPortFree(p);
 				}
@@ -588,12 +587,11 @@ static void __smsTask(void *nouse) {
 			
 			if (n == 2) {
 				const char *messageB = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
-				char * v = pvPortMalloc(strlen(messageB) + 1);
-				strcpy(v, messageB);
-				if (v[0] == 0xff) {
+				if (messageB[0] == 0xff) {
 					n = 3;
-					vPortFree(v);
 				} else {
+					char * v = pvPortMalloc(strlen(messageB) + 1);
+				  strcpy(v, messageB);
 					MessDisplay(v);
 					vPortFree(v);
 				}
@@ -601,12 +599,11 @@ static void __smsTask(void *nouse) {
 			
 			if (n == 3) {
 				const char *messageC = (const char *)(Bank1_NOR2_ADDR + SMS3_PARAM_STORE_ADDR);
-				char * t = pvPortMalloc(strlen(messageC) + 1);
-				strcpy(t, messageC);
-				if (t[0] == 0xff) {
+				if (messageC[0] == 0xff) {
 					n = 4;
-					vPortFree(t);
 				} else {
+					char * t = pvPortMalloc(strlen(messageC) + 1);
+				  strcpy(t, messageC);
 					MessDisplay(t);
 					vPortFree(t);
 				}
@@ -614,12 +611,11 @@ static void __smsTask(void *nouse) {
 			
 			if (n == 4) {
 				const char *messageD = (const char *)(Bank1_NOR2_ADDR + SMS4_PARAM_STORE_ADDR);
-				char * q = pvPortMalloc(strlen(messageD) + 1);
-				strcpy(q, messageD);
-				if (q[0] == 0xff) {
+				if (messageD[0] == 0xff) {
 					n = 5;
-					vPortFree(q);
 				} else {
+					char * q = pvPortMalloc(strlen(messageD) + 1);
+			  	strcpy(q, messageD);
 					MessDisplay(q);
 					vPortFree(q);
 				}
@@ -627,12 +623,11 @@ static void __smsTask(void *nouse) {
 
 			if (n == 5) {
 				const char *messageE = (const char *)(Bank1_NOR2_ADDR + SMS5_PARAM_STORE_ADDR);
-				char * h = pvPortMalloc(strlen(messageE) + 1);
-				strcpy(h, messageE);
-				if (h[0] == 0xff) {
+				if (messageE[0] == 0xff) {
 					n = 6;
-					vPortFree(h);
 				} else {
+					char * h = pvPortMalloc(strlen(messageE) + 1);
+				  strcpy(h, messageE);
 					MessDisplay(h);
 					vPortFree(h);
 				}
@@ -640,12 +635,11 @@ static void __smsTask(void *nouse) {
 			
 			if (n == 6) {
 				const char *messageF = (const char *)(Bank1_NOR2_ADDR + SMS6_PARAM_STORE_ADDR);
-				char * m = pvPortMalloc(strlen(messageF) + 1);
-				strcpy(m, messageF);
-				if (m[0] == 0xff) {
+				if (messageF[0] == 0xff) {
 					n = 7;
-					vPortFree(m);
 				} else {
+					char * m = pvPortMalloc(strlen(messageF) + 1);
+				  strcpy(m, messageF);
 					MessDisplay(m);
 					vPortFree(m);
 				}
@@ -653,13 +647,12 @@ static void __smsTask(void *nouse) {
 
 			if (n == 7) {
 				const char *messageG = (const char *)(Bank1_NOR2_ADDR + SMS7_PARAM_STORE_ADDR);
-				char * k = pvPortMalloc(strlen(messageG) + 1);
-				strcpy(k, messageG);
-				if (k[0] == 0xff) {
-					vPortFree(k);
+				if (messageG[0] == 0xff) {
 					n++;
 					continue;
 				} else {
+					char * k = pvPortMalloc(strlen(messageG) + 1);
+				  strcpy(k, messageG);
 					MessDisplay(k);
 					vPortFree(k);
 				}

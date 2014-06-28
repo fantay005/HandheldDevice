@@ -206,6 +206,16 @@ static int __xfsWoken(void) {
 	return 0;
 }
 
+void recover(void){
+	int i;
+	char xfsCommand[29] = {0xFD, 0x00, 0x1A, 0x01, 0x00, '[', 'v', '5', ']', '[', 't', '5', ']',
+						 '[', 's', '5', ']', '[', 'm', '3', ']', '[', 'h', '0', ']', '[', 'g', '1', ']'};
+		for (i = 0; i < 29; i++) {
+		USART_SendData(USART3, xfsCommand[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+}
+
 static int __xfsSetup(void) {
 	char xfsCommand[] = {0x01, 0x01, '[', 'v', '5', ']', '[', 't', '5', ']',
 						 '[', 's', '5', ']', '[', 'm', '3', ']'

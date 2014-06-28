@@ -355,6 +355,7 @@ static char isTUDE = 0;
 static char isCSQ = 0;
 static char CELLloc = 0;
 static char GSMloc = 0;
+static char CardisEXIST = 0;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
@@ -530,6 +531,11 @@ void USART2_IRQHandler(void) {
 			isCSQ = 1;
 		}
 		
+		if (strncmp(buffer, "+CME ERROR: 3517", 16) == 0) {
+			bufferIndex = 0;
+			CardisEXIST = 0;
+		}
+		
 		if (strncmp(buffer, "+QCELLLOC: ", 11) == 0) {
 			bufferIndex = 0;
 			isTUDE = 1;
@@ -557,6 +563,85 @@ void __gsmModemStart() {
 
 	__gsmDeassertResetPin();
 	vTaskDelay(configTICK_RATE_HZ * 5);
+}
+
+static  char stamp = 0;
+static  char sign = 0;				 
+
+bool sound_Prompt(void) {
+	int i;
+	char prompt[58] = {0xFD, 0x00, 0x37, 0x01, 0x01, '[', 'm', '5', '3', ']', 's', 'o', 'u', 'n', 'd', '2', '2', '5',//sound225
+                     0xBB, 0xB6,  0xD3, 0xAD,  0xC4, 0xFA,  0xCA, 0xB9,  0xD3, 0xC3,  ',', 0xB0, 0xB2,  0xBB, 0xD5, 
+                     0xD6, 0xD0,  0xBF, 0xC6,  0xBD, 0xF0,  0xB3, 0xCF,  ',', 0xD6, 0xC7,  0xC4, 0xDC,  0xCE, 0xDE, 
+		                 0xCF, 0xDF,  0xB9, 0xE3,  0xB2, 0xA5,  0xB2, 0xFA,  0xC6, 0xB7 }; //欢迎您使用,安徽中科金诚,智能无线广播产品
+  if(stamp != 1) return false;
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 58; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 10);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	recover();
+	return true;
+}
+
+bool sound1_Prompt(void) {
+	int i;
+	char prompt[30] = {0xFD, 0x00, 0x1B, 0x01, 0x01, '[', 'm', '5', '4', ']', 's', 'o', 'u', 'n', 'd', '3', '1', '2', //sound312
+		                 0xCA,0xD6,  0xBB,0xFA,  0xBF,0xA8,  0xCE,0xB4,  0xB2,0xE5,  0xC8,0xEB}; //手机卡未插入
+	if(CardisEXIST == 1) return false;
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 30; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 5);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
+
+bool sound2_Prompt(void) {
+	int i;
+	char prompt[36] = {0xFD, 0x00, 0x21, 0x01, 0x01, '[', 'm', '5', '4', ']', 's', 'o', 'u', 'n', 'd', '3', '0', '8',//sound308 
+		0xCE,0xB4,  0xC4,0xDC,  0xBD,0xD3,  0xC8,0xEB,  0xB7,0xFE,  0xCE,0xF1,  0xC6,0xF7,  0xC6,0xBD,  0xCC,0xA8}; //未能接入服务器平台
+	if(sign != 10) return false;
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 36; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 5);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
+
+bool sound3_Prompt(void) {
+	int i;
+	char prompt[36] = {0xFD, 0x00, 0x21, 0x01, 0x01, '[', 'm', '5', '3', ']', 's', 'o', 'u', 'n', 'd', '2', '1', '8',//sound218
+		       0xCA,0xD6,  0xBB,0xFA,  0xC4,0xA3,  0xBF,0xE9,  0xB3,0xF5,  0xCA,0xBC,  0xBB,0xAF,  0xB3,0xC9,  0xB9,0xA6}; //手机模块初始化成功
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 36; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 5);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
+}
+
+bool sound4_Prompt(void) {
+	int i;
+	char prompt[36] = {0xFD, 0x00, 0x21, 0x01, 0x01, '[', 'm', '5', '4', ']', 's', 'o', 'u', 'n', 'd', '3', '0', '4',//sound304
+		0xCE,0xB4,  0xC4,0xDC,  0xD3,0xEB,  0xCA,0xD6,  0xBB,0xFA,  0xC4,0xA3,  0xBF,0xE9,  0xCD,0xA8, 0xD1,0xB6}; //不能与手机模块通讯
+  SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 1);
+	for (i = 0; i < 36; i++) {
+		USART_SendData(USART3, prompt[i]);
+		while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	}
+	vTaskDelay(configTICK_RATE_HZ * 5);
+	SoundControlSetChannel(SOUND_CONTROL_CHANNEL_XFS, 0);
+	return true;
 }
 
 /// Check if has the GSM modem connect to a TCP server.
@@ -652,6 +737,7 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 bool __initGsmRuntime() {
 	int i;
 	static const int bauds[] = {19200, 9600, 115200, 38400, 57600, 4800};
+  sound1_Prompt();
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// 设置波特率
 		printf("Init gsm baud: %d\n", bauds[i]);
@@ -665,16 +751,12 @@ bool __initGsmRuntime() {
 	}
 	if (i >= ARRAY_MEMBER_NUMBER(bauds)) {
 		printf("All baud error\n");
+		sound4_Prompt();
 		return false;
 	}
 
 	if (!ATCommandAndCheckReply("AT+IPR=19200\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+IPR=19200 error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+CFUN=1\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("AT+CFUN error\r");
 		return false;
 	}
 
@@ -700,11 +782,6 @@ bool __initGsmRuntime() {
 
 	if (!ATCommandAndCheckReply("ATS0=5\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("ATS0=5 error\r");
-		return false;
-	}
-	
-	if (!ATCommandAndCheckReply("AT+CMEE=2\r", "OK", configTICK_RATE_HZ)) {
-		printf("AT+CMEE error\r");
 		return false;
 	}
 
@@ -763,17 +840,11 @@ bool __initGsmRuntime() {
   		return false;
 	}			//打开GPRS连接
 
-#if defined (__SPEAKER_V1__)
 	if (!ATCommandAndCheckReply("AT+QCELLLOC=1\r", "OK", configTICK_RATE_HZ * 10)) {
 		printf("AT+QCELLLOC error\r");
 	}
-#endif
-
-	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 10)) {
-		printf("AT+QGSMLOC error\r");
-	}
 	
-	printf("GSM init OK.\r");
+	sound3_Prompt();
 	return true;
 }
 
@@ -1162,15 +1233,16 @@ static void __gsmTask(void *parameter) {
 			
 			curT = xTaskGetTickCount();
 			if(__gsmRuntimeParameter.isonTCP == 0){
+				 sound2_Prompt();
 			   continue;
 			}
 								
-			if(Vcsq < 13) {
+			if(Vcsq < 6) {
 				Count = 0;
 				continue;
 			}
 			
-			if(Count > 10) {
+			if(Count > 6) {
 					continue;
 			}
 			
@@ -1185,8 +1257,9 @@ static void __gsmTask(void *parameter) {
 			
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				Count++;
-				if(Count > 10) {
+				if(Count > 5) {
 					Dflag = 1;
+					sound2_Prompt();
 					continue;
 				}
 				printf("Gsm: Connect TCP error\n");

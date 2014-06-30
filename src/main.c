@@ -72,7 +72,6 @@ extern void GSMInit(void);
 extern void RecoveryInit(void);
 extern void NorFlashInit(void);
 extern void WatchdogInit(void);
-extern void MP3Init(void);
 extern void SHT10TestInit(void);
 int main(void) {
 	PreSetupHardware();
@@ -83,12 +82,11 @@ int main(void) {
 	RecoveryInit();
 #if defined(__SPEAKER__)
 	SoundControlInit();
-	MP3Init();
 #endif
 	XfsInit();
 	GSMInit();
 	SHT10TestInit();
-	mp3TestInit();
+
 
 
 

@@ -82,7 +82,7 @@ const char *GsmGetIMEI(void) {
 }
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1, 0, "0620"};	  // 老平台服务器及端口："221.130.129.72",5555
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 1, 0, "0620"};	  // 老平台服务器及端口："221.130.129.72",5555
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -649,9 +649,11 @@ bool sound4_Prompt(void) {
 /// \return false  When the GSM modem dose not connect to a TCP server.
 
 static char Count = 0;
+static char Dflag = 0;
 
 bool __gsmIsTcpConnected() {
 	char *reply;
+	unsigned char k = 0;
 	while (1) {
 		reply = ATCommand("AT+QISTAT\r", "STATE:", configTICK_RATE_HZ * 2);
 		if (reply == NULL) {
@@ -663,12 +665,22 @@ bool __gsmIsTcpConnected() {
 		}
 		if (strncmp(&reply[7], "TCP CONNECTING", 12) == 0) {
 			AtCommandDropReplyLine(reply);
-			vTaskDelay(configTICK_RATE_HZ);
+			vTaskDelay(configTICK_RATE_HZ * 5);
+			if(k > 12){
+				Dflag = 1;
+				sound2_Prompt();
+				return false;
+			}
 			continue;
 		}
 		if (strncmp(&reply[7], "IP CLOSE", 8) == 0) {
 			AtCommandDropReplyLine(reply);
 			Count++;
+			if(Count > 6){
+				Dflag = 1;
+				Count = 0;
+				sound2_Prompt();
+			}
 			return false;
 		}
 		AtCommandDropReplyLine(reply);
@@ -1197,12 +1209,10 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_NONE, NULL },
 };
 
-static unsigned char Dflag = 0;
-
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0, realT;
+	portTickType lastT = 0, realT = 0, newT = 0;
 	__storeGsmRuntimeParameter();
 	while (1) {
 		printf("Gsm start\n");
@@ -1233,17 +1243,22 @@ static void __gsmTask(void *parameter) {
 			
 			curT = xTaskGetTickCount();
 			if(__gsmRuntimeParameter.isonTCP == 0){
-				 sound2_Prompt();
+				 sound_Prompt();
 			   continue;
+			}								
+			
+			if ((curT - newT) >= GSM_GPRS_HEART_BEAT_TIME * 12) {
+				Dflag = 0;
+				continue;
 			}
-								
-			if(Vcsq < 6) {
-				Count = 0;
+
+			if(Dflag == 1) {
 				continue;
 			}
 			
-			if(Count > 6) {
-					continue;
+			if(Vcsq < 6) {
+				Count = 0;
+				continue;
 			}
 			
 			if ((curT - realT) >= GSM_GPRS_HEART_BEAT_TIME) {
@@ -1251,15 +1266,12 @@ static void __gsmTask(void *parameter) {
 				 realT = curT;
 			}
 
-			if(Dflag == 1) {
-				continue;
-			}
-			
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				Count++;
 				if(Count > 5) {
 					Dflag = 1;
-					sound2_Prompt();
+					Count = 0;
+					sound_Prompt();
 					continue;
 				}
 				printf("Gsm: Connect TCP error\n");

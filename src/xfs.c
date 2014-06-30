@@ -295,45 +295,6 @@ static void __xfsInitRuntime() {
 #define TYPE_BIG5 0x02
 #define TYPE_UCS2 0x03
 
-#if defined (__SPEAKER_V1__)||(__SPEAKER_V2__)
-
-static int __xfsSpeakLowLevel(const char *p, int len, char type) {
-	int ret;
-	portBASE_TYPE rc;
-	xQueueReset(__uartQueue);
-
-	__xfsSendByte(0xFD);
-	ret = len + 2;
-	__xfsSendByte(ret >> 8);
-	__xfsSendByte(ret & 0xFF);
-	__xfsSendByte(0x01);
-	__xfsSendByte(type);
-
-	for (ret = 0; ret < len; ret++) {
-		__xfsSendByte(*p++);
-	}
-
-	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 5);
-//	vTaskDelay(configTICK_RATE_HZ );
-	if (rc != pdTRUE) {
-		return 0;
-	}
-	if (ret != 0x41) {
-		return 0;
-	}
-	ret = 0;
-	while (ret <= len) {
-		if (__xfsQueryState() == 0x4F) {
-			return 1;
-		}
-		vTaskDelay(configTICK_RATE_HZ / 2);
-		++ret;
-	}
-	return 1;
-}
-
-#endif
-
 #if defined(__SPEAKER_V3__)
 static int __xfsSpeakLowLevel(const char *p, int len, char type) {
 	int ret;
@@ -376,6 +337,8 @@ static int __xfsSpeakLowLevel(const char *p, int len, char type) {
 		vTaskDelay(configTICK_RATE_HZ / 100);
 		__xfsSendByte(*p++);
 	}	
+	
+  ret = 0;
 	rc = xQueueReceive(__uartQueue, &ret, configTICK_RATE_HZ * 10);
 	
 	vTaskDelay(configTICK_RATE_HZ * 2);

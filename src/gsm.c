@@ -85,13 +85,6 @@ static inline void __restorGsmRuntimeParameter(void) {
 	NorFlashRead(GSM_PARAM_STORE_ADDR, (short *)&__gsmRuntimeParameter, sizeof(__gsmRuntimeParameter));
 }
 
-/// Low level set TCP server IP and port.
-static void __setGSMserverIPLowLevel(char *ip, int port) {
-	strcpy(__gsmRuntimeParameter.serverIP, ip);
-	__gsmRuntimeParameter.serverPORT = port;
-	__storeGsmRuntimeParameter();
-}
-
 typedef enum {
 	TYPE_NONE = 0,
 	TYPE_SMS_DATA,
@@ -99,6 +92,7 @@ typedef enum {
 	TYPE_GPRS_DATA,
 	TYPE_TUDE_DATA,
 	TYPE_SEND_TCP_DATA,
+	TYPE_CSQ_DATA,
 	TYPE_RESET,
 	TYPE_NO_CARRIER,
 	TYPE_SEND_AT,
@@ -293,6 +287,9 @@ static char isIPD = 0;
 static char isSMS = 0;
 static char isRTC = 0;
 static char isTUDE = 0;
+static char isCSQ = 0;
+static char CELLloc =0;
+static char GSMloc = 0;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
@@ -370,6 +367,24 @@ static inline void __gmsReceiveTUDEData(unsigned char data) {
 	}
 }
 
+static inline void __gmsReceiveCSQData(unsigned char data) {
+	if (data == 0x0A) {
+		GsmTaskMessage *message;
+		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+		buffer[bufferIndex++] = 0;
+		message = __gsmCreateMessage(TYPE_CSQ_DATA, buffer, bufferIndex);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		}
+		isCSQ = 0;
+		bufferIndex = 0;
+	} else if (data != 0x0D) {
+		buffer[bufferIndex++] = data;
+	}
+}
+
 void USART2_IRQHandler(void) {
 	unsigned char data;
 	if (USART_GetITStatus(USART2, USART_IT_RXNE) == RESET) {
@@ -396,6 +411,11 @@ void USART2_IRQHandler(void) {
 	
 	if (isTUDE) {
 		__gmsReceiveTUDEData(data);
+		return;
+	}
+	
+  if (isCSQ) {
+		__gmsReceiveCSQData(data);
 		return;
 	}
 
@@ -435,9 +455,21 @@ void USART2_IRQHandler(void) {
 			isRTC = 1;
 		}
 		
+		if (strncmp(buffer, "+CSQ: ", 6) == 0) {
+			bufferIndex = 0;
+			isCSQ = 1;
+		}
+		
+		if (strncmp(buffer, "+QCELLLOC: ", 11) == 0) {
+			bufferIndex = 0;
+			isTUDE = 1;
+			CELLloc = 1;
+		}
+		
 		if (strncmp(buffer, "+QGSMLOC: ", 10) == 0) {
 			bufferIndex = 0;
 			isTUDE = 1;
+			GSMloc = 1;
 		}
 	}
 }
@@ -460,8 +492,12 @@ void __gsmModemStart() {
 /// Check if has the GSM modem connect to a TCP server.
 /// \return true   When the GSM modem has connect to a TCP server.
 /// \return false  When the GSM modem dose not connect to a TCP server.
+static char Count = 0;
+static unsigned char Dflag = 0;
+
 bool __gsmIsTcpConnected() {
 	char *reply;
+	unsigned char k = 0;
 	while (1) {
 		reply = ATCommand("AT+QISTAT\r", "STATE:", configTICK_RATE_HZ * 2);
 		if (reply == NULL) {
@@ -473,8 +509,22 @@ bool __gsmIsTcpConnected() {
 		}
 		if (strncmp(&reply[7], "TCP CONNECTING", 12) == 0) {
 			AtCommandDropReplyLine(reply);
-			vTaskDelay(configTICK_RATE_HZ);
+			vTaskDelay(configTICK_RATE_HZ * 5);
+			k++;
+			if(k > 12) {
+				Dflag = 1;
+				return false;
+			}
 			continue;
+		}
+		if (strncmp(&reply[7], "IP CLOSE", 8) == 0) {
+			AtCommandDropReplyLine(reply);
+			Count++;
+			if(Count > 5) {
+				Dflag = 1;
+			  Count = 0;
+			}
+			return false;
 		}
 		AtCommandDropReplyLine(reply);
 		break;
@@ -558,45 +608,24 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply(NULL, "Call Ready", configTICK_RATE_HZ * 20)) {
-		printf("Wait Call Realy timeout\n");
-	}
-	
-		if (!ATCommandAndCheckReply("AT+IPR=19200\r", "OK", configTICK_RATE_HZ * 2)) {
+	if (!ATCommandAndCheckReply("AT+IPR=19200\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+IPR=19200 error\r");
 		return false;
 	}
-
-// 	if (!ATCommandAndCheckReply("AT+CFUN=1\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("AT+CFUN error\r");
-// 		return false;
-// 	}
-
-
-//	if (!ATCommandAndCheckReply("AT+CPIN=1\r", "OK", configTICK_RATE_HZ * 2)) {
-//		printf("AT+CPIN=1 error\r");
-//		return false;
-//	}
-
+	
 	if (!ATCommandAndCheckReply("AT+QNITZ=1\r", "OK", configTICK_RATE_HZ)) {
 		printf("AT+IFC error\r");
 		return false;
 	}
-
+	
+	if (!ATCommandAndCheckReply(NULL, "Call Ready", configTICK_RATE_HZ * 20)) {
+		printf("Wait Call Realy timeout\n");
+	}
+	
 	if (!ATCommandAndCheckReply("AT+IFC=2,2\r", "OK", configTICK_RATE_HZ)) {
 		printf("AT+QNITZ error\r");
 		return false;
 	}
-
-// 	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("AT&W error\r");
-// 		return false;
-// 	}
-
-// 	if (!ATCommandAndCheckReply("ATS0=3\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("ATS0=3 error\r");
-// 		return false;
-// 	}
 
 	if (!ATCommandAndCheckReply("AT+CMGF=0\r", "OK", configTICK_RATE_HZ * 2)) {
 		printf("AT+CMGF=0 error\r");
@@ -656,16 +685,7 @@ bool __initGsmRuntime() {
 	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 20)) {
 		printf("AT+QGSMLOC error\r");
 	}
-
-// 	if (!ATCommandAndCheckReply("AT+QIMUX=0\r", "OK", configTICK_RATE_HZ)) {
-// 		printf("AT+QIMUX error\r");
-// 		return false;
-// 	}
-
-//	if (!ATCommandAndCheckReply("AT&W\r", "OK", configTICK_RATE_HZ)) {
-//		printf("AT&W error\r");
-//		return false;
-//	}
+	
 	return true;
 }
 
@@ -702,7 +722,6 @@ bool __gsmIsValidImei(const char *p) {
 }
 
 int __gsmGetImeiFromModem() {
-	int i;
 	char *reply;
 	reply = ATCommand("AT+GSN\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ / 10);
 	if (reply == NULL) {
@@ -784,6 +803,27 @@ void __handleGprsConnection(GsmTaskMessage *msg) {
 	}
 }
 
+static unsigned char Vcsq = 0;
+
+void __handleCSQ(GsmTaskMessage *msg) {
+    char *dat = __gsmGetMessageData(msg);
+	  if (dat[0] == 0x20) {
+			*dat++;
+		}
+	
+	  if ((dat[0] > 0x33) && (dat[0] < 0x30)){
+			Vcsq = 8;
+			return;
+		}
+		
+    Vcsq = (dat[0] - '0') * 10 + dat[1] - '0';
+		
+	  if (Vcsq > 31) {
+			Vcsq = 10;
+		}
+}
+
+
 void __handleM35RTC(GsmTaskMessage *msg) {
 	DateTime dateTime;
 	char *p = __gsmGetMessageData(msg);	 
@@ -797,41 +837,63 @@ void __handleM35RTC(GsmTaskMessage *msg) {
 	RtcSetTime(DateTimeToSecond(&dateTime));
 }
 
-static char longitude[12] = {0}, latitude[12] = {0};
+static char longitude[12] = {1}, latitude[12] = {1};
 
 void __handleTUDE(GsmTaskMessage *msg) {
 	int i, j = 0, count = 0;
 	char date[12], time[10];
 	DateTime __dateTime;
   char *p = __gsmGetMessageData(msg);
-	*p++;
-	*p++;
-	for(i = 0; i < 4; i++){
-		  count++;
-			while(*p != ','){
-				if (count == 1){
-					longitude[j++] = *p++;
-				}	else if (count == 2){ 
-				  latitude[j++] = *p++;
-        }	else if (count == 3){ 
-				  date[j++] = *p++;
-        }	else if (count == 4){					
-				    time[j++] = *p++;
-					if(*p == 0){
-					  break;
-          }
-        }	
-			}
+	if (GSMloc == 1){
 			*p++;
-			j = 0;
-	}
-  __dateTime.year = (date[2] - '0') * 10 + (date[3] - '0');
-	__dateTime.month = (date[5] - '0') * 10 + (date[6] - '0');
-	__dateTime.date = (date[8] - '0') * 10 + (date[9] - '0');
-	__dateTime.hour = (time[0] - '0') * 10 + (time[1] - '0') + 8;
-	__dateTime.minute = (time[3] - '0') * 10 + (time[4] - '0');
-	__dateTime.second = (time[6] - '0') * 10 + (time[7] - '0');
-	RtcSetTime(DateTimeToSecond(&__dateTime));	
+			*p++;
+			for(i = 0; i < 4; i++){
+					count++;
+					while(*p != ','){
+						if (count == 1){
+							longitude[j++] = *p++;
+						}	else if (count == 2){ 
+							latitude[j++] = *p++;
+						}	else if (count == 3){ 
+							date[j++] = *p++;
+						}	else if (count == 4){					
+								time[j++] = *p++;
+							if(*p == 0){
+								break;
+							}
+						}	
+					}
+					*p++;
+					j = 0;
+			}
+			__dateTime.year = (date[2] - '0') * 10 + (date[3] - '0');
+			__dateTime.month = (date[5] - '0') * 10 + (date[6] - '0');
+			__dateTime.date = (date[8] - '0') * 10 + (date[9] - '0');
+			__dateTime.hour = (time[0] - '0') * 10 + (time[1] - '0') + 8;
+			__dateTime.minute = (time[3] - '0') * 10 + (time[4] - '0');
+			__dateTime.second = (time[6] - '0') * 10 + (time[7] - '0');
+			RtcSetTime(DateTimeToSecond(&__dateTime));
+			GSMloc = 0;
+		}
+		
+		if(CELLloc == 1) {
+				for(i = 0; i < 2; i++){
+						count++;
+						while(*p != ','){
+							if (count == 1){
+								longitude[j++] = *p++;
+							}	else if (count == 2){ 
+								latitude[j++] = *p++;
+								if(*p == 0){
+									break;
+								}
+							}	
+						}
+						*p++;
+						j = 0;
+		    }
+				CELLloc = 0;
+		}
 }
 
 const char *__gsmGetTUDE(char *p) {
@@ -854,6 +916,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_GPRS_DATA, __handleProtocol },
   { TYPE_RTC_DATA, __handleM35RTC},
   { TYPE_TUDE_DATA, __handleTUDE},
+  { TYPE_CSQ_DATA, __handleCSQ },
 	{ TYPE_SEND_TCP_DATA, __handleSendTcpDataLowLevel },
 	{ TYPE_RESET, __handleReset },
 	{ TYPE_NO_CARRIER, __handleResetNoCarrier },
@@ -866,7 +929,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0;
+	portTickType lastT = 0, recT = 0, realT = 0;
 
 	while (1) {
 		printf("Gsm start\n");
@@ -879,6 +942,8 @@ static void __gsmTask(void *parameter) {
 	while (!__gsmGetImeiFromModem()) {
 		vTaskDelay(configTICK_RATE_HZ);
 	}
+	
+	__restorGsmRuntimeParameter();
 
 	for (;;) {
 		printf("Gsm: loop again\n");
@@ -897,8 +962,34 @@ static void __gsmTask(void *parameter) {
 			if(__gsmRuntimeParameter.isonTCP == 0){
 			   continue;
 			}
+			
+			if ((curT - recT) >= GSM_GPRS_HEART_BEAT_TIME * 12) {
+				Dflag = 0;
+				recT = curT;
+			}
+			
+			if(Dflag == 1) {				
+				continue;
+			}
+			
+			if(Vcsq == 0) {
+				continue;
+			}
+			
+			if ((curT - realT) >= GSM_GPRS_HEART_BEAT_TIME) {
+			   GsmTaskSendAtCommand("AT+CSQ");
+				 realT = curT;
+			}
+			
 			curT = xTaskGetTickCount();
+			
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
+				Count++;
+				if(Count > 5) {
+					Dflag = 1;
+					Count = 0;
+					continue;
+				}
 				printf("Gsm: Connect TCP error\n");
 			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				int size;

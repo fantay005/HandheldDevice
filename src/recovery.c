@@ -33,6 +33,16 @@ void __taskRecovery(void *nouse) {
 	vTaskDelay(configTICK_RATE_HZ / 5);
 	FSMC_NOR_EraseSector(SMS2_PARAM_STORE_ADDR);
 	vTaskDelay(configTICK_RATE_HZ / 5);
+	FSMC_NOR_EraseSector(SMS3_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 10);
+	FSMC_NOR_EraseSector(SMS4_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 10);
+	FSMC_NOR_EraseSector(SMS5_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 10);
+	FSMC_NOR_EraseSector(SMS6_PARAM_STORE_ADDR);
+  vTaskDelay(configTICK_RATE_HZ / 10);
+	FSMC_NOR_EraseSector(SMS7_PARAM_STORE_ADDR);
+  vTaskDelay(configTICK_RATE_HZ / 10);
 	NorFlashMutexUnlock();
 	printf("Reboot From Default Configuration\n");
 	WatchdogResetSystem();

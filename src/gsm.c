@@ -62,7 +62,7 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 0};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -310,6 +310,8 @@ static inline void __gmsReceiveIPDData(unsigned char data) {
 			if (xHigherPriorityTaskWoken) {
 				taskYIELD();
 			}
+		} else {
+      printf("GRES handle error");
 		}
 		isIPD = 0;
 		bufferIndex = 0;
@@ -323,7 +325,13 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		buffer[bufferIndex++] = 0;
 		message = __gsmCreateMessage(TYPE_SMS_DATA, buffer, bufferIndex);
-		xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		} else {
+			printf("SMS handle error");
+		}
 		isSMS = 0;
 		bufferIndex = 0;
 	} else if (data != 0x0D) {
@@ -341,6 +349,8 @@ static inline void __gmsReceiveRTCData(unsigned char data) {
 			if (xHigherPriorityTaskWoken) {
 				taskYIELD();
 			}
+		} else {
+			printf("RTC handle error");
 		}
 		isRTC = 0;
 		bufferIndex = 0;
@@ -359,6 +369,8 @@ static inline void __gmsReceiveTUDEData(unsigned char data) {
 			if (xHigherPriorityTaskWoken) {
 				taskYIELD();
 			}
+		} else {
+			printf("TUDE handle error");
 		}
 		isTUDE = 0;
 		bufferIndex = 0;
@@ -377,6 +389,8 @@ static inline void __gmsReceiveCSQData(unsigned char data) {
 			if (xHigherPriorityTaskWoken) {
 				taskYIELD();
 			}
+		} else {
+			printf("CSQ handle error");
 		}
 		isCSQ = 0;
 		bufferIndex = 0;
@@ -614,7 +628,7 @@ bool __initGsmRuntime() {
 	}
 	
 	if (!ATCommandAndCheckReply("AT+QNITZ=1\r", "OK", configTICK_RATE_HZ)) {
-		printf("AT+IFC error\r");
+		printf("AT+QNITZ error\r");
 		return false;
 	}
 	
@@ -623,7 +637,7 @@ bool __initGsmRuntime() {
 	}
 	
 	if (!ATCommandAndCheckReply("AT+IFC=2,2\r", "OK", configTICK_RATE_HZ)) {
-		printf("AT+QNITZ error\r");
+		printf("AT+IFC error\r");
 		return false;
 	}
 
@@ -647,7 +661,7 @@ bool __initGsmRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+CSQ\r", "+CSQ:", configTICK_RATE_HZ / 5)) {
+	if (!ATCommandAndCheckReply("AT+CSQ\r", "OK", configTICK_RATE_HZ / 5)) {
 		printf("AT+CSQ error\r");
 		return false;
 	}
@@ -682,9 +696,9 @@ bool __initGsmRuntime() {
 		return false;
 	}
 	
-	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 20)) {
-		printf("AT+QGSMLOC error\r");
-	}
+// 	if (!ATCommandAndCheckReply("AT+QGSMLOC=1\r", "OK", configTICK_RATE_HZ * 20)) {
+// 		printf("AT+QGSMLOC error\r");
+// 	}
 	
 	return true;
 }
@@ -943,7 +957,7 @@ static void __gsmTask(void *parameter) {
 		vTaskDelay(configTICK_RATE_HZ);
 	}
 	
-	__restorGsmRuntimeParameter();
+	__storeGsmRuntimeParameter();
 
 	for (;;) {
 		printf("Gsm: loop again\n");
@@ -1006,6 +1020,6 @@ static void __gsmTask(void *parameter) {
 void GSMInit(void) {
 	ATCommandRuntimeInit();
 	__gsmInitHardware();
-	__queue = xQueueCreate(5, sizeof(GsmTaskMessage *));
+	__queue = xQueueCreate(10, sizeof(GsmTaskMessage *));
 	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
 }

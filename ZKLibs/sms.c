@@ -134,6 +134,7 @@ static inline int sms_decodeucs2(char *pd, const char *pdu_ud, int len) {
 //07 91 7238010010F5 04 0B C8 7238880900F1 0000 99309251619580 03C16010
 static unsigned char n;
 static char buffer[1340];
+static char lenth;
 
 void SMSDecodePdu(const char *pdu, SMSInfo *psms) {
 	unsigned char temp, dcs, F0, Total, Sequence, i, LONGSMS = 0;
@@ -178,6 +179,8 @@ void SMSDecodePdu(const char *pdu, SMSInfo *psms) {
 		
 		if(Sequence == 1){
 			memcpy(&buffer, pdu, 134 * 2);
+		} else if (Sequence == Total) {
+			lenth = temp;
 		}
 		
 		for(i = 0; i < Total; i++){
@@ -192,13 +195,13 @@ void SMSDecodePdu(const char *pdu, SMSInfo *psms) {
 		} else {
 				if (dcs == GSM_SMS_ENCODE_7BIT) {
 					psms->encodeType = ENCODE_TYPE_GBK;
-					psms->contentLen = sms_decode7bit((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + temp - 6));
+					psms->contentLen = sms_decode7bit((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + lenth - 6));
 				} else if (dcs == GSM_SMS_ENCODE_8BIT) {
 					psms->encodeType = ENCODE_TYPE_GBK;
-					psms->contentLen = sms_decode8bit((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + temp - 6));
+					psms->contentLen = sms_decode8bit((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + lenth - 6));
 				} else if (dcs == GSM_SMS_ENCODE_UCS2) {
 					psms->encodeType = ENCODE_TYPE_UCS2;
-					psms->contentLen = sms_decodeucs2((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + temp - 6));
+					psms->contentLen = sms_decodeucs2((char *)psms->content, (const char *)&buffer, (134 * (Total - 1) + lenth - 6));
 				}
 				n = 0;
     }

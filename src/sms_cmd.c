@@ -575,7 +575,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<3>", __cmd_YELLOW_Display, UP_ALL},
 #endif
 
-	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
+	{"<VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{NULL, NULL}
 };
 

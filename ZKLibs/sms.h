@@ -28,7 +28,7 @@
 typedef struct {
 	unsigned char numberType;
 	unsigned char encodeType;
-	unsigned char contentLen;
+	unsigned int contentLen;
 	char number[15];
 	char time[15];
 	char content[700];

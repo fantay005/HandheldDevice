@@ -177,9 +177,7 @@ void SMSDecodePdu(const char *pdu, SMSInfo *psms) {
 		string2bytes(&Sequence, pdu, 2);  //获取长短信 各短信顺序
 		pdu += 2;
 		
-		if(Sequence == 1){
-			memcpy(&buffer, pdu, 134 * 2);
-		} else if (Sequence == Total) {
+   if (Sequence == Total) {
 			lenth = temp;
 		}
 		

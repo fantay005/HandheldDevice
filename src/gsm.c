@@ -296,15 +296,7 @@ static char isTUDE = 0;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
-	if (isIPD == 1) {
-		lenIPD = data << 8;
-		isIPD = 2;
-	} else if (isIPD == 2) {
-		lenIPD += data;
-		isIPD = 3;
-	}
-	buffer[bufferIndex++] = data;
-	if ((isIPD == 3) && (bufferIndex >= lenIPD + 14)) {
+	if (data == 0x0A) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		GsmTaskMessage *message;
 		buffer[bufferIndex++] = 0;
@@ -313,9 +305,13 @@ static inline void __gmsReceiveIPDData(unsigned char data) {
 			if (xHigherPriorityTaskWoken) {
 				taskYIELD();
 			}
+		} else {
+			printf("GPRS handle error");
 		}
 		isIPD = 0;
 		bufferIndex = 0;
+	} else if (data != 0x0D) {
+		buffer[bufferIndex++] = data;
 	}
 }
 
@@ -326,7 +322,11 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		buffer[bufferIndex++] = 0;
 		message = __gsmCreateMessage(TYPE_SMS_DATA, buffer, bufferIndex);
-		xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		}
 		isSMS = 0;
 		bufferIndex = 0;
 	} else if (data != 0x0D) {
@@ -527,13 +527,17 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 	}
 
 	if (strncmp("CONNECT OK", reply, 10) == 0) {
-		int size;
+		int size, i;
 		const char *data;
 		AtCommandDropReplyLine(reply);
-		data = ProtoclCreatLogin(__imei, &size);
+// 		data = ProtoclCreatLogin(__imei, &size);
+// 		__gsmSendTcpDataLowLevel(data, size);
+// 		ProtocolDestroyMessage(data);
+		
+		data = (char *)ProtoclAchieveWeather(GsmGetIMEI());
+		size = strlen(GsmGetIMEI()) + 6;
 		__gsmSendTcpDataLowLevel(data, size);
-		ProtocolDestroyMessage(data);
-		return true;
+	  vPortFree((void *)data);
 	}
 	AtCommandDropReplyLine(reply);
 	return false;
@@ -843,10 +847,12 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_NONE, NULL },
 };
 
+static char pro = 0;
+
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0;
+	portTickType lastT = 0, terT = 0;
 
 	while (1) {
 		printf("Gsm start\n");
@@ -886,7 +892,18 @@ static void __gsmTask(void *parameter) {
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
 				lastT = curT;
-			} 
+			} else if ((curT - terT) >= GSM_GPRS_HEART_BEAT_TIME /20) {
+				int size;
+				char *data;
+				if(pro < 4){
+					size = 6;
+					data = (char *)ProtoclAchieveMessage();
+					__gsmSendTcpDataLowLevel(data, size);
+					vPortFree((void *)data);
+					pro++;
+				}
+				terT = curT;
+			}
 		}
 	}
 }
@@ -895,6 +912,6 @@ static void __gsmTask(void *parameter) {
 void GSMInit(void) {
 	ATCommandRuntimeInit();
 	__gsmInitHardware();
-	__queue = xQueueCreate(5, sizeof(GsmTaskMessage *));
+	__queue = xQueueCreate(10, sizeof(GsmTaskMessage *));
 	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
 }

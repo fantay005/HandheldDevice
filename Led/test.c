@@ -8,6 +8,7 @@
 #include "second_datetime.h"
 #include "unicode2gbk.h"
 #include "softpwm_led.h"
+#include "norflash.h"
 
 #define SHT_TASK_STACK_SIZE	( configMINIMAL_STACK_SIZE + 64 )
 
@@ -66,20 +67,27 @@ static void __ledTestTask(void *nouse) {
 		SevenSegLedSetContent(LED_INDEX_HUMI_L, humi % 10);
 		SevenSegLedDisplay();
 		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.second >= 0x00) && (dateTime.second <= 0x05)) {
+				NorFlashMutexLock(configTICK_RATE_HZ * 10);
+				FSMC_NOR_EraseSector(SMS1_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 5);
+				FSMC_NOR_EraseSector(SMS10_PARAM_STORE_ADDR);
+				vTaskDelay(configTICK_RATE_HZ / 5);
+				NorFlashMutexUnlock();
 		   	printf("Reset From Default Configuration\n");
 				vTaskDelay(configTICK_RATE_HZ * 5);
 	      NVIC_SystemReset();
 		}
-		
-		if ((dateTime.hour == 0x12) && (dateTime.minute == 0x38) && (dateTime.second == 0x00) && (dateTime.second == 0x00)) {
-			  int size;
-				char *dat = (char *)ProtoclAchieveWeather(GsmGetIMEI());
-			  size = strlen(GsmGetIMEI()) + 2;
-				__gsmSendTcpDataLowLevel(dat, size);
-				vPortFree(dat);
+		if (((dateTime.hour == 0x06) || (dateTime.hour == 0x12))&& (dateTime.minute == 0x00) && (dateTime.second == 0x00)) {
+				int size, i;
+				const char *data;
+			  data = (char *)ProtoclAchieveMessage();
+				size = 6;
+			  for(i = 0; i < 8; i++){
+					__gsmSendTcpDataLowLevel(data, size);
+					vPortFree((void *)data);
+					vTaskDelay(configTICK_RATE_HZ * 10);
+				}
 		}
-		
-		
 	}
 }
 

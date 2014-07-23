@@ -22,6 +22,10 @@
 #include "gsm.h"
 
 
+static xQueueHandle __smsQueue;
+
+#define SMS_TASK_STACK_SIZE			(configMINIMAL_STACK_SIZE + 256)
+
 typedef struct {
 	char user[6][12];
 } USERParam;
@@ -38,6 +42,37 @@ void __storeSMS2(const char *sms) {
 	NorFlashWrite(SMS2_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
 }
 
+void __storeSMS3(const char *sms) {
+	NorFlashWrite(SMS3_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS4(const char *sms) {
+	NorFlashWrite(SMS4_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS5(const char *sms) {
+	NorFlashWrite(SMS5_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS6(const char *sms) {
+	NorFlashWrite(SMS6_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS7(const char *sms) {
+	NorFlashWrite(SMS7_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS8(const char *sms) {
+	NorFlashWrite(SMS8_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS9(const char *sms) {
+	NorFlashWrite(SMS9_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
+
+void __storeSMS10(const char *sms) {
+	NorFlashWrite(SMS10_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
+}
 
 static inline bool __isValidUser(const char *p) {
 	int i;
@@ -330,6 +365,14 @@ static void __cmd_RST_Handler(const SMSInfo *p) {
 	vTaskDelay(configTICK_RATE_HZ / 5);
 	FSMC_NOR_EraseSector(SMS2_PARAM_STORE_ADDR);
 	vTaskDelay(configTICK_RATE_HZ / 5);
+	FSMC_NOR_EraseSector(SMS3_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 5);
+	FSMC_NOR_EraseSector(SMS4_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 5);
+	FSMC_NOR_EraseSector(SMS5_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 5);
+	FSMC_NOR_EraseSector(SMS10_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 5);
 	NorFlashMutexUnlock();
 	printf("Reboot From Default Configuration\n");
 	WatchdogResetSystem();
@@ -388,6 +431,12 @@ static void __cmd_CTCP_Handler(const SMSInfo *sms){
 } 
 
 
+static void __cmd_WARNING_Handler(const SMSInfo *sms){
+	  const char *p = (const char *)sms->content;
+		MessDisplay((char *)&(p[3]));
+	  __storeSMS10(&(p[3]));
+}
+
 #define UP1 (1 << 1)
 #define UP2 (1 << 2)
 #define UP3 (1 << 3)
@@ -431,8 +480,9 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<TEST>", __cmd_TEST_Handler, UP_ALL},
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
+	{"<A>", __cmd_WARNING_Handler, UP_ALL},
 
-	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
+	{"<VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{"<CTCP>",  __cmd_CTCP_Handler, UP_ALL},
 	{NULL, NULL}
 };
@@ -473,4 +523,151 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	}
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 
+}
+
+static char n = 1;
+
+static void __smsTask(void *nouse) {
+	portBASE_TYPE rc;
+	char *msg;
+
+	__smsQueue = xQueueCreate(1, sizeof(char *));
+	while (1) {
+		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 30);
+		if (rc == pdTRUE) {
+		} else {
+			
+			if(n > 6){
+				n = 1;
+			}
+			
+			if (n == 1) {
+				const char *messageA = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);				
+				if (messageA[0] == 0xff) {
+					n = 2;
+				} else {
+				  char * p = pvPortMalloc(strlen(messageA) + 1);
+				  strcpy(p, messageA);					
+					MessDisplay(p);
+					vPortFree(p);
+				}
+			} 
+			
+			if (n == 2) {
+				const char *messageB = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
+				if (messageB[0] == 0xff) {
+					n = 3;
+				} else {
+					char * v = pvPortMalloc(strlen(messageB) + 1);
+				  strcpy(v, messageB);
+					MessDisplay(v);
+					vPortFree(v);
+				}
+			} 
+			
+			if (n == 3) {
+				const char *messageC = (const char *)(Bank1_NOR2_ADDR + SMS3_PARAM_STORE_ADDR);
+				if (messageC[0] == 0xff) {
+					n = 4;
+				} else {
+					char * t = pvPortMalloc(strlen(messageC) + 1);
+				  strcpy(t, messageC);
+					MessDisplay(t);
+					vPortFree(t);
+				}
+			} 
+			
+			if (n == 4) {
+				const char *messageD = (const char *)(Bank1_NOR2_ADDR + SMS4_PARAM_STORE_ADDR);
+				if (messageD[0] == 0xff) {
+					n = 5;
+				} else {
+					char * q = pvPortMalloc(strlen(messageD) + 1);
+			  	strcpy(q, messageD);
+					MessDisplay(q);
+					vPortFree(q);
+				}
+			} 
+
+			if (n == 5) {
+				const char *messageE = (const char *)(Bank1_NOR2_ADDR + SMS5_PARAM_STORE_ADDR);
+				if (messageE[0] == 0xff) {
+					n = 6;
+				} else {
+					char * h = pvPortMalloc(strlen(messageE) + 1);
+				  strcpy(h, messageE);
+					MessDisplay(h);
+					vPortFree(h);
+				}
+			} 
+			
+// 			if (n == 6) {
+// 				const char *messageF = (const char *)(Bank1_NOR2_ADDR + SMS6_PARAM_STORE_ADDR);
+// 				if (messageF[0] == 0xff) {
+// 					n = 7;
+// 				} else {
+// 					char * m = pvPortMalloc(strlen(messageF) + 1);
+// 				  strcpy(m, messageF);
+// 					MessDisplay(m);
+// 					vPortFree(m);
+// 				}
+// 			} 
+// 			
+// 			if (n == 7) {
+// 				const char *messageH = (const char *)(Bank1_NOR2_ADDR + SMS7_PARAM_STORE_ADDR);
+// 				if (messageH[0] == 0xff) {
+// 					n = 8;
+// 				} else {
+// 					char * x = pvPortMalloc(strlen(messageH) + 1);
+// 				  strcpy(x, messageH);
+// 					MessDisplay(x);
+// 					vPortFree(x);
+// 				}
+// 			} 
+// 			
+// 			if (n == 8) {
+// 				const char *messageI = (const char *)(Bank1_NOR2_ADDR + SMS8_PARAM_STORE_ADDR);
+// 				if (messageI[0] == 0xff) {
+// 					n = 9;
+// 				} else {
+// 					char * y = pvPortMalloc(strlen(messageI) + 1);
+// 				  strcpy(y, messageI);
+// 					MessDisplay(y);
+// 					vPortFree(y);
+// 				}
+// 			} 
+
+// 			if (n == 9) {
+// 				const char *messageG = (const char *)(Bank1_NOR2_ADDR + SMS9_PARAM_STORE_ADDR);
+// 				if (messageG[0] == 0xff) {
+// 					n++;
+// 					continue;
+// 				} else {
+// 					char * k = pvPortMalloc(strlen(messageG) + 1);
+// 				  strcpy(k, messageG);
+// 					MessDisplay(k);
+// 					vPortFree(k);
+// 				}
+// 			}
+// 			
+			if (n == 6) {
+				const char *messageT = (const char *)(Bank1_NOR2_ADDR + SMS10_PARAM_STORE_ADDR);
+				if (messageT[0] == 0xff) {
+					n++;
+					continue;
+				} else {
+					char * v = pvPortMalloc(strlen(messageT) + 1);
+				  strcpy(v, messageT);
+					MessDisplay(v);
+					vPortFree(v);
+				}
+			}
+			
+			n++;
+		}
+	}
+}
+
+ void __smsCreateTask(void) {
+	xTaskCreate(__smsTask, (signed portCHAR *) "SMS", SMS_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
 }

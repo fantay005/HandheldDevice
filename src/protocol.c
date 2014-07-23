@@ -179,10 +179,27 @@ char *ProtoclCreatLogin(char *imei, int *size) {
 
 char *ProtoclAchieveWeather(char *imei) {
 	int len;
+	char a[3] = {0x0D, 0x0A, 0};
 	char *p = pvPortMalloc(30);
 	memset(p, 0, 30);
-	len = sprintf(p, "#H");
+	len = sprintf(p, "#HID");
 	sprintf(&p[len], imei);
+	strcat(p, a);
+	return p;
+}
+
+static unsigned char ter = 1;
+
+char *ProtoclAchieveMessage(void) {
+	char a[3] = {0x0D, 0x0A, 0};
+	char *p = pvPortMalloc(16);
+	memset(p, 0, 16);
+  sprintf(p, "#HA%d", ter);
+	strcat(p, a);
+  ter++;
+  if (ter > 8) {
+		ter = 1;
+	}
 	return p;
 }
 
@@ -403,6 +420,23 @@ void HandleLongSMS(ProtocolHeader *header, char *p) {
 
 
 void HandleHeFeiWeath(ProtocolHeader *header, char *p) {
+	if (header->class == '1') {
+		__storeSMS2(p);
+	} else if (header->class == '2') {
+		__storeSMS3(p);
+	} else if (header->class == '3') {
+		__storeSMS4(p);
+	} else if (header->class == '4') {
+		__storeSMS5(p);
+	} else if (header->class == '5') {
+		__storeSMS6(p);
+	} else if (header->class == '6') {
+		__storeSMS7(p);
+	} else if (header->class == '7') {
+		__storeSMS8(p);
+	} else if (header->class == '8') {
+		__storeSMS9(p);
+	}
 	MessDisplay(p);
 }
 
@@ -428,7 +462,14 @@ void ProtocolHandler(char *p) {
 		{'4', '3', HandleRecordPromptSound},
 		{'4', '4', HandleMP3Music},
 		{'4', '5', HandleLongSMS},
+		{'5', '1', HandleHeFeiWeath},
+		{'5', '2', HandleHeFeiWeath},
+		{'5', '3', HandleHeFeiWeath},
+		{'5', '4', HandleHeFeiWeath},
 		{'5', '5', HandleHeFeiWeath},
+		{'5', '6', HandleHeFeiWeath},
+		{'5', '7', HandleHeFeiWeath},
+		{'5', '8', HandleHeFeiWeath},
 	};
 	ProtocolHeader *header = (ProtocolHeader *)p;
 

@@ -507,7 +507,7 @@ void XfsTaskSpeakGBK(const char *s, int len) {
 
 void XfsInit(void) {
 	__initHardware();
-	xTaskCreate(__xfsTask, (signed portCHAR *) "XFS", XFS_TASK_STACK_SIZE, (void *)'2', tskIDLE_PRIORITY + 2, NULL);
+	xTaskCreate(__xfsTask, (signed portCHAR *) "XFS", XFS_TASK_STACK_SIZE, (void *)'2', tskIDLE_PRIORITY + 3, NULL);
 }
 
 void USART3_IRQHandler(void) {

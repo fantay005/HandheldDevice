@@ -376,7 +376,7 @@ void DisplayTask(void *helloString) {
 
 void DisplayInit(void) {
 	LedScanInit();
-	xTaskCreate(DisplayTask, (signed portCHAR *) "DISPLAY", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 10, NULL);
+	xTaskCreate(DisplayTask, (signed portCHAR *) "DISPLAY", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 }
 
 #endif

@@ -1021,5 +1021,5 @@ void GSMInit(void) {
 	ATCommandRuntimeInit();
 	__gsmInitHardware();
 	__queue = xQueueCreate(10, sizeof(GsmTaskMessage *));
-	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
+	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 }

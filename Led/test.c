@@ -98,5 +98,5 @@ static void __ledTestTask(void *nouse) {
 
 void SHT10TestInit(void) {
 	SHT10Init();
-	xTaskCreate(__ledTestTask, (signed portCHAR *) "TST", SHT_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+	xTaskCreate(__ledTestTask, (signed portCHAR *) "TST", SHT_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 30, NULL);
 }

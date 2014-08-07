@@ -28,15 +28,9 @@ enum { MSG_CMD_DISPLAY_CONTROL = 0,
 #define	MSG_DATA_DISPLAY_CONTROL_OFF 0
 #define	MSG_DATA_DISPLAY_CONTROL_ON 1
 
-#if defined(__LED_HUAIBEI__)
+
 static const char *host = "安徽气象欢迎您！";
-static const char *assistant = "淮北气象三农服务";
-#endif
 
-
-#if defined(__LED_LIXIN__)
-static const char *host = "解集人民欢迎您！";
-#endif
 
 typedef struct {
 	uint32_t cmd;
@@ -55,7 +49,7 @@ static char __displayMessageColor = 1;
 static const uint8_t *__displayMessage = NULL;
 static const uint8_t *__displayCurrentPoint = NULL;
 
-static const char *const __message_space = "　　　解集人民欢迎您！　　　";
+static const char *const __message_space = "      ";
 void MessDisplay(char *message) {
 	char *p = pvPortMalloc(strlen(message) + 1);
 	DisplayTaskMessage msg;
@@ -189,6 +183,7 @@ void __handlerDisplayMessage(DisplayTaskMessage *msg) {
 	}
 	__displayMessage = msg->data.pointData;
 	__displayCurrentPoint = __displayMessage;
+	DisplayClear();
 	//__displayMessageLowlevel();
 }
 
@@ -230,12 +225,12 @@ const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, co
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
 
-	static int yorg = 128;
+	static int yorg = LED_PHY_DOT_HEIGHT;
 	int dy;
 
 
-	int y = msg->data.wordData;		          
-//	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
+	int y = msg->data.wordData;		         
+	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
 
 	if (__displayMessage == NULL) {
@@ -243,20 +238,19 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	}
 
 	if (*__displayCurrentPoint == 0) {
-		yorg = 128;
-		if (y == 128){
+		yorg = LED_PHY_DOT_HEIGHT;
+		if (y == yorg){
 		    __displayCurrentPoint = __displayMessage;
 		}
 	}
 
-	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
+//	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
-
-	if (yorg >= QIANGLI_UNIT_Y_NUM * 16 * 3){
-		yorg = yorg - QIANGLI_UNIT_Y_NUM * 16 * 3;
-	}
-
-    if(yorg >= y){
+	if (yorg >= LED_VIR_DOT_HEIGHT){
+		yorg = yorg - LED_VIR_DOT_HEIGHT;
+	} else if(y == 0){
+		yorg = LED_VIR_DOT_HEIGHT;
+	} else if (yorg > y) {
 		return;
 	} else {
 		dy = y - yorg;
@@ -338,7 +332,7 @@ void DisplayTask(void *helloString) {
 		host = p;
 	}
 	LedScanOnOff(1);
-//	DisplayMessageRed((char*)host);
+	MessDisplay((char*)host);
 	ScrollDisplayInit();
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);

@@ -72,7 +72,7 @@ static inline bool __isValidUser(const char *p) {
 static int __userIndex(const char *user) {
 	int i;
 
-	if (!__isValidUser(__userParam.user[0])) {
+	if (__isValidUser(__userParam.user[0])) {
 		return 1;
 	}
 
@@ -569,7 +569,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
 #endif
 
-	{"VERSION>", __cmd_VERSION_Handler, UP_ALL},
+	{"<VERSION>", __cmd_VERSION_Handler, UP_ALL},
 	{NULL, NULL}
 };
 

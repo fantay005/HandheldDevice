@@ -247,52 +247,169 @@ static void __cmd_UNLOCK_Handler(const SMSInfo *p) {
 
 }
 
-static void __cmd_AHQX_Handler(const SMSInfo *p) {
+static void __cmd_AHQX_Handler(const SMSInfo *sms) {
+
 }
 
-static void __cmd_SMSC_Handler(const SMSInfo *p) {
+static void __cmd_SMSC_Handler(const SMSInfo *sms) {
+	int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
+	
 }
 
-static void __cmd_CLR_Handler(const SMSInfo *p) {
+static void __cmd_CLR_Handler(const SMSInfo *sms) {
+	int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if ((index != 1) || (index != 2)){
+		return;
+	}
 }
 
-static void __cmd_DM_Handler(const SMSInfo *p) {
+static void __cmd_DM_Handler(const SMSInfo *sms) {
+	int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_DSP_Handler(const SMSInfo *p) {
+static void __cmd_DSP_Handler(const SMSInfo *sms) {
+	int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if ((index != 1) || (index != 2)){
+		return;
+	}
 }
 
-static void __cmd_STAY_Handler(const SMSInfo *p) {
+static void __cmd_STAY_Handler(const SMSInfo *sms) {
+	int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_YSP_Handler(const SMSInfo *p) {
+static void __cmd_YSP_Handler(const SMSInfo *sms) {
+		int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_YM_Handler(const SMSInfo *p) {
+static void __cmd_YM_Handler(const SMSInfo *sms) {
+		int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_YD_Handler(const SMSInfo *p) {
+static void __cmd_YD_Handler(const SMSInfo *sms) {
+		int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_VOLUME_Handler(const SMSInfo *p) {
+static void __cmd_VOLUME_Handler(const SMSInfo *sms) {
+		int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_INT_Handler(const SMSInfo *p) {
+static void __cmd_INT_Handler(const SMSInfo *sms) {
+		int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_YC_Handler(const SMSInfo *p) {
+static void __cmd_YC_Handler(const SMSInfo *sms) {
+		int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_R_Handler(const SMSInfo *p) {
+static void __cmd_R_Handler(const SMSInfo *sms) {
+	int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
-static void __cmd_VALID_Handler(const SMSInfo *p) {
+static void __cmd_ST_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_S_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_W_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_WR_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_T_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_TEM_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_HUM_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_WARNING_Handler(const SMSInfo *sms) {
+}
+
+static void __cmd_VALID_Handler(const SMSInfo *sms) {
+	int index;
+	const char *pnumber = sms->number;
+	
+	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);	
+	if (index != 1) {
+		return;
+	}
 }
 
 static void __cmd_USER_Handler(const SMSInfo *p) {
 }
 
-static void __cmd_ST_Handler(const SMSInfo *sms) {
+static void __cmd_TM_Handler(const SMSInfo *sms) {
 	DateTime dateTime;
 	const char *p = sms->time;
 	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
@@ -481,28 +598,37 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<LOCK>", __cmd_LOCK_Handler, UP1},
 	{"<ALOCK>", __cmd_LOCK_Handler, UP1},
 	{"<UNLOCK>", __cmd_UNLOCK_Handler, UP1},
-	{"<AHQXZYTXXZX>", __cmd_AHQX_Handler, UP_ALL},
-	{"<SMSC>", __cmd_SMSC_Handler, UP_ALL},
-	{"<CLR>", __cmd_CLR_Handler, UP_ALL},
-	{"<DM>", __cmd_DM_Handler, UP_ALL},
-	{"<DSP>", __cmd_DSP_Handler, UP_ALL},
-	{"<STAY>", __cmd_STAY_Handler, UP_ALL},
-	{"<YSP>", __cmd_YSP_Handler, UP_ALL},
-	{"<YM>", __cmd_YM_Handler, UP_ALL},
-	{"<YD>", __cmd_YD_Handler, UP_ALL},
-	{"<VOLUME>", __cmd_VOLUME_Handler, UP_ALL},
-	{"<INT>", __cmd_INT_Handler, UP_ALL},
-	{"<YC>", __cmd_YC_Handler, UP_ALL},
-	{"<R>", __cmd_R_Handler, UP_ALL},
-	{"<VALID>", __cmd_VALID_Handler, UP_ALL},
-	{"<USER>", __cmd_USER_Handler, UP_ALL},
-	{"<ST>", __cmd_ST_Handler, UP_ALL},
-	{"<ERR>", __cmd_ERR_Handler, UP_ALL},
+	{"<AHQXZYTXXZX>", __cmd_AHQX_Handler, UP1},
+	{"<SMSC>", __cmd_SMSC_Handler, UP1},
+	{"<CLR>", __cmd_CLR_Handler, UP1},
+	{"<DM>", __cmd_DM_Handler, UP1},
+	{"<DSP>", __cmd_DSP_Handler, UP1},
+	{"<STAY>", __cmd_STAY_Handler, UP1},
+	{"<YSP>", __cmd_YSP_Handler, UP1},
+	{"<YM>", __cmd_YM_Handler, UP1},
+	{"<YD>", __cmd_YD_Handler, UP1},
+	{"<VOLUME>", __cmd_VOLUME_Handler, UP1},
+	{"<INT>", __cmd_INT_Handler, UP1},
+	{"<YC>", __cmd_YC_Handler, UP1},
+	{"<R>", __cmd_R_Handler, UP1},
+	{"<VALID>", __cmd_VALID_Handler, UP1},
+	{"<USER>", __cmd_USER_Handler, UP1 | UP2},
+	{"<TM>", __cmd_TM_Handler, UP_ALL},
+  {"<ST>", __cmd_ST_Handler, UP1 | UP2},
+	{"<ERR>", __cmd_ERR_Handler, UP1 | UP2},
 	{"<ADMIN>", __cmd_ADMIN_Handler, UP_ALL},
 	{"<IMEI>", __cmd_IMEI_Handler, UP_ALL},
 	{"<REFAC>", __cmd_REFAC_Handler, UP_ALL},
 	{"<RST>", __cmd_RST_Handler, UP_ALL},
 	{"<TEST>", __cmd_TEST_Handler, UP_ALL},
+	{"<S>", __cmd_S_Handler, UP_ALL},
+	{"<W>", __cmd_W_Handler, UP_ALL},
+	{"<RD>", __cmd_RST_Handler, UP_ALL},
+	{"<WR>", __cmd_WR_Handler, UP_ALL},
+	{"<T>", __cmd_T_Handler, UP_ALL},
+	{"<TEM>", __cmd_TEM_Handler, UP_ALL},
+	{"<HUM>", __cmd_HUM_Handler, UP_ALL},
+	{"<#>", __cmd_WARNING_Handler, UP_ALL},
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<1>", __cmd_SMS_Handler, UP_ALL},
   {"<2>", __cmd_SMS_Handler, UP_ALL},
@@ -511,7 +637,7 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<5>", __cmd_SMS_Handler, UP_ALL},
 	{"<6>", __cmd_SMS_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
-	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
+	{"<A>", __cmd_A_Handler, UP1 | UP2},
 
 
 	{"<VERSION>", __cmd_VERSION_Handler, UP_ALL},

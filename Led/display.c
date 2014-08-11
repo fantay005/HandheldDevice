@@ -105,17 +105,18 @@ void __displayMessageLowlevel(void) {
 	if (__displayCurrentPoint == NULL) {
 		__displayCurrentPoint = __displayMessage;
 	}
-	LedDisplayClear(0, 0, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT / 2 - 1);
-	LedDisplayClear(0, LED_VIR_DOT_HEIGHT / 2, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT - 1);
+	LedDisplayClear(0, 0,LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String32(0, 0, LED_VIR_DOT_WIDTH / 8, 32, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String16(0, 0, __displayCurrentPoint);
 	}
 
-	if (__displayMessageColor & 2) {
-		tmp = LedDisplayGB2312String32(0, 32, LED_VIR_DOT_WIDTH / 8, 64, __displayCurrentPoint);
-	}
+// 	if (__displayMessageColor & 2) {
+// 		tmp = LedDisplayGB2312String32(0, 32, LED_VIR_DOT_WIDTH / 8, 64, __displayCurrentPoint);
+// 	}
 	__displayCurrentPoint = tmp;
+	//LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
+
 }
 #endif
 
@@ -139,7 +140,7 @@ void __handlerDisplayMessage(DisplayTaskMessage *msg) {
 	__displayMessage = msg->data.pointData;
 	__displayCurrentPoint = __displayMessage;
 	DisplayClear();
-	//__displayMessageLowlevel();
+//	__displayMessageLowlevel();
 }
 
 
@@ -242,7 +243,7 @@ void DisplayTask(void *helloString) {
 	MessDisplay((char*)host);
 	ScrollDisplayInit();
 	while (1) {
-		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
+		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 7);
 		if (rc == pdTRUE) {
 			int i;
 			for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
@@ -255,7 +256,7 @@ void DisplayTask(void *helloString) {
 				}
 			}
 		} else {
-//				__displayMessageLowlevel();
+//			__displayMessageLowlevel();
 		}
 	}
 }

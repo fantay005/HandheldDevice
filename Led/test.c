@@ -74,7 +74,7 @@ static void __ledTestTask(void *nouse) {
 		SevenSegLedSetContent(LED_INDEX_HUMI_L, humi % 10);
 		SevenSegLedDisplay();
 
-		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.minute >= 0x00) && (dateTime.minute <= 0x05)) {
+		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.second>= 0x00) && (dateTime.second <= 0x02)) {
       WatchdogResetSystem();
 		}
 

@@ -122,6 +122,3 @@ void RtcSetTime(uint32_t seconds) {
 	RTC_SetCounter(seconds);
 	RTC_WaitForLastTask();
 }
-
-void get_fattime(void) {
-}

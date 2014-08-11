@@ -72,11 +72,11 @@ extern void SDInit(void);
 int main(void) {
 	PreSetupHardware();
 	UartDebugInit();
-//	RtcInit();
-//	WatchdogInit();
+	//RtcInit();
+	//WatchdogInit();
 
 	GSMInit();
-  SDInit();
+//  SDInit();
 	printf("\n==============================\n");
 	printf("%s", Version());
 	printf("\n==============================\n");

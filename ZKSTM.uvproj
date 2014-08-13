@@ -670,6 +670,16 @@
               <FileType>1</FileType>
               <FilePath>.\src\sdcard.c</FilePath>
             </File>
+            <File>
+              <FileName>timdelay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\timdelay.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc_dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\adc_dma.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -723,15 +733,15 @@
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\rtc.c</FilePath>
             </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Sensors</GroupName>
-          <Files>
             <File>
-              <FileName>sht1x.c</FileName>
+              <FileName>onewire.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\Sensors\sht1x.c</FilePath>
+              <FilePath>.\ZKLibs\onewire.c</FilePath>
+            </File>
+            <File>
+              <FileName>softI2C.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\ZKLibs\softI2C.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -747,6 +757,31 @@
               <FileName>diskio.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Fatfs\diskio.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Devices</GroupName>
+          <Files>
+            <File>
+              <FileName>BH1750.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Devices\BH1750.c</FilePath>
+            </File>
+            <File>
+              <FileName>soil.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Devices\soil.c</FilePath>
+            </File>
+            <File>
+              <FileName>sht1x.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Devices\sht1x.c</FilePath>
+            </File>
+            <File>
+              <FileName>sensors.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Devices\sensors.c</FilePath>
             </File>
           </Files>
         </Group>

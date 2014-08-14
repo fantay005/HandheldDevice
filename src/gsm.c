@@ -378,7 +378,7 @@ bool __gsmSendTcpDataLowLevel(const char *p, int len) {
 	char *reply;
 
 	if (!isONtcp){
-	   return;
+	   return false;
 	}
 
 
@@ -437,14 +437,19 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 
 bool __gsmInitRuntime() {
 	int i;
-	static const int bauds[] = {19200, 9600, 115200, 38400, 51200, 4800 };
+	//static const int bauds[] = {19200, 9600, 115200, 38400, 51200, 4800 };
+	static const int bauds[] = {19200 };
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// ÉèÖÃ²¨ÌØÂÊ
 		printf("Init gsm baud: %d\n", bauds[i]);
 		__gsmInitUsart(bauds[i]);
-		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
-		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
-		if (ATCommandAndCheckReply("ATE0\r", "OK", configTICK_RATE_HZ)) {
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ * 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ * 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ * 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ * 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ * 2);
+		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ * 2);
+		if (ATCommandAndCheckReply("ATE0\r", "OK", configTICK_RATE_HZ * 5)) {
 			break;
 		}
 	}
@@ -666,6 +671,9 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_NONE, NULL },
 };
 
+extern char *backdate(int *size);
+extern void __sensors_config(void);
+
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
@@ -682,6 +690,8 @@ static void __gsmTask(void *parameter) {
 	while (!__gsmGetImeiFromModem()) {
 		vTaskDelay(configTICK_RATE_HZ);
 	}
+	
+	__sensors_config();
 
 	for (;;) {
 		printf("Gsm: loop again\n");
@@ -705,9 +715,10 @@ static void __gsmTask(void *parameter) {
 																		
 			if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				int size;
-				const char *dat = ProtoclCreateHeartBeat(&size);
+        char *dat = backdate(&size);
 				__gsmSendTcpDataLowLevel(dat, size);
-				ProtocolDestroyMessage(dat);
+				vPortFree(dat);
+				printf("Send dat sucess.\n");
 				lastT = curT;
 			}
 		}

@@ -68,6 +68,7 @@ extern void RtcInit(void);
 extern void GSMInit(void);
 extern void WatchdogInit(void);
 extern void SDInit(void);
+extern void __sensors_config(void);
 
 int main(void) {
 	PreSetupHardware();

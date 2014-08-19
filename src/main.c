@@ -90,7 +90,7 @@ int main(void) {
 	GSMInit();
 	SHT10TestInit();
 	SDInit();
-//	mp3TestInit();
+/*	mp3TestInit();  */
 
 
 

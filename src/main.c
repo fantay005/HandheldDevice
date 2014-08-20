@@ -65,36 +65,19 @@ static void PreSetupHardware(void) {
 /*-----------------------------------------------------------*/
 
 extern void UartDebugInit(void);
-extern void RtcInit(void);
-extern void SoundControlInit(void);
 extern void XfsInit(void);
 extern void GSMInit(void);
 extern void DisplayInit(void);
-extern void SHT10TestInit(void);
-extern void SevenSegLedInit(void);
-extern void RecoveryInit(void);
 extern void NorFlashInit(void);
-extern void WatchdogInit(void);
-extern void SoftPWMLedInit(void);
 
 int main(void) {
 	PreSetupHardware();
 	NorFlashInit();
 	UartDebugInit();
-	RtcInit();
-	WatchdogInit();
-	SoftPWMLedInit();
-	RecoveryInit();
-#if defined(__SPKEAER__)
-	SoundControlInit();
-#endif
 	XfsInit();
 	GSMInit();
-#if defined(__LED__)
 	DisplayInit();
-	SevenSegLedInit();
-	SHT10TestInit();
-#endif
+
 
 	printf("\n==============================\n");
 	printf("%s", Version());

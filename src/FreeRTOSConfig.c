@@ -2,7 +2,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-extern void RecoveryToFactory(void);
 extern void WatchdogFeed(void);
 
 /// Malloc failed hook for FreeRTOS.
@@ -16,6 +15,5 @@ void vApplicationMallocFailedHook(void) {
 
 /// Application idle hook for FreeRTOS.
 void vApplicationIdleHook(void) {
-	RecoveryToFactory();
 	WatchdogFeed();
 }

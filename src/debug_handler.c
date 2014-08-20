@@ -84,16 +84,6 @@ void __setDisplayBuffer(const char *p) {
 }
 #endif
 
-void __sendAtCommandToGSM(const char *p) {
-	extern int GsmTaskSendAtCommand(const char * atcmd);
-	printf("SendAtCommandToGSM: ");
-	if (GsmTaskSendAtCommand(p)) {
-		printf("Succeed\n");
-	} else {
-		printf("Failed\n");
-	}
-}
-
 #ifdef __LED_HUAIBEI__
 static void __setSoftPWMLed(const char *p) {
 	switch (p[4]) {
@@ -132,7 +122,6 @@ static const DebugHandlerMap __handlerMaps[] = {
 #ifdef __LED_HUAIBEI__
 	{ "SPWM", __setSoftPWMLed },
 #endif
-	{ "AT", __sendAtCommandToGSM },
 	{ NULL, NULL },
 };
 

@@ -71,10 +71,10 @@ __Vectors       DCD     __initial_sp               ; Top of Stack
                 DCD     MemManage_Handler          ; MPU Fault Handler
                 DCD     BusFault_Handler           ; Bus Fault Handler
                 DCD     UsageFault_Handler         ; Usage Fault Handler
-                DCD     __Vectors                  ; Reserved
-                DCD     __Vectors                  ; Reserved
-                DCD     __Vectors                  ; Reserved
-                DCD     __Vectors                  ; Reserved
+                DCD     0                          ; Reserved
+                DCD     0                           ; Reserved
+                DCD     0                          ; Reserved
+                DCD     0                          ; Reserved
                 DCD     vPortSVCHandler            ; SVCall Handler
                 DCD     DebugMon_Handler           ; Debug Monitor Handler
                 DCD     0                          ; Reserved

@@ -21,7 +21,7 @@ static struct {
 	unsigned char speakType;
 	unsigned char speakSpeed;
 	unsigned char speakTone;
-} speakParam = {3, 2, '9', '3', '5', '5'};
+} speakParam = {1, 2, '9', '3', '5', '5'};
 
 static inline void __storeSpeakParam(void) {
 	NorFlashWrite(XFS_PARAM_STORE_ADDR, (const short *)&speakParam, sizeof(speakParam));
@@ -30,7 +30,7 @@ static inline void __storeSpeakParam(void) {
 static void __restorSpeakParam(void) {
 	NorFlashRead(XFS_PARAM_STORE_ADDR, (short *)&speakParam, sizeof(speakParam));
 	if (speakParam.speakTimes > 100) {
-		speakParam.speakTimes = 3;
+		speakParam.speakTimes = 1;
 	}
 	if (speakParam.speakPause > 100) {
 		speakParam.speakPause = 2;
@@ -429,7 +429,7 @@ void __xfsTask(void *parameter) {
 	__speakQueue = xQueueCreate(3, sizeof(char *));
 
 	printf("Xfs start\n");
-	__restorSpeakParam();
+	__storeSpeakParam();
 	__xfsInitRuntime();
 	WelcomeNote();
 	for (;;) {

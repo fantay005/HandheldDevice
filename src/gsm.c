@@ -15,16 +15,21 @@
 #include "zklib.h"
 #include "unicode2gbk.h"
 #include "second_datetime.h"
+#include "norflash.h"
 
 
 #define GSM_TASK_STACK_SIZE		( configMINIMAL_STACK_SIZE + 64 )
+#define DELAY_TIME             (configTICK_RATE_HZ)
 
 static xQueueHandle __gsmQueue;
 
-const char *com_data = "one#\r\n";
+const char *com_data = "#one#\r\n";
+const char *stop = "#onestop#\r\n";
 
 typedef enum {
 	TYPE_NONE = 0,
+	TYPE_CALL_AGAIN,
+	TYPE_PAUSE_SEV,
 	TYPE_SEND_DATA,
 	TYPE_DIS_DATA,
 } GsmTaskMessageType;
@@ -44,6 +49,10 @@ void ATCmdSendChar(char *msg, int len) {
 		while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
 		USART_SendData(USART2, *msg++);
 	}
+}
+
+static inline void __storeSpeakParam(char *p) {
+	NorFlashWrite(GSM_PARAM_STORE_ADDR, (const short *)p, strlen(p));
 }
 
 GsmTaskMessage *__gsmCreateMessage(GsmTaskMessageType type, const char *dat, int len) {
@@ -95,24 +104,50 @@ static void __gsmInitHardware(void) {
 	NVIC_Init(&NVIC_InitStructure);
 }
 
-
-void EXTI3_INTI(void){
+void EXTI15_INTI(void){
 	GPIO_InitTypeDef GPIO_InitStructure;
 	EXTI_InitTypeDef EXTI_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13 ;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_15 ;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOG, &GPIO_InitStructure);		  //MP3_IRQ
+	GPIO_Init(GPIOB, &GPIO_InitStructure);		  //MP3_IRQ
 
 
-	EXTI_InitStructure.EXTI_Line = EXTI_Line13; //选择中断线路2 3 5
+	EXTI_InitStructure.EXTI_Line = EXTI_Line15; //选择中断线路2 3 5
   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt; //设置为中断请求，非事件请求
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; //设置中断触发方式为上下降沿触发
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising; //设置中断触发方式为上下降沿触发
   EXTI_InitStructure.EXTI_LineCmd = ENABLE;                                          //外部中断使能
   EXTI_Init(&EXTI_InitStructure);
 
-	GPIO_EXTILineConfig(GPIO_PortSourceGPIOG, GPIO_PinSource13);	  
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource15);	  
+
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+	
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;     //选择中断通道1
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; //抢占式中断优先级设置为0
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;        //响应式中断优先级设置为0
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;                                   //使能中断
+  NVIC_Init(&NVIC_InitStructure);
+}
+
+void EXTI14_INTI(void){
+	GPIO_InitTypeDef GPIO_InitStructure;
+	EXTI_InitTypeDef EXTI_InitStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_14 ;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);		  //MP3_IRQ
+
+
+	EXTI_InitStructure.EXTI_Line = EXTI_Line14; //选择中断线路2 3 5
+  EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt; //设置为中断请求，非事件请求
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising; //设置中断触发方式为上下降沿触发
+  EXTI_InitStructure.EXTI_LineCmd = ENABLE;                                          //外部中断使能
+  EXTI_Init(&EXTI_InitStructure);
+
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOB, GPIO_PinSource14);	  
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	
@@ -123,17 +158,85 @@ void EXTI3_INTI(void){
   NVIC_Init(&NVIC_InitStructure);
 }
 
+void EXTI7_INTI(void){
+	GPIO_InitTypeDef GPIO_InitStructure;
+	EXTI_InitTypeDef EXTI_InitStructure;
+	NVIC_InitTypeDef NVIC_InitStructure;
+
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7 ;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	GPIO_Init(GPIOG, &GPIO_InitStructure);		  //MP3_IRQ
+
+
+	EXTI_InitStructure.EXTI_Line = EXTI_Line7; //选择中断线路2 3 5
+  EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt; //设置为中断请求，非事件请求
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising; //设置中断触发方式为上下降沿触发
+  EXTI_InitStructure.EXTI_LineCmd = ENABLE;                                          //外部中断使能
+  EXTI_Init(&EXTI_InitStructure);
+
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOG, GPIO_PinSource7);	  
+
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+	
+	NVIC_InitStructure.NVIC_IRQChannel = EXTI9_5_IRQn;     //选择中断通道1
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; //抢占式中断优先级设置为0
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;        //响应式中断优先级设置为0
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;                                   //使能中断
+  NVIC_Init(&NVIC_InitStructure);
+}
+
+static portTickType lastTI = 0;
+static portTickType lastTII = 0;
+static portTickType lastTIII = 0;
+
+void EXTI9_5_IRQHandler(void) {
+	int curT;
+	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	if ((curT - lastTIII) >= DELAY_TIME){
+			GsmTaskMessage *message;
+			curT = xTaskGetTickCount();
+		  lastTIII = curT;
+			EXTI_ClearITPendingBit(EXTI_Line7);
+			message = __gsmCreateMessage(TYPE_CALL_AGAIN, "OK", 2);
+			if (pdTRUE == xQueueSendFromISR(__gsmQueue, &message, &xHigherPriorityTaskWoken)) {
+				 if (xHigherPriorityTaskWoken) {
+						taskYIELD();
+				 }
+			}
+	}
+}
+
 void EXTI15_10_IRQHandler(void)
 {
-	GsmTaskMessage *message;
+  int curT;
 	portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-	EXTI_ClearITPendingBit(EXTI_Line13);
-  message = __gsmCreateMessage(TYPE_SEND_DATA, com_data, 6);
-	if (pdTRUE == xQueueSendFromISR(__gsmQueue, &message, &xHigherPriorityTaskWoken)) {
-		if (xHigherPriorityTaskWoken) {
-			taskYIELD();
-		}
-	}	
+	if (GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_15) == 0){
+			curT = xTaskGetTickCount();
+		  if ((curT - lastTI) >= DELAY_TIME){
+					GsmTaskMessage *message;
+					lastTI = curT;
+					EXTI_ClearITPendingBit(EXTI_Line15);
+					message = __gsmCreateMessage(TYPE_SEND_DATA, com_data, 7);
+					if (pdTRUE == xQueueSendFromISR(__gsmQueue, &message, &xHigherPriorityTaskWoken)) {
+						if (xHigherPriorityTaskWoken) {
+							taskYIELD();
+						}
+					}	
+				}
+   } else if (GPIO_ReadInputDataBit(GPIOB,GPIO_Pin_14) == 0) {
+		 	curT = xTaskGetTickCount();
+		  if ((curT - lastTII) >= DELAY_TIME){
+					GsmTaskMessage *message;
+					lastTII = curT;
+					EXTI_ClearITPendingBit(EXTI_Line14);
+					message = __gsmCreateMessage(TYPE_PAUSE_SEV, stop, 11);
+					if (pdTRUE == xQueueSendFromISR(__gsmQueue, &message, &xHigherPriorityTaskWoken)) {
+						if (xHigherPriorityTaskWoken) {
+							taskYIELD();
+						}
+					}	
+			}
+	 }
 }
 
 static char buffer[800];
@@ -189,6 +292,16 @@ void USART2_IRQHandler(void) {
 		}
 	}
 }
+void __handleCall(GsmTaskMessage *p) {
+	const char *t = (const char *)(Bank1_NOR2_ADDR + GSM_PARAM_STORE_ADDR);
+	XfsTaskSpeakGBK(t, 16);	
+}
+
+void __handlePause(GsmTaskMessage *p) {
+	unsigned int len = p->length;
+	char *dat = __gsmGetMessageData(p);
+	ATCmdSendChar(dat, len);
+}
 
 void __handleSendData(GsmTaskMessage *p) {
 	unsigned int len = p->length;
@@ -198,6 +311,7 @@ void __handleSendData(GsmTaskMessage *p) {
 
 void __handleDisplay(GsmTaskMessage *p) {
 	char *dat = __gsmGetMessageData(p);
+	__storeSpeakParam(dat);
 	MessDisplay(dat);
 }
 
@@ -207,6 +321,8 @@ typedef struct {
 } MessageHandlerMap;
 
 static const MessageHandlerMap __messageHandlerMaps[] = {
+	{ TYPE_CALL_AGAIN, __handleCall},
+  { TYPE_PAUSE_SEV, __handlePause},
 	{ TYPE_SEND_DATA, __handleSendData },
 	{ TYPE_DIS_DATA, __handleDisplay},
 	{ TYPE_NONE, NULL },
@@ -233,7 +349,9 @@ static void __gsmTask(void *parameter) {
 
 void GSMInit(void) {
 	__gsmInitHardware();
-	EXTI3_INTI();
+	EXTI14_INTI();
+	EXTI15_INTI();
+	EXTI7_INTI();
 	__gsmInitUsart();
 	__gsmQueue = xQueueCreate(10, sizeof( char *));
 	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);

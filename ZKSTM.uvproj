@@ -295,7 +295,7 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8010000</StartAddress>
+                <StartAddress>0x8000000</StartAddress>
                 <Size>0x80000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
@@ -596,11 +596,6 @@
               <FilePath>./SRC/main.c</FilePath>
             </File>
             <File>
-              <FileName>protocol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/protocol.c</FilePath>
-            </File>
-            <File>
               <FileName>startup_stm32f10x_hd_arm.s</FileName>
               <FileType>2</FileType>
               <FilePath>./SRC/startup_stm32f10x_hd_arm.s</FilePath>
@@ -624,11 +619,6 @@
               <FileName>recovery.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\recovery.c</FilePath>
-            </File>
-            <File>
-              <FileName>sms_cmd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\sms_cmd.c</FilePath>
             </File>
             <File>
               <FileName>version.c</FileName>
@@ -772,11 +762,6 @@
               <FileName>seven_seg_led.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Led\seven_seg_led.c</FilePath>
-            </File>
-            <File>
-              <FileName>test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\test.c</FilePath>
             </File>
             <File>
               <FileName>softpwm_led.c</FileName>

@@ -596,11 +596,6 @@
               <FilePath>./SRC/main.c</FilePath>
             </File>
             <File>
-              <FileName>protocol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/protocol.c</FilePath>
-            </File>
-            <File>
               <FileName>startup_stm32f10x_hd_arm.s</FileName>
               <FileType>2</FileType>
               <FilePath>./SRC/startup_stm32f10x_hd_arm.s</FilePath>
@@ -624,11 +619,6 @@
               <FileName>recovery.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\recovery.c</FilePath>
-            </File>
-            <File>
-              <FileName>sms_cmd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\sms_cmd.c</FilePath>
             </File>
             <File>
               <FileName>version.c</FileName>

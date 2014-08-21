@@ -25,7 +25,7 @@
 #define	MSG_DATA_DISPLAY_CONTROL_OFF 0
 #define	MSG_DATA_DISPLAY_CONTROL_ON 1
 
-static const char *host = "安徽气象欢迎您！";
+static const char *host = "欢迎光临中国邮政储蓄银行";
 
 typedef struct {
 	uint32_t cmd;
@@ -74,7 +74,7 @@ void __displayMessageLowlevel(void) {
 	LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT / 2 - 1);
 	LedDisplayClear(0, LED_DOT_HEIGHT / 2, LED_DOT_XEND, LED_DOT_HEIGHT - 1);
 	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String16(0, 0, __displayCurrentPoint);
+		tmp = (const uint8_t *)LedDisplayGB2312String16(0, 8, __displayCurrentPoint);
 	}
 	__displayCurrentPoint = tmp;
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
@@ -134,14 +134,6 @@ void DisplayTask(void *helloString) {
 
 	printf("DisplayTask: start-> %s\n", (const char *)helloString);
 	__displayQueue = xQueueCreate(5, sizeof(DisplayTaskMessage));
-	{
-		const char *p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
-		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-			host = p;
-		} else if (isAsciiStart(p[0])) {
-			host = p;
-		}
-	}
 	MessDisplay((char *)host);
 	LedScanOnOff(1);
 	while (1) {

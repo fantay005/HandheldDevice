@@ -69,17 +69,7 @@ static void __ledTestTask(void *nouse) {
 		   	printf("Reset From Default Configuration\n");
 				vTaskDelay(configTICK_RATE_HZ * 5);
 	      NVIC_SystemReset();
-		}
-		
-		if ((dateTime.hour == 0x12) && (dateTime.minute == 0x38) && (dateTime.second == 0x00) && (dateTime.second == 0x00)) {
-			  int size;
-				char *dat = (char *)ProtoclAchieveWeather(GsmGetIMEI());
-			  size = strlen(GsmGetIMEI()) + 2;
-				__gsmSendTcpDataLowLevel(dat, size);
-				vPortFree(dat);
-		}
-		
-		
+		}		
 	}
 }
 

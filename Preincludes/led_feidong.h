@@ -17,11 +17,11 @@
 #define LED_SCAN_MUX 16
 
 /// É¨ÃèÁ´µÄ³¤¶È
-#define LED_SCAN_LENGTH 192
+#define LED_SCAN_LENGTH 896
 #define LED_SCAN_BITS_MASK 0x0F
 #define LED_SCAN_BITS 4
 
-#define LED_DOT_HEIGHT 96
+#define LED_DOT_HEIGHT 32
 #define LED_DOT_WIDTH  LED_SCAN_LENGTH
 #define LED_DRIVER_LEVEL 0
 

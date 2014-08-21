@@ -418,6 +418,112 @@ __exit:
 	return NULL;
 }
 
+const unsigned char *LedDisplayGB2312String32X32(int x, int y, const unsigned char *gbString) {
+	int i, j;
+	if (!FontDotArrayFetchLock()) {
+		return gbString;
+	}
+
+	while (*gbString) {
+		if (isAsciiStart(*gbString)) {
+			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_ASCII_32X16) {
+				y += BYTES_HEIGHT_PER_FONT_ASCII_32X16;
+				x = 0;
+			}
+
+			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_ASCII_32X16) {
+				goto __exit;
+			}
+
+			j = FontDotArrayFetchASCII_32(arrayBuffer, *gbString);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+			if (*gbString & 0x01) {
+				for (i = 0; i < BYTES_HEIGHT_PER_FONT_ASCII_32X16; ++i) {
+					__displayBuffer[y + i][x] = arrayBuffer[i + 1];
+				}
+			} else {
+				for (i = 0; i < BYTES_HEIGHT_PER_FONT_ASCII_32X16; ++i) {
+					__displayBuffer[y + i][x] = arrayBuffer[i];
+				}
+			}
+			++gbString;
+			x += BYTES_WIDTH_PER_FONT_ASCII_32X16;
+
+		} else if (isGB2312Start(*gbString)) {
+			int code;
+			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_32X32) {
+				y += BYTES_HEIGHT_PER_FONT_GB_32X32;
+				x = 0;
+			}
+
+			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_32X32) {
+				goto __exit;
+			}
+
+			code = (*gbString++) << 8;
+			if (!isGB2312Start(*gbString)) {
+				goto __exit;
+			}
+			code += *gbString++;
+
+
+			j = FontDotArrayFetchGB_32(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_GB_32X32; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_GB_32X32; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_32X32 + j];
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_GB_32X32;
+		} else if (isUnicodeStart(*gbString)) {
+			int code;
+			if (x > LED_DOT_WIDTH / 8 - BYTES_WIDTH_PER_FONT_GB_32X32) {
+				y += BYTES_HEIGHT_PER_FONT_GB_32X32;
+				x = 0;
+			}
+
+			if (y > LED_DOT_HEIGHT - BYTES_HEIGHT_PER_FONT_GB_32X32) {
+				goto __exit;
+			}
+
+			code = (*gbString++) << 8;
+			code += *gbString++;
+
+
+			j = FontDotArrayFetchUCS_32(arrayBuffer, code);
+			for (i = 0; i < j; i += 2) {
+				unsigned char tmp = arrayBuffer[i];
+				arrayBuffer[i] = __dotArrayTable[arrayBuffer[i + 1]];
+				arrayBuffer[i + 1] = __dotArrayTable[tmp];
+			}
+
+			for (i = 0; i < BYTES_HEIGHT_PER_FONT_GB_32X32; ++i) {
+				for (j = 0; j < BYTES_WIDTH_PER_FONT_GB_32X32; j++) {
+					__displayBuffer[y + i][j + x] = arrayBuffer[i * BYTES_WIDTH_PER_FONT_GB_32X32 + j];
+				}
+			}
+			x += BYTES_WIDTH_PER_FONT_GB_32X32;
+		} else {
+			++gbString;
+		}
+	}
+__exit:
+	FontDotArrayFetchUnlock();
+	if (*gbString) {
+		return gbString;
+	}
+	return NULL;
+}
+
 void LedScanClear(int x, int y, int xend, int yend) {
 	int vx;
 	int *dest;

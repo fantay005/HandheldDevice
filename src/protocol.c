@@ -213,7 +213,6 @@ char *TerminalFeedback(const char radom[4], int *size) {
 	r[5] = '0';
 	r[6] = radom[2];
 	r[7] = radom[3];
-	p = (char *)__gsmGetTUDE(dat);
   while(*p != 0) {
     r[8 + i++] = *p++;
   }
@@ -347,18 +346,9 @@ void HandleRecoverFactory(ProtocolHeader *header, char *p) {
 }
 
 void HandleBasicParameter(ProtocolHeader *header, char *p) {
-
-	ProtocolDestroyMessage(p);
 }
 
 void HandleCoordinate(ProtocolHeader *header, char *p) {
-	char *dat;
-	int len;
-	len = strlen((const char*)__gsmGetTUDE(dat)) + 2;
-	p = TerminalFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-	vPortFree((void *)dat);
 }
 
 void HandleRecordMP3(ProtocolHeader *header, char *p) {

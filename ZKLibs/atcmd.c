@@ -83,6 +83,7 @@ ATCmdReplyInfo *__atCommand(const char *cmd, const char *prefix, int timeoutTick
 	if (cmd != NULL) {
 		while (*cmd) {
 			ATCmdSendChar(*cmd++);
+  //    vTaskDelay(configTICK_RATE_HZ / 50);			
 		}
 	}
 

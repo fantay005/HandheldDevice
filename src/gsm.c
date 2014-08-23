@@ -23,46 +23,30 @@
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
 #define GSM_IMEI_LENGTH              15
 
-#if defined(__SPEAKER__)
-#  define RESET_GPIO_GROUP           GPIOA
-#  define RESET_GPIO                 GPIO_Pin_11
-#elif defined(__LED__)
-#  define RESET_GPIO_GROUP           GPIOB
-#  define RESET_GPIO                 GPIO_Pin_1
-#endif
+#define RESET_GPIO_GROUP           GPIOA
+#define RESET_GPIO                 GPIO_Pin_11
+#define MODE_GPIO_GROUP            GPIOA
+#define MODE_GPIO                  GPIO_Pin_12
 
-#define __gsmAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)
-#define __gsmDeassertResetPin()      GPIO_ResetBits(RESET_GPIO_GROUP, RESET_GPIO)
-#define __gsmPowerSupplyOn()         GPIO_SetBits(GPIOB, GPIO_Pin_0)
-#define __gsmPowerSupplyOff()        GPIO_ResetBits(GPIOB, GPIO_Pin_0)
+#define __wifiAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)
+#define __wifiDeassertResetPin()      GPIO_ResetBits(RESET_GPIO_GROUP, RESET_GPIO)
+
+#define __wifiAssertModePin()        GPIO_SetBits(MODE_GPIO_GROUP, MODE_GPIO)
+#define __wifiDeassertModePin()      GPIO_ResetBits(MODE_GPIO_GROUP, MODE_GPIO)
+
+
 #define __gsmPortMalloc(size)        pvPortMalloc(size)
 #define __gsmPortFree(p)             vPortFree(p)
-
-
-
-void __gsmSMSEncodeConvertToGBK(SMSInfo *info) {
-	uint8_t *gbk;
-
-	if (info->encodeType == ENCODE_TYPE_GBK) {
-		return;
-	}
-
-	gbk = Unicode2GBK(info->content, info->contentLen);
-	strcpy(info->content, gbk);
-	Unicode2GBKDestroy(gbk);
-	info->encodeType = ENCODE_TYPE_GBK;
-	info->contentLen = strlen(info->content);
-}
 
 
 /// GSM task message queue.
 static xQueueHandle __queue;
 
 /// Save the imei of GSM modem, filled when GSM modem start.
-static char __imei[GSM_IMEI_LENGTH + 1];
+static char __mac[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12121, 1};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12121, 0};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -72,7 +56,7 @@ void ATCmdSendChar(char c) {
 }
 
 const char *GsmGetIMEI(void) {
-	return __imei;
+	return __mac;
 }
 
 /// Store __gsmRuntimeParameter to flash.
@@ -107,6 +91,11 @@ typedef enum {
 	TYPE_SET_GPRS_CONNECTION,
 } GsmTaskMessageType;
 
+typedef enum {
+	TYPE_SSID,
+	TYPE_ATRM,
+	TYPE_KEY,
+} WifiParaType;
 /// Message format send to GSM task.
 typedef struct {
 	/// Message type.
@@ -212,7 +201,7 @@ bool GsmTaskSetGprsConnect(bool isOn) {
 }
 
 
-static void __gsmInitUsart(int baud) {
+static void __wifiInitUsart(int baud) {
 	USART_InitTypeDef USART_InitStructure;
 	USART_InitStructure.USART_BaudRate = baud;
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
@@ -239,31 +228,17 @@ static void __gsmInitHardware(void) {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSM模块的串口
 
-	__gsmDeassertResetPin();
+	__wifiAssertResetPin();
 	GPIO_InitStructure.GPIO_Pin =  RESET_GPIO;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(RESET_GPIO_GROUP, &GPIO_InitStructure);				    //GSM模块的RTS和RESET
+	GPIO_Init(RESET_GPIO_GROUP, &GPIO_InitStructure);				    //RESET
 
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_11;
+	__wifiDeassertModePin();
+	GPIO_InitStructure.GPIO_Pin =  MODE_GPIO;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOG, &GPIO_InitStructure);				    //GSM模块的RTS和RESET
-
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSM模块的STATAS
-
-	GPIO_ResetBits(GPIOB, GPIO_Pin_0);
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_Init(GPIOB, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
-
-	GPIO_SetBits(GPIOD, GPIO_Pin_3);
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_3;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_OD;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOD, &GPIO_InitStructure);				   //判断TCP是否打开
+	GPIO_Init(MODE_GPIO_GROUP, &GPIO_InitStructure);				    //READY
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
 	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
@@ -447,18 +422,15 @@ void USART2_IRQHandler(void) {
 }
 
 /// Start GSM modem.
-void __gsmModemStart() {
-	__gsmPowerSupplyOff();
+void __wifiModemStart() {
+	__wifiDeassertResetPin();
+	vTaskDelay(configTICK_RATE_HZ / 10);
+
+	__wifiAssertResetPin();
 	vTaskDelay(configTICK_RATE_HZ / 2);
 
-	__gsmPowerSupplyOn();
-	vTaskDelay(configTICK_RATE_HZ / 2);
-
-	__gsmAssertResetPin();
+	__wifiAssertModePin();
 	vTaskDelay(configTICK_RATE_HZ * 2);
-
-	__gsmDeassertResetPin();
-	vTaskDelay(configTICK_RATE_HZ * 5);
 }
 
 /// Check if has the GSM modem connect to a TCP server.
@@ -534,7 +506,7 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 		int size;
 		const char *data;
 		AtCommandDropReplyLine(reply);
-		data = ProtoclCreatLogin(__imei, &size);
+		data = ProtoclCreatLogin(__mac, &size);
 		__gsmSendTcpDataLowLevel(data, size);
 		ProtocolDestroyMessage(data);
 		return true;
@@ -543,107 +515,160 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 	return false;
 }
 
-bool __initGsmRuntime() {
+bool __initWifiRuntime() {
 	int i;
-	static const int bauds[] = {19200, 9600, 115200, 38400, 51200, 4800 };
+	static const int bauds[] = {115200, 19200, 9600};
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// 设置波特率
-		printf("Init gsm baud: %d\n", bauds[i]);
-		__gsmInitUsart(bauds[i]);
-		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
-		ATCommandAndCheckReply("AT\r", "OK", configTICK_RATE_HZ / 2);
-
-		if (ATCommandAndCheckReply("ATE0\r", "OK", configTICK_RATE_HZ)) {
+		printf("Init wifi baud: %d\n", bauds[i]);
+		__wifiInitUsart(bauds[i]);
+		vTaskDelay(configTICK_RATE_HZ * 10);
+		ATCommandAndCheckReply("+++", "+OK", configTICK_RATE_HZ * 5);
+		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ *5);
+		if (ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ * 5)){
 			break;
 		}
+	}
+
+	if (i >= ARRAY_MEMBER_NUMBER(bauds)) {
+		printf("All baud error\n");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+ATM=!1\r", "+OK", configTICK_RATE_HZ * 5)) {
+		printf("AT+ATM=1 error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+Z\r", "+OK", configTICK_RATE_HZ * 5)) {
+		printf("AT+Z error\r");
+		return false;
+	}
+
+	vTaskDelay(configTICK_RATE_HZ * 15);
+	
+	if (!ATCommandAndCheckReply("AT+WPRT=!0\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+WPRT error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+ATPT=!100\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+ATPT error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+SSID=!\"ZKJC_CMD\"\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+SSID error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+ATRM=!0,0,\"192.168.1.7\",60000\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+ATRM error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+ENCRY=!6\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+ENCRY error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+KEY=!1,0,\"5578900000\"\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+KEY error\r");
+		return false;
+	}
+	
+	if (!ATCommandAndCheckReply("AT+ATM=!0\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+ATM=0 error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+PMTF\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+PMTF error\r");
+		return false;
+	}
+
+	if (!ATCommandAndCheckReply("AT+Z\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+Z RESET error\r");
+		return false;
+	}
+
+	return true;
+}
+
+bool __setWifiParameter(WifiParaType type, char *dat) {
+	int i;
+	char *buff;
+	static const int bauds[] = {115200, 57600, 38400, 19200, 9600, 4800, 2400, 1200};
+	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
+		// 设置波特率
+		printf("Init wifi baud: %d\n", bauds[i]);
+		__wifiInitUsart(bauds[i]);
+		ATCommandAndCheckReply("+++", "+OK", configTICK_RATE_HZ * 2);
+		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ / 2);
+		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ / 2);
 	}
 	if (i >= ARRAY_MEMBER_NUMBER(bauds)) {
 		printf("All baud error\n");
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply(NULL, "Call Ready", configTICK_RATE_HZ * 20)) {
-		printf("Wait Call Realy timeout\n");
+	if (!ATCommandAndCheckReply("AT+ATM=!1\r", "+OK", configTICK_RATE_HZ * 5)) {
+		printf("AT+ATM=1 error\r");
+		return false;
 	}
+
+	if (!ATCommandAndCheckReply("AT+Z\r", "+OK", configTICK_RATE_HZ * 5)) {
+		printf("AT+Z error\r");
+		return false;
+	}
+
+	vTaskDelay(configTICK_RATE_HZ * 10);
 	
-		if (!ATCommandAndCheckReply("AT+IPR=19200\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("AT+IPR=19200 error\r");
+	switch (type){
+		case TYPE_SSID:
+			buff = pvPortMalloc(64);
+			sprintf(buff, "AT+SSID=!\"%s\"", dat);
+			if (!ATCommandAndCheckReply(buff, "+OK", configTICK_RATE_HZ * 5)) {
+				printf("AT+SSID error\r");
+				return false;
+			}
+			vPortFree(buff);
+	}
+
+	switch (type){
+		case TYPE_ATRM:
+			buff = pvPortMalloc(64);
+			sprintf(buff, "AT+ATRM=!0,0,\"%s\",%d\r", dat);
+			if (!ATCommandAndCheckReply(buff, "+OK", configTICK_RATE_HZ * 5)) {
+				printf("AT+ATRM error\r");
+				return false;
+			}
+			vPortFree(buff);
+	}
+
+	switch (type){
+		case TYPE_KEY:
+			buff = pvPortMalloc(64);
+			sprintf(buff, "AT+KEY=!1,0,\"%s\"\r", dat);
+			if (!ATCommandAndCheckReply(buff, "+OK", configTICK_RATE_HZ * 5)) {
+				printf("AT+KEY error\r");
+				return false;
+			}
+			vPortFree(buff);
+	}
+
+	if (!ATCommandAndCheckReply("AT+ATM=!0\r", "+OK", configTICK_RATE_HZ * 5)) {
+		printf("AT+ATM=0 error\r");
 		return false;
 	}
 
-// 	if (!ATCommandAndCheckReply("AT+CFUN=1\r", "OK", configTICK_RATE_HZ * 2)) {
-// 		printf("AT+CFUN error\r");
-// 		return false;
-// 	}
-
-
-//	if (!ATCommandAndCheckReply("AT+CPIN=1\r", "OK", configTICK_RATE_HZ * 2)) {
-//		printf("AT+CPIN=1 error\r");
-//		return false;
-//	}
-
-	if (!ATCommandAndCheckReply("AT+QNITZ=1\r", "OK", configTICK_RATE_HZ)) {
-		printf("AT+IFC error\r");
+	if (!ATCommandAndCheckReply("AT+PMTF\r", "+OK", configTICK_RATE_HZ * 5)) {
+		printf("AT+PMTF error\r");
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+IFC=2,2\r", "OK", configTICK_RATE_HZ)) {
-		printf("AT+QNITZ error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+CMGF=0\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("AT+CMGF=0 error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+CNMI=2,2,0,0,0\r", "OK", configTICK_RATE_HZ * 2)) {
-		printf("AT+CNMI error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReplyUntilOK("AT+CPMS=\"SM\"\r", "+CPMS", configTICK_RATE_HZ * 3, 10)) {
-		printf("AT+CPMS error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+CMGD=1,4\r", "OK", configTICK_RATE_HZ * 5)) {
-		printf("AT+CMGD error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+CSQ\r", "+CSQ:", configTICK_RATE_HZ / 5)) {
-		printf("AT+CSQ error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+QIDEACT\r", "DEACT", configTICK_RATE_HZ * 10)) {
-		printf("AT+QIDEACT error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+QIHEAD=0\r", "OK", configTICK_RATE_HZ / 5)) {
-		printf("AT+QIHEAD error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+QISHOWRA=0\r", "OK", configTICK_RATE_HZ / 5)) {
-		printf("AT+QISHOWRA error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+QISHOWPT=1\r", "OK", configTICK_RATE_HZ / 5)) {
-		printf("AT+QISHOWPT error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+QIFGCNT=0\r", "OK", configTICK_RATE_HZ / 2)) {
-		printf("AT+QIFGCNT error\r");
-		return false;
-	}
-
-	if (!ATCommandAndCheckReply("AT+QICSGP=1,\"CMNET\"\r", "OK", configTICK_RATE_HZ / 2)) {
-		printf("AT+QICSGP error\r");
+	if (!ATCommandAndCheckReply("AT+Z\r", "+OK", configTICK_RATE_HZ * 2)) {
+		printf("AT+Z RESET error\r");
 		return false;
 	}
 
@@ -660,7 +685,6 @@ void __handleSMS(GsmTaskMessage *p) {
 		__gsmPortFree(sms);
 		return;
 	}
-	__gsmSMSEncodeConvertToGBK(sms);
 	printf("Gsm: sms_content=> %s\n", sms->content);
 #if defined(__SPEAKER__)
 	XfsTaskSpeakGBK(sms->content, sms->contentLen);
@@ -685,17 +709,17 @@ bool __gsmIsValidImei(const char *p) {
 	return true;
 }
 
-int __gsmGetImeiFromModem() {
+int __gsmGetMACFromModem() {
 	int i;
 	char *reply;
-	reply = ATCommand("AT+GSN\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ / 10);
+	reply = ATCommand("AT+GSN\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ);
 	if (reply == NULL) {
 		return 0;
 	}
 	if (!__gsmIsValidImei(reply)) {
 		return 0;
 	}
-	strcpy(__imei, reply);
+	strcpy(__mac, reply);
 	AtCommandDropReplyLine(reply);
 	return 1;
 }
@@ -781,50 +805,7 @@ void __handleM35RTC(GsmTaskMessage *msg) {
 	RtcSetTime(DateTimeToSecond(&dateTime));
 }
 
-static char longitude[12] = {0}, latitude[12] = {0};
-
-void __handleTUDE(GsmTaskMessage *msg) {
-	int i, j = 0, count = 0;
-	char date[12], time[10];
-	DateTime __dateTime;
-  char *p = __gsmGetMessageData(msg);
-	*p++;
-	*p++;
-	for(i = 0; i < 4; i++){
-		  count++;
-			while(*p != ','){
-				if (count == 1){
-					longitude[j++] = *p++;
-				}	else if (count == 2){ 
-				  latitude[j++] = *p++;
-        }	else if (count == 3){ 
-				  date[j++] = *p++;
-        }	else if (count == 4){					
-				    time[j++] = *p++;
-					if(*p == 0){
-					  break;
-          }
-        }	
-			}
-			*p++;
-			j = 0;
-	}
-  __dateTime.year = (date[2] - '0') * 10 + (date[3] - '0');
-	__dateTime.month = (date[5] - '0') * 10 + (date[6] - '0');
-	__dateTime.date = (date[8] - '0') * 10 + (date[9] - '0');
-	__dateTime.hour = (time[0] - '0') * 10 + (time[1] - '0') + 8;
-	__dateTime.minute = (time[3] - '0') * 10 + (time[4] - '0');
-	__dateTime.second = (time[6] - '0') * 10 + (time[7] - '0');
-	RtcSetTime(DateTimeToSecond(&__dateTime));	
-}
-
-const char *__gsmGetTUDE(char *p) {
-	p = pvPortMalloc(30);
-	memset(p, 0, 30);
-	strcpy(p, longitude);
-  strcat(p, ",");
-	strcat(p, latitude);
-	return p;
+void __handleTUDE(GsmTaskMessage *msg) {	
 }
 
 typedef struct {
@@ -853,20 +834,20 @@ static void __gsmTask(void *parameter) {
 	portTickType lastT = 0;
 
 	while (1) {
-		printf("Gsm start\n");
-		__gsmModemStart();
-		if (__initGsmRuntime()) {
+		printf("Wifi start\n");
+		__wifiModemStart();
+		if (__initWifiRuntime()) {
 			break;
 		}
 	}
 
-	while (!__gsmGetImeiFromModem()) {
-		vTaskDelay(configTICK_RATE_HZ);
-	}
+// 	while (!__gsmGetMACFromModem()) {
+// 		vTaskDelay(configTICK_RATE_HZ);
+// 	}
 
 	for (;;) {
 		printf("Gsm: loop again\n");
-		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 10);
+		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 20);
 		if (rc == pdTRUE) {
 			const MessageHandlerMap *map = __messageHandlerMaps;
 			for (; map->type != TYPE_NONE; ++map) {

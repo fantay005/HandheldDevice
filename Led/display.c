@@ -74,7 +74,7 @@ void __displayMessageLowlevel(void) {
 	LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT / 2 - 1);
 	LedDisplayClear(0, LED_DOT_HEIGHT / 2, LED_DOT_XEND, LED_DOT_HEIGHT - 1);
 	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String16(0, 0, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String16(0, 16, __displayCurrentPoint);
 	}
 	__displayCurrentPoint = tmp;
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);

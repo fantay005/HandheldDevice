@@ -308,19 +308,13 @@ void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
 
 void HandleSendSMS(ProtocolHeader *header, char *p) {
 	int len;
-	uint8_t *gbk;
 	len = (header->lenH << 8) + header->lenL;
-#if defined(__SPEAKER__)
-	XfsTaskSpeakUCS2(p, len);
-#elif defined(__LED__)
-	gbk = Unicode2GBK(p, len);
 	DisplayClear();
 	SMS_Prompt();
-	MessDisplay(gbk);
-	__storeSMS1(gbk);
-	Unicode2GBKDestroy(gbk);
+	MessDisplay(p);
+	__storeSMS1(p);
+	Unicode2GBKDestroy(p);
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-#endif
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
 	ProtocolDestroyMessage(p);

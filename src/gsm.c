@@ -20,8 +20,8 @@
 #include "second_datetime.h"
 
 #define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
-#define GSM_IMEI_LENGTH              15
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 30)
+#define WIFI_MAC_LENGTH              12
 
 #define RESET_GPIO_GROUP           GPIOA
 #define RESET_GPIO                 GPIO_Pin_11
@@ -43,20 +43,16 @@
 static xQueueHandle __queue;
 
 /// Save the imei of GSM modem, filled when GSM modem start.
-static char __mac[GSM_IMEI_LENGTH + 1];
+static char __mac[WIFI_MAC_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12121, 0};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12121, 1};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
 void ATCmdSendChar(char c) {
 	USART_SendData(USART2, c);
 	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
-}
-
-const char *GsmGetIMEI(void) {
-	return __mac;
 }
 
 /// Store __gsmRuntimeParameter to flash.
@@ -271,17 +267,9 @@ static char isTUDE = 0;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
-	if (isIPD == 1) {
-		lenIPD = data << 8;
-		isIPD = 2;
-	} else if (isIPD == 2) {
-		lenIPD += data;
-		isIPD = 3;
-	}
-	buffer[bufferIndex++] = data;
-	if ((isIPD == 3) && (bufferIndex >= lenIPD + 14)) {
-		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+	if (data == 0x0A) {
 		GsmTaskMessage *message;
+		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		buffer[bufferIndex++] = 0;
 		message = __gsmCreateMessage(TYPE_GPRS_DATA, buffer, bufferIndex);
 		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
@@ -291,6 +279,8 @@ static inline void __gmsReceiveIPDData(unsigned char data) {
 		}
 		isIPD = 0;
 		bufferIndex = 0;
+	} else if (data != 0x0D) {
+		buffer[bufferIndex++] = data;
 	}
 }
 
@@ -421,6 +411,14 @@ void USART2_IRQHandler(void) {
 	}
 }
 
+
+bool __gsmIsValidMac(const char *p) {
+	int i;
+	if (strlen(p) != WIFI_MAC_LENGTH + 4) {
+		return false;
+	}
+	return true;
+}
 /// Start GSM modem.
 void __wifiModemStart() {
 	__wifiDeassertResetPin();
@@ -433,96 +431,23 @@ void __wifiModemStart() {
 	vTaskDelay(configTICK_RATE_HZ * 2);
 }
 
-/// Check if has the GSM modem connect to a TCP server.
-/// \return true   When the GSM modem has connect to a TCP server.
-/// \return false  When the GSM modem dose not connect to a TCP server.
-bool __gsmIsTcpConnected() {
-	char *reply;
-	while (1) {
-		reply = ATCommand("AT+QISTAT\r", "STATE:", configTICK_RATE_HZ * 2);
-		if (reply == NULL) {
-			return false;
-		}
-		if (strncmp(&reply[7], "CONNECT OK", 10) == 0) {
-			AtCommandDropReplyLine(reply);
-			return true;
-		}
-		if (strncmp(&reply[7], "TCP CONNECTING", 12) == 0) {
-			AtCommandDropReplyLine(reply);
-			vTaskDelay(configTICK_RATE_HZ);
-			continue;
-		}
-		AtCommandDropReplyLine(reply);
-		break;
-	}
-	return false;
-}
 
-bool __gsmSendTcpDataLowLevel(const char *p, int len) {
+void __gsmSendTcpDataLowLevel(const char *p, int len) {
 	int i;
-	char buf[16];
-	char *reply;
-
-	sprintf(buf, "AT+QISEND=%d\r", len);
-	ATCommand(buf, NULL, configTICK_RATE_HZ / 5);
 	for (i = 0; i < len; i++) {
 		ATCmdSendChar(*p++);
 	}
-
-	while (1) {
-		reply = ATCommand(NULL, "SEND", configTICK_RATE_HZ * 3);
-		if (reply == NULL) {
-			return false;
-		}
-		if (0 == strncmp(reply, "SEND OK", 7)) {
-			AtCommandDropReplyLine(reply);
-			return true;
-		} else if (0 == strncmp(reply, "SEND FAIL", 9)) {
-			AtCommandDropReplyLine(reply);
-			return false;
-		} else if (0 == strncmp(reply, "ERROR", 5)) {
-			AtCommandDropReplyLine(reply);
-			return false;
-		} else {
-			AtCommandDropReplyLine(reply);
-		}
-	}
-}
-
-bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
-	char buf[44];
-	char *reply;
-	if (__gsmIsTcpConnected()) {
-		return true;
-	}
-	ATCommand("AT+QIDEACT\r", NULL, configTICK_RATE_HZ * 2);
-	sprintf(buf, "AT+QIOPEN=\"TCP\",\"%s\",\"%d\"\r", ip, port);
-	reply = ATCommand(buf, "CONNECT", configTICK_RATE_HZ * 40);
-	if (reply == NULL) {
-		return false;
-	}
-
-	if (strncmp("CONNECT OK", reply, 10) == 0) {
-		int size;
-		const char *data;
-		AtCommandDropReplyLine(reply);
-		data = ProtoclCreatLogin(__mac, &size);
-		__gsmSendTcpDataLowLevel(data, size);
-		ProtocolDestroyMessage(data);
-		return true;
-	}
-	AtCommandDropReplyLine(reply);
-	return false;
 }
 
 bool __initWifiRuntime() {
 	int i;
-	static const int bauds[] = {115200, 19200, 9600};
+	char *reply;
+	static const int bauds[] = {115200, 9600};
+	vTaskDelay(configTICK_RATE_HZ * 12);
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// 设置波特率
 		printf("Init wifi baud: %d\n", bauds[i]);
 		__wifiInitUsart(bauds[i]);
-		vTaskDelay(configTICK_RATE_HZ * 10);
 		ATCommandAndCheckReply("+++", "+OK", configTICK_RATE_HZ * 5);
 		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ *5);
 		if (ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ * 5)){
@@ -534,7 +459,12 @@ bool __initWifiRuntime() {
 		printf("All baud error\n");
 		return false;
 	}
-
+	
+  if (!ATCommandAndCheckReply("AT+RSTF\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+RSTF error\r");
+		return false;
+	}
+	
 	if (!ATCommandAndCheckReply("AT+ATM=!1\r", "+OK", configTICK_RATE_HZ * 5)) {
 		printf("AT+ATM=1 error\r");
 		return false;
@@ -545,12 +475,12 @@ bool __initWifiRuntime() {
 		return false;
 	}
 
-	vTaskDelay(configTICK_RATE_HZ * 15);
+	vTaskDelay(configTICK_RATE_HZ * 12);
 	
-	if (!ATCommandAndCheckReply("AT+WPRT=!0\r", "+OK", configTICK_RATE_HZ * 10)) {
+	do {
 		printf("AT+WPRT error\r");
-		return false;
-	}
+	}while(!ATCommandAndCheckReply("AT+WPRT=!0\r", "+OK", configTICK_RATE_HZ * 10));
+	
 
 	if (!ATCommandAndCheckReply("AT+ATPT=!100\r", "+OK", configTICK_RATE_HZ * 10)) {
 		printf("AT+ATPT error\r");
@@ -562,20 +492,34 @@ bool __initWifiRuntime() {
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+ATRM=!0,0,\"192.168.1.7\",60000\r", "+OK", configTICK_RATE_HZ * 10)) {
+	if (!ATCommandAndCheckReply("AT+ATRM=!0,0,\"192.168.1.108\",60000\r", "+OK", configTICK_RATE_HZ * 10)) {
 		printf("AT+ATRM error\r");
 		return false;
 	}
 
-	if (!ATCommandAndCheckReply("AT+ENCRY=!6\r", "+OK", configTICK_RATE_HZ * 10)) {
+  do {
 		printf("AT+ENCRY error\r");
-		return false;
-	}
+	}	while (!ATCommandAndCheckReply("AT+ENCRY=!6\r", "+OK", configTICK_RATE_HZ * 5));
 
 	if (!ATCommandAndCheckReply("AT+KEY=!1,0,\"5578900000\"\r", "+OK", configTICK_RATE_HZ * 10)) {
 		printf("AT+KEY error\r");
 		return false;
 	}
+	
+	if (!ATCommandAndCheckReply("AT+NIP=!0\r", "+OK", configTICK_RATE_HZ * 10)) {
+		printf("AT+NIP error\r");
+		return false;
+	}
+	
+	reply = ATCommand("AT+QMAC\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ * 5);
+	if (reply == NULL) {
+		return false;
+	}
+	if (!__gsmIsValidMac(reply)) {
+		return false;
+	}
+	strcpy(__mac, &reply[4]);
+	AtCommandDropReplyLine(reply);
 	
 	if (!ATCommandAndCheckReply("AT+ATM=!0\r", "+OK", configTICK_RATE_HZ * 10)) {
 		printf("AT+ATM=0 error\r");
@@ -598,14 +542,14 @@ bool __initWifiRuntime() {
 bool __setWifiParameter(WifiParaType type, char *dat) {
 	int i;
 	char *buff;
-	static const int bauds[] = {115200, 57600, 38400, 19200, 9600, 4800, 2400, 1200};
+	static const int bauds[] = {115200, 19200, 9600};
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// 设置波特率
 		printf("Init wifi baud: %d\n", bauds[i]);
 		__wifiInitUsart(bauds[i]);
-		ATCommandAndCheckReply("+++", "+OK", configTICK_RATE_HZ * 2);
-		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ / 2);
-		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ / 2);
+		ATCommandAndCheckReply("+++", "+OK", configTICK_RATE_HZ * 5);
+		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ * 5);
+		ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ * 5);
 	}
 	if (i >= ARRAY_MEMBER_NUMBER(bauds)) {
 		printf("All baud error\n");
@@ -692,36 +636,6 @@ void __handleSMS(GsmTaskMessage *p) {
 	ProtocolHandlerSMS(sms);
 #endif
 	__gsmPortFree(sms);
-}
-
-bool __gsmIsValidImei(const char *p) {
-	int i;
-	if (strlen(p) != GSM_IMEI_LENGTH) {
-		return false;
-	}
-
-	for (i = 0; i < GSM_IMEI_LENGTH; i++) {
-		if (!isdigit(p[i])) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-int __gsmGetMACFromModem() {
-	int i;
-	char *reply;
-	reply = ATCommand("AT+GSN\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ);
-	if (reply == NULL) {
-		return 0;
-	}
-	if (!__gsmIsValidImei(reply)) {
-		return 0;
-	}
-	strcpy(__mac, reply);
-	AtCommandDropReplyLine(reply);
-	return 1;
 }
 
 void __handleProtocol(GsmTaskMessage *msg) {
@@ -841,13 +755,9 @@ static void __gsmTask(void *parameter) {
 		}
 	}
 
-// 	while (!__gsmGetMACFromModem()) {
-// 		vTaskDelay(configTICK_RATE_HZ);
-// 	}
-
 	for (;;) {
 		printf("Gsm: loop again\n");
-		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 20);
+		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 10);
 		if (rc == pdTRUE) {
 			const MessageHandlerMap *map = __messageHandlerMaps;
 			for (; map->type != TYPE_NONE; ++map) {
@@ -863,12 +773,10 @@ static void __gsmTask(void *parameter) {
 			   continue;
 			}
 			curT = xTaskGetTickCount();
-			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
-				printf("Gsm: Connect TCP error\n");
-			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
-				int size;
-				const char *dat = ProtoclCreateHeartBeat(&size);
-				__gsmSendTcpDataLowLevel(dat, size);
+      if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
+				char *dat = pvPortMalloc(20);		
+				sprintf(dat, "#H%s\r\n", __mac);
+				__gsmSendTcpDataLowLevel(dat, strlen(dat));
 				ProtocolDestroyMessage(dat);
 				lastT = curT;
 			} 

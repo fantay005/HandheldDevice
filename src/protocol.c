@@ -14,212 +14,12 @@
 #include "zklib.h"
 #include "unicode2gbk.h"
 #include "led_lowlevel.h"
-
-
-#define WOMANSOUND  0x33
-#define MANSOUND	0X32
-#define MIXSOUND	0X34
-
-extern int GsmTaskSendTcpData(const char *p, int len);
-extern int GsmTaskResetSystemAfter(int seconds);
-
-//USERParam __userParam1;
-//
-//static inline void __storeUSERParam1(void) {
-//	NorFlashWrite(USER_PARAM_STORE_ADDR, (const short *)&__userParam1, sizeof(__userParam1));
-//}
-//
-//static void __restorUSERParam1(void) {
-//	NorFlashRead(USER_PARAM_STORE_ADDR, (short *)&__userParam1, sizeof(__userParam1));
-//}
-
-typedef enum {
-	TermActive  = 0x31,
-	ParaSetup = 0x32,
-	QueryPara = 0x33,
-	Mp3File = 0x34,
-	TypeChooseReply = 0x39,
-} TypeChoose;
-
-typedef enum {
-	Login = 0x31,
-	Heart =	0x32,
-
-	SetupUser =	0x30,
-	RemoveUser = 0x31,
-	StopTime = 0x32,
-	VoiceType =	0x33,
-	VolumeSetup = 0x34,
-	BroadTimes = 0x35,
-	SendSMS	= 0x36,
-	Restart = 0x37,
-	ReFactory =	0x38,
-	ClassificReply = 0x39,
-
-	basic =	0x31,
-	Coordinate = 0x32,
-
-	Record	= 0x31,
-	SMSPrompt = 0x32,
-	RecordPrompt = 0x33,
-	Mp3Music = 0x34,
-	LongSMS = 0x35,
-
-} Classific;
+#include "second_datetime.h"
 
 typedef struct {
-	unsigned char header[2];
-	unsigned char lenH;
-	unsigned char lenL;
 	unsigned char type;
 	unsigned char class;
-	unsigned short radom;
-	unsigned short reserve;
 } ProtocolHeader;
-
-typedef struct {
-	unsigned char sum[2];
-	unsigned char x0D;
-	unsigned char x0A;
-} ProtocolPadder;
-
-void ProtocolDestroyMessage(const char *p) {
-	vPortFree((void *)p);
-}
-
-static char HexToChar(unsigned char hex) {
-	unsigned char hexTable[] = "0123456789ABCDEF";
-	return hexTable[hex & 0x0F];
-}
-
-char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int *size) {
-	int i;
-	unsigned char sum = 0;
-	unsigned char *p, *ret;
-	int len = message == NULL ? 0 : strlen(message);
-
-	*size = sizeof(ProtocolHeader) + len + sizeof(ProtocolPadder);
-	ret = pvPortMalloc(*size);
-	{
-		ProtocolHeader *h = (ProtocolHeader *)ret;
-		h->header[0] = '#';
-		h->header[1] = 'H';
-		h->lenH = len >> 8;
-		h->lenL = len;
-		h->type = type;
-		h->class = class;
-		h->radom = 0x3030;
-		h->reserve = 0x3030;
-	}
-
-	if (message != NULL) {
-		strcpy((char *)(ret + sizeof(ProtocolHeader)), message);
-	}
-
-	p = ret;
-	for (i = 0; i < len + sizeof(ProtocolHeader); ++i) {
-		sum += *p++;
-	}
-
-	*p++ = HexToChar(sum >> 4);
-	*p++ = HexToChar(sum);
-	*p++ = 0x0D;
-	*p = 0x0A;
-	return (char *)ret;
-}
-
-char *Protocol__Message(TypeChoose type, Classific class, const char *message, int *size) {
-	int i;
-	unsigned char sum = 0;
-	char ram[3];
-	unsigned char *p, *ret;
-	int len = message == NULL ? 0 : (strlen(message) - 6);
-
-	*size = sizeof(ProtocolHeader) + len + sizeof(ProtocolPadder);
-	ret = pvPortMalloc(*size);
-	{
-		ProtocolHeader *h = (ProtocolHeader *)ret;
-		h->header[0] = '#';
-		h->header[1] = 'H';
-		h->lenH = len >> 8;
-		h->lenL = len;
-		h->type = message[0];
-		h->class = message[1];
-		h->radom = 0x3030;
-		h->reserve = 0x3030;
-	}
-	ram[0] = message[6];
-	ram[1] = message[7];
-	ram[2] = 0;
-  strcpy((char*)(ret + sizeof(ProtocolHeader)), &ram[0]);
-	if (message != NULL) {
-		strcpy((char *)(ret + sizeof(ProtocolHeader) + 2), &message[8]);
-	}
-
-	p = ret;
-	for (i = 0; i < len + sizeof(ProtocolHeader); ++i) {
-		sum += *p++;
-	}
-
-	*p++ = HexToChar(sum >> 4);
-	*p++ = HexToChar(sum);
-	*p++ = 0x0D;
-	*p = 0x0A;
-	return (char *)ret;
-}
-//
-//void SoftReset(void) {
-//	__set_FAULTMASK(1);  //关闭所有终端
-//	NVIC_SystemReset();	 //复位
-//}
-
-char *ProtoclCreatLogin(char *imei, int *size) {
-	return ProtocolMessage(TermActive, Login, imei, size);
-}
-
-char *ProtoclAchieveWeather(char *imei) {
-	int len;
-	char *p = pvPortMalloc(30);
-	memset(p, 0, 30);
-	len = sprintf(p, "#H");
-	sprintf(&p[len], imei);
-	return p;
-}
-
-char *ProtoclCreateHeartBeat(int *size) {
-	return ProtocolMessage(TermActive, Heart, NULL, size);
-}
-
-char *TerminalCreateFeedback(const char radom[4], int *size) {
-	char r[5];
-	r[0] = radom[0];
-	r[1] = radom[1];
-	r[2] = radom[2];
-	r[3] = radom[3];
-	r[4] = 0;
-	return ProtocolMessage(TypeChooseReply, ClassificReply, r, size);
-}
-
-char *TerminalFeedback(const char radom[4], int *size) {
-	char r[40];
-	char *p, *dat;
-	int i = 0;
-	p = pvPortMalloc(30);
-	r[0] = radom[0];
-	r[1] = radom[1];
-	r[2] = '0';
-	r[3] = '0';
-	r[4] = '0';
-	r[5] = '0';
-	r[6] = radom[2];
-	r[7] = radom[3];
-  while(*p != 0) {
-    r[8 + i++] = *p++;
-  }
-	r[8 + i] = 0;
-  vPortFree((void *)p);	
-	return Protocol__Message(TypeChooseReply, ClassificReply, r, size);
-}
 
 typedef void (*ProtocolHandleFunction)(ProtocolHeader *header, char *p);
 typedef struct {
@@ -229,190 +29,38 @@ typedef struct {
 } ProtocolHandleMap;
 
 
-void HandleLogin(ProtocolHeader *header, char *p) {
-	ProtocolDestroyMessage(p);
-}
-
-void HandleHeartBeat(ProtocolHeader *header, char *p) {
-	ProtocolDestroyMessage(p);
-}
-
-void HandleSettingUser(ProtocolHeader *header, char *p) {
-	int len;
-	int j, i = p[0] - '0';
-	p[12] = 0;
-	SMSCmdSetUser(i, (char *)&p[1]);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleRemoveUser(ProtocolHeader *header, char *p) {
-	int len;
-	int index = p[0] - '0';
-	SMSCmdRemoveUser(index);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleDeadTime(ProtocolHeader *header, char *p) {
-	int len;
-	int choose;
-	choose = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakPause(choose);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleVoiceType(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	if (choose == 0x34) {
-		choose = MANSOUND;
-	} else if (choose == 0x35) {
-		choose = MIXSOUND;
-	} else if (choose == 0x33) {
-		choose = WOMANSOUND;
-	}
-	XfsTaskSetSpeakType(choose);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleVolumeSetting(ProtocolHeader *header, char *p) {
-	int len,  choose;
-	choose = *p;
-	XfsTaskSetSpeakVolume(choose);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
-	int len, times;
-	times = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakTimes(times);
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
+void ProtocolDestroyMessage(const char *p) {
+	vPortFree((void *)p);
 }
 
 void HandleSendSMS(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
 	DisplayClear();
-	SMS_Prompt();
 	MessDisplay(p);
 	__storeSMS1(p);
-	Unicode2GBKDestroy(p);
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-	return;
+	GsmTaskSendTcpData("DISPLAY is OK\r\n", 15);
 }
 
 void HandleRestart(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-	GsmTaskResetSystemAfter(10);
-}
+  DateTime dateTime;
+	p++;
+	p++;
+	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
+	dateTime.month = (p[3] - '0') * 10 + (p[4] - '0');
+	dateTime.date = (p[6] - '0') * 10 + (p[7] - '0');
+	dateTime.hour = (p[9] - '0') * 10 + (p[10] - '0') + 8;
+	dateTime.minute = (p[12] - '0') * 10 + (p[13] - '0');
+	dateTime.second = (p[15] - '0') * 10 + (p[16] - '0');
+	RtcSetTime(DateTimeToSecond(&dateTime));
 
-
-void HandleRecoverFactory(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleBasicParameter(ProtocolHeader *header, char *p) {
-}
-
-void HandleCoordinate(ProtocolHeader *header, char *p) {
-}
-
-void HandleRecordMP3(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleSMSPromptSound(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleRecordPromptSound(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleMP3Music(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-void HandleLongSMS(ProtocolHeader *header, char *p) {
-	int len;
-	len = (header->lenH << 8) + header->lenL;
-	p = TerminalCreateFeedback((char *) & (header->type), &len);
-	GsmTaskSendTcpData(p, len);
-	ProtocolDestroyMessage(p);
-}
-
-
-void HandleHeFeiWeath(ProtocolHeader *header, char *p) {
-	MessDisplay(p);
+	GsmTaskSendTcpData("RTC is OK\r\n", 11);
 }
 
 void ProtocolHandler(char *p) {
-//	if (strncmp(p, "#H", 2) != 0) return;
 	int i;
 	const static ProtocolHandleMap map[] = {
-		{'1', '1', HandleLogin},
-		{'1', '2', HandleHeartBeat},
-		{'2', '0', HandleSettingUser},
-		{'2', '1', HandleRemoveUser},
-		{'2', '2', HandleDeadTime},
-		{'2', '3', HandleVoiceType},
-		{'2', '4', HandleVolumeSetting},
-		{'2', '5', HandleBroadcastTimes},
-		{'2', '6', HandleSendSMS},
-		{'2', '7', HandleRestart},
-		{'2', '8', HandleRecoverFactory},
-		{'3', '1', HandleBasicParameter},
-		{'3', '2', HandleCoordinate},
-		{'4', '1', HandleRecordMP3},
-		{'4', '2', HandleSMSPromptSound},
-		{'4', '3', HandleRecordPromptSound},
-		{'4', '4', HandleMP3Music},
-		{'4', '5', HandleLongSMS},
-		{'5', '5', HandleHeFeiWeath},
+		{'1', '1', HandleSendSMS},
+		{'1', '2', HandleRestart},
 	};
 	ProtocolHeader *header = (ProtocolHeader *)p;
 

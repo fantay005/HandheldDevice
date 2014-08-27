@@ -304,15 +304,6 @@ static void __cmd_ADMIN_Handler(const SMSInfo *p) {
 }
 
 static void __cmd_IMEI_Handler(const SMSInfo *p) {
-	char buf[16];
-	int len;
-	char *pdu;
-
-	sprintf(buf, "<IMEI>%s", GsmGetIMEI());
-	pdu = pvPortMalloc(300);
-	len = SMSEncodePdu8bit(pdu, (const char *)p->number, buf);
-	GsmTaskSendSMS(pdu, len);
-	vPortFree(pdu);
 }
 
 static void __cmd_REFAC_Handler(const SMSInfo *p) {

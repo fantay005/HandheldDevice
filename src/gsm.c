@@ -62,7 +62,8 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 0};
+//static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 0};
+static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -986,14 +987,14 @@ static void __gsmTask(void *parameter) {
 				continue;
 			}
 			
-			if(Vcsq == 0) {
-				continue;
-			}
+// 			if(Vcsq == 0) {
+// 				continue;
+// 			}
 			
-			if ((curT - realT) >= GSM_GPRS_HEART_BEAT_TIME) {
-			   GsmTaskSendAtCommand("AT+CSQ");
-				 realT = curT;
-			}
+// 			if ((curT - realT) >= GSM_GPRS_HEART_BEAT_TIME) {
+// 			   GsmTaskSendAtCommand("AT+CSQ");
+// 				 realT = curT;
+// 			}
 			
 			curT = xTaskGetTickCount();
 			

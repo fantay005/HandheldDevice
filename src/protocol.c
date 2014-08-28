@@ -36,24 +36,52 @@ void ProtocolDestroyMessage(const char *p) {
 void HandleSendSMS(ProtocolHeader *header, char *p) {
 	DisplayClear();
 	MessDisplay(p);
-	__storeSMS1(p);
 	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
+	printf("DISPLAY is OK");
 	GsmTaskSendTcpData("DISPLAY is OK\r\n", 15);
 }
 
 void HandleRestart(ProtocolHeader *header, char *p) {
   DateTime dateTime;
-	p++;
-	p++;
+	if (*p++ != 0x32) {
+		return;
+	}
+	if (*p++ != 0x30) {
+		return;
+	}
+	if (*p != 0x31) {
+		return;
+	}
 	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
+	if ((*p < 0x30) && (*p > 0x31)) {
+		return;
+	}
 	dateTime.month = (p[3] - '0') * 10 + (p[4] - '0');
+	if ((*p < 0x30) && (*p > 0x33)) {
+		return;
+	}
 	dateTime.date = (p[6] - '0') * 10 + (p[7] - '0');
+	if ((*p < 0x30) && (*p > 0x31)) {
+		return;
+	}
 	dateTime.hour = (p[9] - '0') * 10 + (p[10] - '0') + 8;
+	if ((*p < 0x30) && (*p > 0x36)) {
+		return;
+	}
 	dateTime.minute = (p[12] - '0') * 10 + (p[13] - '0');
+	if ((*p < 0x30) && (*p > 0x36)) {
+		return;
+	}
 	dateTime.second = (p[15] - '0') * 10 + (p[16] - '0');
 	RtcSetTime(DateTimeToSecond(&dateTime));
 
+	printf("RTC is OK");
 	GsmTaskSendTcpData("RTC is OK\r\n", 11);
+}
+
+void HandleHeartBeat(ProtocolHeader *header, char *p) {
+	printf("HeartBeat is OK");
+	GsmTaskSendTcpData("HeartBeat is OK\r\n", 17);
 }
 
 void ProtocolHandler(char *p) {
@@ -61,6 +89,7 @@ void ProtocolHandler(char *p) {
 	const static ProtocolHandleMap map[] = {
 		{'1', '1', HandleSendSMS},
 		{'1', '2', HandleRestart},
+		{'1', '3', HandleHeartBeat},
 	};
 	ProtocolHeader *header = (ProtocolHeader *)p;
 

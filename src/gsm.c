@@ -397,6 +397,7 @@ void USART2_IRQHandler(void) {
 		buffer[bufferIndex++] = data;
 		if ((bufferIndex == 2) && (strncmp("#H", buffer, 2) == 0)) {
 			isIPD = 1;
+			bufferIndex = 0;
 		}
 		
 		if (strncmp(buffer, "+QNITZ: ", 8) == 0) {
@@ -485,8 +486,6 @@ bool __initWifiRuntime() {
 		}
 		i++;
 	} while (!ATCommandAndCheckReply("AT+Z\r", "+OK", configTICK_RATE_HZ * 3));
-
-	// vTaskDelay(configTICK_RATE_HZ * 12);
 	
 	i = 0;
 	do {
@@ -494,7 +493,7 @@ bool __initWifiRuntime() {
 		  printf("AT+WPRT error\r");
 		}
 		i++;
-	}while(!ATCommandAndCheckReply("AT+WPRT=!0\r", "+OK", configTICK_RATE_HZ * 3));
+	}while(!ATCommandAndCheckReply("AT+WPRT=!2\r", "+OK", configTICK_RATE_HZ * 3));    /*设置为2，基础网AP模式*/
 	
 	i = 0;
 	do {
@@ -510,7 +509,7 @@ bool __initWifiRuntime() {
 		  printf("AT+SSID error\r");
 		}
 		i++;
-	} while (!ATCommandAndCheckReply("AT+SSID=!\"ZKJC_CMD\"\r", "+OK", configTICK_RATE_HZ * 3));
+	} while (!ATCommandAndCheckReply("AT+SSID=!\"ZKJC_WIFI\"\r", "+OK", configTICK_RATE_HZ * 3));
 
 	i = 0;
 	do {
@@ -518,7 +517,7 @@ bool __initWifiRuntime() {
 		  printf("AT+ATRM error\r");
 		}
 		i++;
-	} while (!ATCommandAndCheckReply("AT+ATRM=!0,0,\"192.168.1.108\",60000\r", "+OK", configTICK_RATE_HZ * 3));
+	} while (!ATCommandAndCheckReply("AT+ATRM=!0,1,60,5000\r", "+OK", configTICK_RATE_HZ * 3));
 
 	i = 0;
   do  {
@@ -526,15 +525,15 @@ bool __initWifiRuntime() {
 		  printf("AT+ENCRY error\r");
 		}
 		i++;
-	}	while (!ATCommandAndCheckReply("AT+ENCRY=!6\r", "+OK", configTICK_RATE_HZ * 3));
+	}	while (!ATCommandAndCheckReply("AT+ENCRY=!0\r", "+OK", configTICK_RATE_HZ * 3));
 
-	i = 0;
-	do {
-		if (i > 0) {
-		  printf("AT+KEY error\r");
-		}
-		i++;
-	} while (!ATCommandAndCheckReply("AT+KEY=!1,0,\"5578900000\"\r", "+OK", configTICK_RATE_HZ * 3));
+// 	i = 0;
+// 	do {
+// 		if (i > 0) {
+// 		  printf("AT+KEY error\r");
+// 		}
+// 		i++;
+// 	} while (!ATCommandAndCheckReply("AT+KEY=!1,1,\"0123456789abc\"\r", "+OK", configTICK_RATE_HZ * 3));
 	
 	i = 0;
 	do {
@@ -542,7 +541,7 @@ bool __initWifiRuntime() {
 	  	printf("AT+NIP error\r");
 		}
 		i++;
-	} while (!ATCommandAndCheckReply("AT+NIP=!0\r", "+OK", configTICK_RATE_HZ * 3));
+	} while (!ATCommandAndCheckReply("AT+NIP=!1,192.168.2.1,255.255.255.0,192.168.2.1,192.168.2.1\r", "+OK", configTICK_RATE_HZ * 3));
 	
 	do {
 		reply = ATCommand("AT+QMAC\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ * 3);
@@ -579,7 +578,7 @@ bool __initWifiRuntime() {
 		  printf("AT+Z RESET error\r");
 		}
 		i++;
-	} while (!ATCommandAndCheckReply("AT+Z\r", "+OK", configTICK_RATE_HZ * 10));
+	} while (!ATCommandAndCheckReply("AT+Z\r", "+OK", configTICK_RATE_HZ * 10)); 
 
 	return true;
 }
@@ -713,7 +712,7 @@ void __handleRING(GsmTaskMessage *msg) {
 
 
 void __handleSendAtCommand(GsmTaskMessage *msg) {
-	ATCommand(__gsmGetMessageData(msg), NULL, configTICK_RATE_HZ / 10);
+	ATCommand(__gsmGetMessageData(msg), NULL, configTICK_RATE_HZ * 3);
 }
 
 void __handleSendSMS(GsmTaskMessage *msg) {
@@ -790,8 +789,9 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0, finalT = 0;
-
+//	portTickType finalT = 0;
+	portTickType lastT = 0;
+	
 	while (1) {
 		printf("Wifi start\n");
 		__wifiModemStart();
@@ -813,30 +813,30 @@ static void __gsmTask(void *parameter) {
 			}
 			__gsmDestroyMessage(message);
 		} else {
-			static int N = 0;
-			int curT;
-			const char *TIME = "#HREQUIRE\r\n";
-			if(__gsmRuntimeParameter.isonTCP == 0){
-			   continue;
-			}
-			curT = xTaskGetTickCount();
-      if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
-				char *dat = pvPortMalloc(20);		
-				sprintf(dat, "#H%s\r\n", __mac);
-				__gsmSendTcpDataLowLevel(dat, strlen(dat));
-				ProtocolDestroyMessage(dat);
-				lastT = curT;
-			} 
-			
-			N++;
-			if(N == 2) {
-				__gsmSendTcpDataLowLevel(TIME, strlen(TIME));
-			}
-			
-		  if ((curT - finalT) >= GSM_GPRS_HEART_BEAT_TIME * 120 * 6) {
-				__gsmSendTcpDataLowLevel(TIME, strlen(TIME));
-				finalT = curT;
-			} 
+// 			static int N = 0;
+// 			int curT;
+// 			const char *TIME = "#HREQUIRE\r\n";
+// 			if(__gsmRuntimeParameter.isonTCP == 0){
+// 			   continue;
+// 			}
+// 			curT = xTaskGetTickCount();
+//       if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
+// 				char *dat = pvPortMalloc(20);		
+// 				sprintf(dat, "#H%s\r\n", __mac);
+// 				__gsmSendTcpDataLowLevel(dat, strlen(dat));
+// 				ProtocolDestroyMessage(dat);
+// 				lastT = curT;
+// 			} 
+// 			
+// 			N++;
+// 			if(N == 2) {
+// 				__gsmSendTcpDataLowLevel(TIME, strlen(TIME));
+// 			}
+// 			
+// 		  if ((curT - finalT) >= GSM_GPRS_HEART_BEAT_TIME * 120 * 6) {
+// 				__gsmSendTcpDataLowLevel(TIME, strlen(TIME));
+// 				finalT = curT;
+// 			} 
 		}
 	}
 }

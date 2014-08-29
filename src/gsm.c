@@ -422,13 +422,25 @@ bool __gsmIsValidMac(const char *p) {
 /// Start GSM modem.
 void __wifiModemStart() {
 	__wifiDeassertResetPin();
-	vTaskDelay(configTICK_RATE_HZ / 10);
+	vTaskDelay(configTICK_RATE_HZ / 20);
 
 	__wifiAssertResetPin();
-	vTaskDelay(configTICK_RATE_HZ / 2);
+	vTaskDelay(configTICK_RATE_HZ / 10 * 4);
 
 	__wifiAssertModePin();
-	vTaskDelay(configTICK_RATE_HZ * 2);
+	vTaskDelay(configTICK_RATE_HZ / 10);
+	
+	__wifiDeassertModePin();
+}
+
+void __wifiConfigStart() {
+	__wifiDeassertResetPin();
+	vTaskDelay(configTICK_RATE_HZ / 100);
+
+		__wifiAssertModePin();
+	vTaskDelay(configTICK_RATE_HZ / 10);
+	
+	__wifiAssertResetPin();
 }
 
 
@@ -443,6 +455,7 @@ bool __initWifiRuntime() {
 	int i;
 	char *reply;
 	static const int bauds[] = {115200, 9600};
+  __wifiConfigStart();
 	vTaskDelay(configTICK_RATE_HZ * 5);
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// ÉèÖÃ²¨ÌØÂÊ
@@ -802,8 +815,8 @@ static void __gsmTask(void *parameter) {
 	
 	while (1) {
 		printf("Wifi start\n");
-		__wifiModemStart();
 		if (__initWifiRuntime()) {
+			__wifiModemStart();
 			break;
 		}
 	}

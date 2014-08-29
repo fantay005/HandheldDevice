@@ -17,7 +17,7 @@
 #define LED_SCAN_MUX 16
 
 /// É¨ÃèÁ´µÄ³¤¶È
-#define LED_SCAN_LENGTH 960
+#define LED_SCAN_LENGTH 1280
 #define LED_SCAN_BITS_MASK 0x0F
 #define LED_SCAN_BITS 4
 

@@ -49,26 +49,32 @@ void HandleRestart(ProtocolHeader *header, char *p) {
 	if (*p++ != 0x30) {
 		return;
 	}
+	
 	if (*p != 0x31) {
 		return;
 	}
 	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
+	
 	if ((*p < 0x30) && (*p > 0x31)) {
 		return;
 	}
 	dateTime.month = (p[3] - '0') * 10 + (p[4] - '0');
+	
 	if ((*p < 0x30) && (*p > 0x33)) {
 		return;
 	}
 	dateTime.date = (p[6] - '0') * 10 + (p[7] - '0');
+	
 	if ((*p < 0x30) && (*p > 0x31)) {
 		return;
 	}
-	dateTime.hour = (p[9] - '0') * 10 + (p[10] - '0') + 8;
+	dateTime.hour = (p[9] - '0') * 10 + (p[10] - '0');
+	
 	if ((*p < 0x30) && (*p > 0x36)) {
 		return;
 	}
 	dateTime.minute = (p[12] - '0') * 10 + (p[13] - '0');
+	
 	if ((*p < 0x30) && (*p > 0x36)) {
 		return;
 	}

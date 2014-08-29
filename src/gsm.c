@@ -502,6 +502,14 @@ bool __initWifiRuntime() {
 		}
 		i++;
 	} while (!ATCommandAndCheckReply("AT+ATPT=!100\r", "+OK", configTICK_RATE_HZ * 3));
+	
+	i = 0;
+	do {
+		if (i > 0) {
+		  printf("AT+ATLT error\r");
+		}
+		i++;
+	} while (!ATCommandAndCheckReply("AT+ATLT=!1000\r", "+OK", configTICK_RATE_HZ * 3));
 
 	i = 0;
 	do {
@@ -517,7 +525,7 @@ bool __initWifiRuntime() {
 		  printf("AT+ATRM error\r");
 		}
 		i++;
-	} while (!ATCommandAndCheckReply("AT+ATRM=!0,1,60,5000\r", "+OK", configTICK_RATE_HZ * 3));
+	} while (!ATCommandAndCheckReply("AT+ATRM=!0,1,400,5000\r", "+OK", configTICK_RATE_HZ * 3));
 
 	i = 0;
   do  {
@@ -525,15 +533,15 @@ bool __initWifiRuntime() {
 		  printf("AT+ENCRY error\r");
 		}
 		i++;
-	}	while (!ATCommandAndCheckReply("AT+ENCRY=!0\r", "+OK", configTICK_RATE_HZ * 3));
+	}	while (!ATCommandAndCheckReply("AT+ENCRY=!2\r", "+OK", configTICK_RATE_HZ * 3));
 
-// 	i = 0;
-// 	do {
-// 		if (i > 0) {
-// 		  printf("AT+KEY error\r");
-// 		}
-// 		i++;
-// 	} while (!ATCommandAndCheckReply("AT+KEY=!1,1,\"0123456789abc\"\r", "+OK", configTICK_RATE_HZ * 3));
+	i = 0;
+	do {
+		if (i > 0) {
+		  printf("AT+KEY error\r");
+		}
+		i++;
+	} while (!ATCommandAndCheckReply("AT+KEY=!1,1,\"0123456789abc\"\r", "+OK", configTICK_RATE_HZ * 3));
 	
 	i = 0;
 	do {

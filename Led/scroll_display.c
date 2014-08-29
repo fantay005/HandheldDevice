@@ -47,7 +47,7 @@ void __scrollDisplayTask(void *helloString) {
 #else
 void __scrollDisplayTask(void *helloString) {
 	portBASE_TYPE rc;
-	int yDisp = 80;
+	int yDisp = 0;
 	printf("ScrollDisplayTask, start\n");
 	while(1) {
 		if (xSemaphoreTake(__scrollSemaphore, portMAX_DELAY) == pdTRUE) {
@@ -55,18 +55,24 @@ void __scrollDisplayTask(void *helloString) {
 			if (yDisp % 16 == 0) {
 				int yPre = yDisp - 16;
 				if (yPre < 0) {
-					yPre += LED_VIR_DOT_HEIGHT;
+					yPre +=LED_VIR_DOT_HEIGHT;
 				}
 				DisplayScrollNotify(yPre);
 			}
 			++yDisp;
+
 			if (yDisp >= LED_VIR_DOT_HEIGHT) {
 				yDisp = 0;
+			}
+			
+			if ((yDisp == 1) || (yDisp == LED_PHY_DOT_HEIGHT + 1) || (yDisp == LED_PHY_DOT_HEIGHT * 2 + 1)){
+				TIM_Cmd(TIM3, DISABLE);
+				vTaskDelay(configTICK_RATE_HZ * 3);
+				TIM_Cmd(TIM3, ENABLE);
 			}
 		}
 	}
 }
-
 
 #endif
 
@@ -91,16 +97,16 @@ static void __init(void) {
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-	TIM_TimeBaseStructure.TIM_Period = 5000;
+	TIM_TimeBaseStructure.TIM_Period = 36000;
 	TIM_TimeBaseStructure.TIM_Prescaler = 0;
 	TIM_TimeBaseStructure.TIM_ClockDivision = 0;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
 	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
 
-	TIM_PrescalerConfig(TIM3, 4000, TIM_PSCReloadMode_Immediate);
+	TIM_PrescalerConfig(TIM3, (180 - 1), TIM_PSCReloadMode_Immediate);
 	TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_Timing;
 	TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-	TIM_OCInitStructure.TIM_Pulse = 50000;
+	TIM_OCInitStructure.TIM_Pulse = 1800;
 	TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
 
 	TIM_OC1Init(TIM3, &TIM_OCInitStructure);
@@ -115,7 +121,7 @@ static void __init(void) {
 void ScrollDisplayInit(void) {
 	__init();
 	vSemaphoreCreateBinary(__scrollSemaphore);
-	xTaskCreate(__scrollDisplayTask, (signed portCHAR *) "SCROLL", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 20, NULL);
+	xTaskCreate(__scrollDisplayTask, (signed portCHAR *) "SCROLL", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 100, NULL);
 }
 
 #endif

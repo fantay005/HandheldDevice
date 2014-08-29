@@ -155,39 +155,41 @@ void __handlerDisplayMessageRed(DisplayTaskMessage *msg) {
 	//__displayMessageLowlevel();
 }
 
+static char N = 0;
 const unsigned char *LedDisplayGB2312String32ScrollUp(int x, int *py, int dy, const unsigned char *gbString);
 
 void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	const uint8_t *tmp;
-
 	static int yorg = LED_PHY_DOT_HEIGHT;
 	int dy;
 
 	int y = msg->data.wordData;		          
-//	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
 	if (__displayMessage == NULL) {
 		return;
 	}
 
 	if (*__displayCurrentPoint == 0) {
-		yorg = LED_PHY_DOT_HEIGHT;
-		if (y == yorg){
+		N++;
+		if (N == 1){
+			__displayCurrentPoint = "ÄãºÃÖÐ¹ú";
+		} else if (N > 1) {
+			N = 0;
 			__displayCurrentPoint = __displayMessage;
 		}
 	}
+	
+	if (yorg == 96){
+		yorg = 0;
+	}
+	
 	printf("yorg=%d, y=%d, %s\n", yorg, y, __displayCurrentPoint);
 
-	if (yorg >= LED_VIR_DOT_HEIGHT){
-		yorg = yorg - LED_VIR_DOT_HEIGHT;
-	} else if(y == 0){
-		yorg = LED_VIR_DOT_HEIGHT;
-	} else if (yorg > y) {
-		return;
-	} else {
+	if (yorg > y) {
+    dy = 16;
+  } else {
 		dy = y - yorg;
 	}
-
 
 	tmp = LedDisplayGB2312String32ScrollUp(0, &yorg, dy, __displayCurrentPoint);
 	if (tmp == __displayCurrentPoint) {

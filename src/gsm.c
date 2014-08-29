@@ -60,7 +60,9 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555};
+//static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555};
+
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -735,7 +737,6 @@ static void __gsmTask(void *parameter) {
 		} else {
 			int curT;
 			curT = xTaskGetTickCount();
-			continue;
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				printf("Gsm: Connect TCP error\n");
 			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {

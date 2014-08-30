@@ -114,7 +114,6 @@ void __displayMessageLowlevel(void) {
 // 		tmp = LedDisplayGB2312String32(0, 32, LED_VIR_DOT_WIDTH / 8, 64, __displayCurrentPoint);
 // 	}
 	__displayCurrentPoint = tmp;
-	//LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 	LedDisplayToScan(0, 0, LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
 
 }
@@ -172,7 +171,7 @@ void __handlerDisplayScrollNotify(DisplayTaskMessage *msg) {
 	if (*__displayCurrentPoint == 0) {
 		N++;
 		if (N == 1){
-			__displayCurrentPoint = "ÄãºÃÖÐ¹ú";
+			__displayCurrentPoint = "                    ";
 		} else if (N > 1) {
 			N = 0;
 			__displayCurrentPoint = __displayMessage;
@@ -243,7 +242,7 @@ void DisplayTask(void *helloString) {
 	}
 	LedScanOnOff(1);
 	MessDisplay((char*)host);
-	ScrollDisplayInit();
+  ScrollDisplayInit();
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 7);
 		if (rc == pdTRUE) {

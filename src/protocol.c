@@ -236,6 +236,8 @@ void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
 	ProtocolDestroyMessage(p);
 }
 
+extern char SMScome(void);
+
 void HandleSendSMS(ProtocolHeader *header, char *p) {
 	int len;
 	uint8_t *gbk;
@@ -246,6 +248,7 @@ void HandleSendSMS(ProtocolHeader *header, char *p) {
 	gbk = Unicode2GBK(p, len);
 	SMS_Prompt();
 	DisplayClear();
+	SMScome() == 2;
 	MessDisplay(gbk);
 	__storeSMS1(gbk);
 	Unicode2GBKDestroy(gbk);

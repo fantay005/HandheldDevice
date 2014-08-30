@@ -45,12 +45,20 @@ void __scrollDisplayTask(void *helloString) {
 	}
 }
 #else
+
+extern char SMScome(void);
+extern void FlagChange(void);
+
 void __scrollDisplayTask(void *helloString) {
 	portBASE_TYPE rc;
-	int yDisp = 0;
+	int yDisp = 0, i;
 	printf("ScrollDisplayTask, start\n");
 	while(1) {
 		if (xSemaphoreTake(__scrollSemaphore, portMAX_DELAY) == pdTRUE) {
+			if (SMScome() != 0) {
+				yDisp = 0;
+				FlagChange();
+			}
 			LedScrollDisplayToScan(0, yDisp, 0, 0);
 			if (yDisp % 16 == 0) {
 				int yPre = yDisp - 16;
@@ -65,9 +73,14 @@ void __scrollDisplayTask(void *helloString) {
 				yDisp = 0;
 			}
 			
-			if ((yDisp == 1) || (yDisp == LED_PHY_DOT_HEIGHT + 1) || (yDisp == LED_PHY_DOT_HEIGHT * 2 + 1)){
+			if ((yDisp == 0) || (yDisp == LED_PHY_DOT_HEIGHT) || (yDisp == LED_PHY_DOT_HEIGHT * 2)){
 				TIM_Cmd(TIM3, DISABLE);
-				vTaskDelay(configTICK_RATE_HZ * 3);
+				for (i = 0; i < 300; i++) {
+					if (SMScome() == 1) {
+						break;
+					}
+				  vTaskDelay(configTICK_RATE_HZ / 100);
+				}
 				TIM_Cmd(TIM3, ENABLE);
 			}
 		}

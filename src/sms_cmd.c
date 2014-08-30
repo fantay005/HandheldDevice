@@ -461,6 +461,16 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{NULL, NULL}
 };
 
+static char sms_flag = 0;
+
+char SMScome(void) {
+	return sms_flag;
+}
+
+void FlagChange(void) {
+	 sms_flag = 0;
+}
+
 #if defined(__LED_LIXIN__)
 void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
@@ -479,6 +489,9 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	if (index == 0) {
 		return;
 	}
+	
+	sms_flag = 1;
+	
 	SMS_Prompt();
 	__storeSMS1(sms->content);
 	if (sms->encodeType == ENCODE_TYPE_UCS2) {

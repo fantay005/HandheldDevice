@@ -34,10 +34,8 @@ void ProtocolDestroyMessage(const char *p) {
 }
 
 void HandleSendSMS(ProtocolHeader *header, char *p) {
-	DisplayClear();
 	MessDisplay(p);
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-	printf("DISPLAY is OK");
+	printf("DISPLAY is OK.\r\n");
 	GsmTaskSendTcpData("DISPLAY is OK\r\n", 15);
 }
 
@@ -81,12 +79,12 @@ void HandleRestart(ProtocolHeader *header, char *p) {
 	dateTime.second = (p[15] - '0') * 10 + (p[16] - '0');
 	RtcSetTime(DateTimeToSecond(&dateTime));
 
-	printf("RTC is OK");
+	printf("RTC is OK.\r\n");
 	GsmTaskSendTcpData("RTC is OK\r\n", 11);
 }
 
 void HandleHeartBeat(ProtocolHeader *header, char *p) {
-	printf("HeartBeat is OK");
+	printf("HeartBeat is OK.\r\n");
 	GsmTaskSendTcpData("HeartBeat is OK\r\n", 17);
 }
 

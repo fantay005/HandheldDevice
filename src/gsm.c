@@ -270,7 +270,7 @@ static inline void __gmsReceiveIPDData(unsigned char data) {
 	if (data == 0x0A) {
 		GsmTaskMessage *message;
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		message = __gsmCreateMessage(TYPE_GPRS_DATA, buffer, bufferIndex);
 		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
 			if (xHigherPriorityTaskWoken) {
@@ -289,7 +289,7 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 	if (data == 0x0A) {
 		GsmTaskMessage *message;
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		message = __gsmCreateMessage(TYPE_SMS_DATA, buffer, bufferIndex);
 		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
 			if (xHigherPriorityTaskWoken) {
@@ -307,7 +307,7 @@ static inline void __gmsReceiveRTCData(unsigned char data) {
 	if (data == 0x0A) {
 		GsmTaskMessage *message;
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		message = __gsmCreateMessage(TYPE_RTC_DATA, buffer, bufferIndex);
 		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
 			if (xHigherPriorityTaskWoken) {
@@ -325,7 +325,7 @@ static inline void __gmsReceiveTUDEData(unsigned char data) {
 	if (data == 0x0A) {
 		GsmTaskMessage *message;
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		message = __gsmCreateMessage(TYPE_TUDE_DATA, buffer, bufferIndex);
 		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
 			if (xHigherPriorityTaskWoken) {
@@ -369,7 +369,7 @@ void USART2_IRQHandler(void) {
 	}
 
 	if (data == 0x0A) {
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		if (bufferIndex >= 2) {
 			portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 			const GSMAutoReportMap *p;
@@ -462,9 +462,9 @@ bool __initWifiRuntime() {
 		printf("Init wifi baud: %d\n", bauds[i]);
 		__wifiInitUsart(bauds[i]);
 		
-		ATCommandAndCheckReply("+++", "+OK", configTICK_RATE_HZ * 3);
+		ATCommandAndCheckReply("+++", "+OK", configTICK_RATE_HZ * 5);
 		
-    ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ * 3);
+    ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ * 5);
 
 		if (ATCommandAndCheckReply("AT+\r", "+OK", configTICK_RATE_HZ * 3)){
 			break;
@@ -546,7 +546,7 @@ bool __initWifiRuntime() {
 		  printf("AT+ENCRY error\r");
 		}
 		i++;
-	}	while (!ATCommandAndCheckReply("AT+ENCRY=!2\r", "+OK", configTICK_RATE_HZ * 3));
+	}	while (!ATCommandAndCheckReply("AT+ENCRY=!1\r", "+OK", configTICK_RATE_HZ * 3));
 
 	i = 0;
 	do {
@@ -554,7 +554,7 @@ bool __initWifiRuntime() {
 		  printf("AT+KEY error\r");
 		}
 		i++;
-	} while (!ATCommandAndCheckReply("AT+KEY=!1,1,\"0123456789abc\"\r", "+OK", configTICK_RATE_HZ * 3));
+	} while (!ATCommandAndCheckReply("AT+KEY=!1,2,\"95270\"\r", "+OK", configTICK_RATE_HZ * 3));
 	
 	i = 0;
 	do {
@@ -564,18 +564,18 @@ bool __initWifiRuntime() {
 		i++;
 	} while (!ATCommandAndCheckReply("AT+NIP=!1,192.168.2.1,255.255.255.0,192.168.2.1,192.168.2.1\r", "+OK", configTICK_RATE_HZ * 3));
 	
-	do {
-		reply = ATCommand("AT+QMAC\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ * 3);
-		if (reply == NULL) {
-			continue;
-		}
-		if (!__gsmIsValidMac(reply)) {
-			continue;
-		}
-		strcpy(__mac, &reply[4]);
-		AtCommandDropReplyLine(reply);
-		break;
-	} while(1);
+// 	do {
+// 		reply = ATCommand("AT+QMAC\r", ATCMD_ANY_REPLY_PREFIX, configTICK_RATE_HZ * 3);
+// 		if (reply == NULL) {
+// 			continue;
+// 		}
+// 		if (!__gsmIsValidMac(reply)) {
+// 			continue;
+// 		}
+// 		strcpy(__mac, &reply[4]);
+// 		AtCommandDropReplyLine(reply);
+// 		break;
+// 	} while(1);
 	
 	i = 0;
 	do {
@@ -584,6 +584,22 @@ bool __initWifiRuntime() {
 		}
 		i++;
 	} while (!ATCommandAndCheckReply("AT+ATM=!0\r", "+OK", configTICK_RATE_HZ * 3));
+	
+	i = 0;
+	do {
+		if (i > 0) {
+		  printf("AT+WEBS error\r");
+		}
+		i++;
+	} while (!ATCommandAndCheckReply("AT+WEBS=!0\r", "+OK", configTICK_RATE_HZ * 10)); 
+	
+	i = 0;
+  do  {
+		if (i > 0) {
+		  printf("AT+BRDSSID error\r");
+		}
+		i++;
+	}	while (!ATCommandAndCheckReply("AT+BRDSSID=!0\r", "+OK", configTICK_RATE_HZ * 3));
 
 	i = 0;
 	do {

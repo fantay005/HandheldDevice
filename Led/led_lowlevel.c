@@ -681,7 +681,6 @@ void LedDisplayClear(int x, int y, int xend, int yend) {
 		for (xv = x; xv <= xend; ++xv) {
 			__displayBuffer[y][xv] = 0;
 		}
-
 	}
 }
 

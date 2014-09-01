@@ -71,8 +71,7 @@ void __displayMessageLowlevel(void) {
 	if (__displayCurrentPoint == NULL) {
 		__displayCurrentPoint = __displayMessage;
 	}
-	LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT / 2 - 1);
-	LedDisplayClear(0, LED_DOT_HEIGHT / 2, LED_DOT_XEND, LED_DOT_HEIGHT - 1);
+	LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT);
 	if (__displayMessageColor & 1) {
 		tmp = LedDisplayGB2312String16(0, 8, __displayCurrentPoint);
 	}
@@ -148,6 +147,7 @@ void DisplayTask(void *helloString) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 10);
 		if (rc == pdTRUE) {
 			int i;
+			LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT);
 			for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
 				if (__messageHandlerFunctions[i].cmd == msg.cmd) {
 					__messageHandlerFunctions[i].handlerFunc(&msg);

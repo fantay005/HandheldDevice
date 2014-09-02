@@ -278,11 +278,15 @@ static inline void __gmsReceiveIPDData(unsigned char data) {
 		lenIPD += data;
 		isIPD = 3;
 	}
-	buffer[bufferIndex++] = data;
+	if(data != 0x0A) {
+	  buffer[bufferIndex++] = data;
+	} else {
+		buffer[bufferIndex++] = ' ';
+	}
 	if ((isIPD == 3) && (bufferIndex >= lenIPD + 14)) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		GsmTaskMessage *message;
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		message = __gsmCreateMessage(TYPE_GPRS_DATA, buffer, bufferIndex);
 		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
 			if (xHigherPriorityTaskWoken) {
@@ -299,7 +303,7 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 	if (data == 0x0A) {
 		GsmTaskMessage *message;
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		message = __gsmCreateMessage(TYPE_SMS_DATA, buffer, bufferIndex);
 		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
 			if (xHigherPriorityTaskWoken) {
@@ -333,7 +337,7 @@ void USART2_IRQHandler(void) {
 	}
 
 	if (data == 0x0A) {
-		buffer[bufferIndex++] = 0;
+		buffer[bufferIndex] = 0;
 		if (bufferIndex >= 2) {
 			portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 			const GSMAutoReportMap *p;

@@ -246,8 +246,6 @@ void HandleSendSMS(ProtocolHeader *header, char *p) {
 	XfsTaskSpeakUCS2(p, len);
 #elif defined(__LED__)
 	gbk = Unicode2GBK(p, len);
-	SMS_Prompt();
-	DisplayClear();
 	SMScome() == 2;
 	MessDisplay(gbk);
 	__storeSMS1(gbk);

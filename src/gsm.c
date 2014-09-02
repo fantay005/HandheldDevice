@@ -303,7 +303,11 @@ static inline void __gmsReceiveIPDData(unsigned char data) {
 		lenIPD += data;
 		isIPD = 3;
 	}
-	buffer[bufferIndex++] = data;
+	if(data != 0x0A) {
+	  buffer[bufferIndex++] = data;
+	} else {
+		buffer[bufferIndex++] = ' ';
+	}
 	if ((isIPD == 3) && (bufferIndex >= lenIPD + 14)) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		GsmTaskMessage *message;

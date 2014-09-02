@@ -62,8 +62,8 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-//static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 0};
-static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 0};
+//static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -301,7 +301,11 @@ static inline void __gmsReceiveIPDData(unsigned char data) {
 		lenIPD += data;
 		isIPD = 3;
 	}
-	buffer[bufferIndex++] = data;
+	if(data != 0x0A) {
+	  buffer[bufferIndex++] = data;
+	} else {
+		buffer[bufferIndex++] = ' ';
+	}
 	if ((isIPD == 3) && (bufferIndex >= lenIPD + 14)) {
 		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
 		GsmTaskMessage *message;

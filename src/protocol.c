@@ -74,7 +74,6 @@ typedef struct {
 } ProtocolHeader;
 
 typedef struct {
-	unsigned char sum[2];
 	unsigned char x0D;
 	unsigned char x0A;
 } ProtocolPadder;

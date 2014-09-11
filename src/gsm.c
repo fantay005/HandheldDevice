@@ -23,7 +23,7 @@
 #include "second_datetime.h"
 
 #define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 2)
 #define GSM_IMEI_LENGTH              15
 
 #define  RING_PIN  GPIO_Pin_15
@@ -1079,6 +1079,7 @@ void __handleSetIP(GsmTaskMessage *msg) {
 	 }
 	 __gsmRuntimeParameter.serverPORT = atoi(dat);
 	 __storeGsmRuntimeParameter();
+	 NVIC_SystemReset();
 }
 
 void __handleSetSpacing(GsmTaskMessage *msg) {
@@ -1319,6 +1320,7 @@ static void __gsmTask(void *parameter) {
 				 realT = curT;
 			}			
 			
+			printf("IP is %s, PORT is %d.\n", __gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT);
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				Count++;
 				if(Count > 5) {

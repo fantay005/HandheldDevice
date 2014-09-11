@@ -89,6 +89,10 @@ static char HexToChar(unsigned char hex) {
 }
 static char N = 0;
 
+void changeN (char p) {
+	N = p;
+}
+
 char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int *size) {
 	int i;
 	unsigned char sum = 0;
@@ -195,7 +199,7 @@ char *Protocol__Message(TypeChoose type, Classific class, const char *message, i
 	unsigned char sum = 0;
 	char ram[3];
 	unsigned char *p, *ret;
-	int len = message == NULL ? 0 : (strlen(message) - 6);
+	int len = message == NULL ? 0 : strlen(message);
 
 	*size = sizeof(ProtocolHeader) + len + sizeof(ProtocolPadder);
 	ret = pvPortMalloc(*size);
@@ -203,35 +207,28 @@ char *Protocol__Message(TypeChoose type, Classific class, const char *message, i
 		ProtocolHeader *h = (ProtocolHeader *)ret;
 		h->header[0] = '#';
 		h->header[1] = 'H';
-		h->lenH = len >> 8;
-		h->lenL = len;
-		h->type = message[0];
-		h->class = message[1];
-		h->radom = 0x3030;
-		h->reserve = 0x3030;
+		h->lenH = 'T';
+		h->lenL = 'I';
+		h->type = 'D';
+		h->class = 'A';
+		h->radom = 'A';
+		h->reserve = '_';
 	}
-	ram[0] = message[6];
-	ram[1] = message[7];
-	ram[2] = 0;
-  strcpy((char*)(ret + sizeof(ProtocolHeader)), &ram[0]);
 	if (message != NULL) {
-		strcpy((char *)(ret + sizeof(ProtocolHeader) + 2), &message[8]);
+		strcpy((char *)(ret + sizeof(ProtocolHeader)), message);
 	}
 
 	p = ret;
 	for (i = 0; i < len + sizeof(ProtocolHeader); ++i) {
 		sum += *p++;
 	}
-
-	*p++ = HexToChar(sum >> 4);
-	*p++ = HexToChar(sum);
 	*p++ = 0x0D;
 	*p = 0x0A;
 	return (char *)ret;
 }
 
 char *ProtoclCreatLogin(char *imei, int *size) {
-	return ProtocolMessage(TermActive, Login, imei, size);
+	return Protocol__Message(TermActive, Login, imei, size);
 }
 
 char *ProtoclCreateHeartBeat(int *size) {

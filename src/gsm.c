@@ -82,7 +82,7 @@ const char *GsmGetIMEI(void) {
 }
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12304, 1, 0, "0620", 1, 1};	  // 老平台服务器及端口："221.130.129.72",5555
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12121, 1, 0, "0620", 1, 1};	  // 老平台服务器及端口："221.130.129.72",5555
 
 //static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1, 0, "0620", 1, 2};
 
@@ -580,7 +580,7 @@ void USART2_IRQHandler(void) {
 			GSMloc = 1;
 		}
 		
-		if (strncmp(buffer, "+COPS: 0,0,", 11) == 0) {
+		if (strncmp(buffer, "*D", 2) == 0) {
 			bufferIndex = 0;
 			isCops = 1;
 		}
@@ -691,12 +691,12 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 	}
 
 	if (strncmp("CONNECT OK", reply, 10) == 0) {
-//		int size;
-//		const char *data;
+		int size;
+		const char *data;
 		AtCommandDropReplyLine(reply);
-// 		data = ProtoclCreatLogin(__imei, &size);
-// 		__gsmSendTcpDataLowLevel(data, size);
-// 		ProtocolDestroyMessage(data);
+		data = ProtoclCreatLogin(__imei, &size);
+		__gsmSendTcpDataLowLevel(data, size);
+		ProtocolDestroyMessage(data);
 		return true;
 	}
 	AtCommandDropReplyLine(reply);
@@ -1127,16 +1127,19 @@ void __handleCSQ(GsmTaskMessage *msg) {
 		}
 }
 
+void changeN (char p) ;
+
 static char china = 0;
 
 void __handleCOPS(GsmTaskMessage *msg) {
-	char *dat = __gsmGetMessageData(msg);
-	*dat++;
-	if(strncasecmp(dat, "CHINA MOBILE", 12) == 0){
-		china = 1;
-	} else if(strncasecmp(dat, "CHINA UNICOM", 12) == 0){
-		china = 2;
-	}
+	int size;
+	const char *dat;
+	char *num = __gsmGetMessageData(msg);
+	changeN(atoi(num));
+	dat = ProtoclCreateHeartBeat(&size);
+	__gsmSendTcpDataLowLevel(dat, size);
+	ProtocolDestroyMessage(dat);
+
 }
 
 char *isChina(void){

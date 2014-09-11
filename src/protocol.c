@@ -69,8 +69,8 @@ typedef struct {
 	unsigned char lenL;
 	unsigned char type;
 	unsigned char class;
-	unsigned short radom;
-	unsigned short reserve;
+	unsigned char radom;
+	unsigned char reserve;
 } ProtocolHeader;
 
 typedef struct {
@@ -87,40 +87,106 @@ static char HexToChar(unsigned char hex) {
 	unsigned char hexTable[] = "0123456789ABCDEF";
 	return hexTable[hex & 0x0F];
 }
+static char N = 0;
 
 char *ProtocolMessage(TypeChoose type, Classific class, const char *message, int *size) {
 	int i;
 	unsigned char sum = 0;
-	unsigned char *p, *ret;
-	int len = message == NULL ? 0 : strlen(message);
+	unsigned char *p, *ret, *t;
+	int len;
 
-	*size = sizeof(ProtocolHeader) + len + sizeof(ProtocolPadder);
-	ret = pvPortMalloc(*size);
+	ret = pvPortMalloc(200);
 	{
 		ProtocolHeader *h = (ProtocolHeader *)ret;
 		h->header[0] = '#';
 		h->header[1] = 'H';
-		h->lenH = len >> 8;
-		h->lenL = len;
-		h->type = type;
-		h->class = class;
-		h->radom = 0x3030;
-		h->reserve = 0x3030;
+		h->lenH = 'E';
+		h->lenL = 'A';
+		h->type = 'L';
+		h->class = 'T';
+		h->radom = 'H';
+		h->reserve = '_';
 	}
 
-	if (message != NULL) {
-		strcpy((char *)(ret + sizeof(ProtocolHeader)), message);
+	if (message == NULL) {
+		t = pvPortMalloc(100);
+		switch (N){
+			case 0:
+				t = "HR78_GLU96_BPA118_BPB76_SAO98_PH61_SG1017_TEM368";
+				N++;
+			  break;
+			case 1:
+				t = "HR82_GLU106_BPA119_BPB74_SAO97_PH63_SG1020_TEM369";
+				N++;
+				break;
+			case 2:
+				t = "HR86_GLU93_BPA118_BPB77_SAO98_PH65_SG1015_TEM367";
+				N++;
+				break;
+			case 3:
+				t = "HR72_GLU87_BPA120_BPB75_SAO96_PH68_SG1016_TEM369";
+				N++;
+				break;
+			case 4:
+				t = "HR68_GLU110_BPA115_BPB73_SAO98_PH60_SG1018_TEM366";
+				N++;
+				break;
+			case 5:
+				t = "HR90_GLU113_BPA120_BPB78_SAO97_PH61_SG1022_TEM367";
+				N++;
+				break;
+			case 6:
+				t = "HR76_GLU103_BPA117_BPB76_SAO96_PH70_SG1023_TEM368";
+				N++;
+				break;
+			case 7:
+				t = "HR91_GLU116_BPA120_BPB80_SAO99_PH54_SG1015_TEM365";
+				N++;
+				break;
+			case 8:
+				t = "HR68_GLU82_BPA122_BPB71_SAO95_PH78_SG1024_TEM368";
+				N++;
+				break;
+			case 9:
+				t = "HR96_GLU124_BPA113_BPB72_SAO95_PH76_SG1028_TEM369";
+				N++;
+				break;
+			case 10:
+				t = "HR65_GLU83_BPA112_BPB70_SAO98_PH78_SG1023_TEM366";
+				N++;
+				break;
+			case 11:
+				t = "HR95_GLU117_BPA120_BPB70_SAO96_PH72_SG1016_TEM367";
+				N++;
+				break;
+			case 12:
+				t = "HR76_GLU113_BPA115_BPB76_SAO98_PH51_SG1019_TEM369";
+				N++;
+				break;
+			case 13:
+				t = "HR81_GLU89_BPA114_BPB72_SAO97_PH70_SG1020_TEM367";
+				N++;
+				break;
+			case 14:
+				t = "HR79_GLU98_BPA119_BPB79_SAO95_PH71_SG1026_TEM368";
+				N++;
+				break;
+			default:
+				t = NULL;
+				N = 0;
+		}
+		if (t != NULL){
+	    len = strlen(t);
+		} else {
+			t = 0;
+		}
+		strcpy((char *)(ret + sizeof(ProtocolHeader)),t);
+		vPortFree(t);
 	}
 
-	p = ret;
-	for (i = 0; i < len + sizeof(ProtocolHeader); ++i) {
-		sum += *p++;
-	}
-
-	*p++ = HexToChar(sum >> 4);
-	*p++ = HexToChar(sum);
-	*p++ = 0x0D;
-	*p = 0x0A;
+	*size = sizeof(ProtocolHeader) + len + 2;
+	ret[sizeof(ProtocolHeader) + len] = 0x0D;
+	ret[sizeof(ProtocolHeader) + len + 1] = 0x0A;
 	return (char *)ret;
 }
 

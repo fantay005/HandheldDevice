@@ -23,7 +23,7 @@
 #include "second_datetime.h"
 
 #define GSM_TASK_STACK_SIZE			     (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60)
 #define GSM_IMEI_LENGTH              15
 
 #define  RING_PIN  GPIO_Pin_15
@@ -82,7 +82,7 @@ const char *GsmGetIMEI(void) {
 }
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 5555, 1, 0, "0620", 1, 1};	  // 老平台服务器及端口："221.130.129.72",5555
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12304, 1, 0, "0620", 1, 1};	  // 老平台服务器及端口："221.130.129.72",5555
 
 //static GMSParameter __gsmRuntimeParameter = {"221.130.129.72", 5555, 1, 0, "0620", 1, 2};
 
@@ -691,12 +691,12 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 	}
 
 	if (strncmp("CONNECT OK", reply, 10) == 0) {
-		int size;
-		const char *data;
+//		int size;
+//		const char *data;
 		AtCommandDropReplyLine(reply);
-		data = ProtoclCreatLogin(__imei, &size);
-		__gsmSendTcpDataLowLevel(data, size);
-		ProtocolDestroyMessage(data);
+// 		data = ProtoclCreatLogin(__imei, &size);
+// 		__gsmSendTcpDataLowLevel(data, size);
+// 		ProtocolDestroyMessage(data);
 		return true;
 	}
 	AtCommandDropReplyLine(reply);

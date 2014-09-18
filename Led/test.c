@@ -79,10 +79,10 @@ static void __ledTestTask(void *nouse) {
 		}
 		if (((dateTime.hour == 0x06) || (dateTime.hour == 0x12))&& (dateTime.minute == 0x00) && (dateTime.second == 0x00)) {
 				int size, i;
-				const char *data;
-			  data = (char *)ProtoclAchieveMessage();
+				const char *data;  
 				size = 6;
-			  for(i = 0; i < 8; i++){
+			  for(i = 0; i < 4; i++){
+					data = (char *)ProtoclAchieveMessage();
 					__gsmSendTcpDataLowLevel(data, size);
 					vPortFree((void *)data);
 					vTaskDelay(configTICK_RATE_HZ * 10);

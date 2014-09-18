@@ -533,11 +533,11 @@ static void __smsTask(void *nouse) {
 
 	__smsQueue = xQueueCreate(1, sizeof(char *));
 	while (1) {
-		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 30);
+		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 60);
 		if (rc == pdTRUE) {
 		} else {
 			
-			if(n > 6){
+			if(n > 5){
 				n = 1;
 			}
 			
@@ -589,17 +589,17 @@ static void __smsTask(void *nouse) {
 				}
 			} 
 
-			if (n == 5) {
-				const char *messageE = (const char *)(Bank1_NOR2_ADDR + SMS5_PARAM_STORE_ADDR);
-				if (messageE[0] == 0xff) {
-					n = 6;
-				} else {
-					char * h = pvPortMalloc(strlen(messageE) + 1);
-				  strcpy(h, messageE);
-					MessDisplay(h);
-					vPortFree(h);
-				}
-			} 
+// 			if (n == 5) {
+// 				const char *messageE = (const char *)(Bank1_NOR2_ADDR + SMS5_PARAM_STORE_ADDR);
+// 				if (messageE[0] == 0xff) {
+// 					n = 6;
+// 				} else {
+// 					char * h = pvPortMalloc(strlen(messageE) + 1);
+// 				  strcpy(h, messageE);
+// 					MessDisplay(h);
+// 					vPortFree(h);
+// 				}
+// 			} 
 			
 // 			if (n == 6) {
 // 				const char *messageF = (const char *)(Bank1_NOR2_ADDR + SMS6_PARAM_STORE_ADDR);
@@ -650,8 +650,8 @@ static void __smsTask(void *nouse) {
 // 				}
 // 			}
 // 			
-			if (n == 6) {
-				const char *messageT = (const char *)(Bank1_NOR2_ADDR + SMS10_PARAM_STORE_ADDR);
+			if (n == 5) {
+				const char *messageT = (const char *)(Bank1_NOR2_ADDR + SMS5_PARAM_STORE_ADDR);
 				if (messageT[0] == 0xff) {
 					n++;
 					continue;

@@ -197,7 +197,7 @@ char *ProtoclAchieveMessage(void) {
   sprintf(p, "#HA%d", ter);
 	strcat(p, a);
   ter++;
-  if (ter > 8) {
+  if (ter > 4) {
 		ter = 1;
 	}
 	return p;
@@ -428,15 +428,7 @@ void HandleHeFeiWeath(ProtocolHeader *header, char *p) {
 		__storeSMS4(p);
 	} else if (header->class == '4') {
 		__storeSMS5(p);
-	} else if (header->class == '5') {
-		__storeSMS6(p);
-	} else if (header->class == '6') {
-		__storeSMS7(p);
-	} else if (header->class == '7') {
-		__storeSMS8(p);
-	} else if (header->class == '8') {
-		__storeSMS9(p);
-	}
+	} 
 	MessDisplay(p);
 }
 

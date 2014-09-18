@@ -892,7 +892,7 @@ static void __gsmTask(void *parameter) {
 				__gsmSendTcpDataLowLevel(dat, size);
 				ProtocolDestroyMessage(dat);
 				lastT = curT;
-			} else if ((curT - terT) >= GSM_GPRS_HEART_BEAT_TIME /20) {
+			} else if ((curT - terT) >= GSM_GPRS_HEART_BEAT_TIME / 20) {
 				int size;
 				char *data;
 				if(pro < 4){

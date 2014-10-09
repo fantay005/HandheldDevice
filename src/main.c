@@ -67,7 +67,7 @@ static void PreSetupHardware(void) {
 extern void UartDebugInit(void);
 extern void RtcInit(void);
 extern void SoundControlInit(void);
-extern void XfsInit(void);
+// extern void XfsInit(void);
 extern void GSMInit(void);
 extern void DisplayInit(void);
 extern void SHT10TestInit(void);
@@ -88,7 +88,7 @@ int main(void) {
 #if defined(__SPKEAER__)
 	SoundControlInit();
 #endif
-	XfsInit();
+//	XfsInit();
 	GSMInit();
 #if defined(__LED__)
 	DisplayInit();

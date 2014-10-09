@@ -492,7 +492,7 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	
 	sms_flag = 1;
 	
-	SMS_Prompt();
+//	SMS_Prompt();
 	__storeSMS1(sms->content);
 	if (sms->encodeType == ENCODE_TYPE_UCS2) {
 		uint8_t *gbk = Unicode2GBK((const uint8_t *)(sms->content), sms->contentLen);

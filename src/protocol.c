@@ -192,7 +192,7 @@ void HandleDeadTime(ProtocolHeader *header, char *p) {
 	int len;
 	int choose;
 	choose = (p[1] - '0') * 10 + (p[0] - '0');
-	XfsTaskSetSpeakPause(choose);
+//	XfsTaskSetSpeakPause(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -209,7 +209,7 @@ void HandleVoiceType(ProtocolHeader *header, char *p) {
 	} else if (choose == 0x33) {
 		choose = WOMANSOUND;
 	}
-	XfsTaskSetSpeakType(choose);
+//	XfsTaskSetSpeakType(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -219,7 +219,7 @@ void HandleVoiceType(ProtocolHeader *header, char *p) {
 void HandleVolumeSetting(ProtocolHeader *header, char *p) {
 	int len,  choose;
 	choose = *p;
-	XfsTaskSetSpeakVolume(choose);
+//	XfsTaskSetSpeakVolume(choose);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -229,7 +229,7 @@ void HandleVolumeSetting(ProtocolHeader *header, char *p) {
 void HandleBroadcastTimes(ProtocolHeader *header, char *p) {
 	int len, times;
 	times = (p[1] - '0');
-	XfsTaskSetSpeakTimes(times);
+//	XfsTaskSetSpeakTimes(times);
 	len = (header->lenH << 8) + header->lenL;
 	p = TerminalCreateFeedback((char *) & (header->type), &len);
 	GsmTaskSendTcpData(p, len);
@@ -243,7 +243,7 @@ void HandleSendSMS(ProtocolHeader *header, char *p) {
 	uint8_t *gbk;
 	len = (header->lenH << 8) + header->lenL;
 #if defined(__SPEAKER__)
-	XfsTaskSpeakUCS2(p, len);
+//	XfsTaskSpeakUCS2(p, len);
 #elif defined(__LED__)
 	gbk = Unicode2GBK(p, len);
 	SMScome() == 2;

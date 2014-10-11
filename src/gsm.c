@@ -242,7 +242,7 @@ static void __gsmInitHardware(void) {
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_Init(GPIOB, &GPIO_InitStructure);				   //__gsmPowerSupplyOn,29302
 
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
 	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;

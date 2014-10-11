@@ -76,6 +76,7 @@ extern void RecoveryInit(void);
 extern void NorFlashInit(void);
 extern void WatchdogInit(void);
 extern void SoftPWMLedInit(void);
+extern void ZIGBEEInit(void);
 
 int main(void) {
 	PreSetupHardware();
@@ -94,6 +95,7 @@ int main(void) {
 	DisplayInit();
 	SevenSegLedInit();
 	SHT10TestInit();
+	ZIGBEEInit();
 #endif
 
 	printf("\n==============================\n");

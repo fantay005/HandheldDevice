@@ -242,7 +242,7 @@ void DisplayTask(void *helloString) {
 	}
 	LedScanOnOff(1);
 	MessDisplay((char*)host);
-  ScrollDisplayInit();
+//  ScrollDisplayInit();
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 7);
 		if (rc == pdTRUE) {
@@ -257,7 +257,7 @@ void DisplayTask(void *helloString) {
 				}
 			}
 		} else {
-//			__displayMessageLowlevel();
+			__displayMessageLowlevel();
 		}
 	}
 }

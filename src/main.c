@@ -77,7 +77,7 @@ extern void NorFlashInit(void);
 extern void WatchdogInit(void);
 extern void SoftPWMLedInit(void);
 extern void ZIGBEEInit(void);
-
+extern  void __smsCreateTask(void);
 int main(void) {
 	PreSetupHardware();
 	NorFlashInit();
@@ -90,12 +90,13 @@ int main(void) {
 	SoundControlInit();
 #endif
 //	XfsInit();
-	GSMInit();
+  GSMInit();
 #if defined(__LED__)
 	DisplayInit();
 	SevenSegLedInit();
 	SHT10TestInit();
 	ZIGBEEInit();
+	__smsCreateTask();
 #endif
 
 	printf("\n==============================\n");

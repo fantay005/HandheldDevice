@@ -20,6 +20,9 @@
 #include "version.h"
 #include "second_datetime.h"
 
+static xQueueHandle __smsQueue;
+
+#define SMS_TASK_STACK_SIZE			(configMINIMAL_STACK_SIZE)
 
 typedef struct {
 	char user[6][12];
@@ -31,26 +34,6 @@ GMSParameter  __cmdGMSParameter;
 
 void __storeSMS1(const char *sms) {
 	NorFlashWrite(SMS1_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
-}
-
-void __storeSMS2(const char *sms) {
-	NorFlashWrite(SMS2_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
-}
-
-void __storeSMS3(const char *sms) {
-	NorFlashWrite(SMS3_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
-}
-
-void __storeSMS4(const char *sms) {
-	NorFlashWrite(SMS4_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
-}
-
-void __storeSMS5(const char *sms) {
-	NorFlashWrite(SMS5_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
-}
-
-void __storeSMS6(const char *sms) {
-	NorFlashWrite(SMS6_PARAM_STORE_ADDR, (const short *)sms, strlen(sms) + 1);
 }
 
 static inline bool __isValidUser(const char *p) {
@@ -503,4 +486,55 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	}
 }
 #endif
+
+static char n = 1;
+
+static void __smsTask(void *nouse) {
+	portBASE_TYPE rc;
+	char *msg;
+
+	__smsQueue = xQueueCreate(1, sizeof(char *));
+	printf("sms: loop again\n");
+	while (1) {
+		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 40);
+		if (rc == pdTRUE) {
+		} else {
+			
+			if(n > 2){
+				n = 1;
+			}
+			
+			if (n == 1) {
+				const char *messageA = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);				
+				if (messageA[0] == 0xff) {
+					n = 2;
+				} else {
+				  char * p = pvPortMalloc(strlen(messageA) + 1);
+				  strcpy(p, messageA);
+					MessDisplay(p);
+					vPortFree(p);
+				}
+			} 
+
+			if (n == 2) {
+				const char *messageG = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
+				if (messageG[0] == 0xff) {
+					n++;
+					continue;
+				} else {
+					char * k = pvPortMalloc(strlen(messageG) + 1);
+				  strcpy(k, messageG);
+					MessDisplay(k);
+					vPortFree(k);
+				}
+			}
+			
+			n++;
+		}
+	}
+}
+
+ void __smsCreateTask(void) {
+	xTaskCreate(__smsTask, (signed portCHAR *) "SMS", SMS_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+}
 

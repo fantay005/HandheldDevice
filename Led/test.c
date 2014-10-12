@@ -40,8 +40,9 @@ static void __ledTestTask(void *nouse) {
 
 //	unsigned short unicode = 0x4E2D;
 //	Unicode2GBKDestroy(Unicode2GBK((const uint8_t *)&unicode, 2));
-
+	printf("Test: loop again\n");
 	while (1) {
+
 		if (!RtcWaitForSecondInterruptOccured(portMAX_DELAY)) {
 			continue;
 		}
@@ -74,7 +75,8 @@ static void __ledTestTask(void *nouse) {
 		SevenSegLedSetContent(LED_INDEX_HUMI_L, humi % 10);
 		SevenSegLedDisplay();
 
-		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.second>= 0x00) && (dateTime.second <= 0x02)) {
+		if (((dateTime.hour == 0x06) || (dateTime.hour == 0x0C) || (dateTime.hour == 0x12) || (dateTime.hour == 0x00)) 
+			&& (dateTime.minute == 0x00) && (dateTime.second>= 0x00) && (dateTime.second <= 0x02)) {
       WatchdogResetSystem();
 		}
 
@@ -83,5 +85,5 @@ static void __ledTestTask(void *nouse) {
 
 void SHT10TestInit(void) {
 	SHT10Init();
-	xTaskCreate(__ledTestTask, (signed portCHAR *) "TST", SHT_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+	xTaskCreate(__ledTestTask, (signed portCHAR *) "TST", SHT_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
 }

@@ -49,7 +49,7 @@ static void __uartDebugTask(void *nouse) {
 	portBASE_TYPE rc;
 	char *msg;
 
-//	printf("UartDebugTask: start\n");
+	//printf("UartDebugTask: start\n");
 	__uartDebugQueue = xQueueCreate(3, sizeof(char *));
 	while (1) {
 		rc = xQueueReceive(__uartDebugQueue, &msg, portMAX_DELAY);

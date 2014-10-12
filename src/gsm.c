@@ -16,6 +16,7 @@
 #include "atcmd.h"
 #include "norflash.h"
 #include "unicode2gbk.h"
+#include "second_datetime.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
@@ -96,6 +97,7 @@ typedef enum {
 	TYPE_SEND_TCP_DATA,
 	TYPE_RESET,
 	TYPE_NO_CARRIER,
+  TYPE_RTC_DATA,
 	TYPE_SEND_AT,
 	TYPE_SEND_SMS,
 } GsmTaskMessageType;
@@ -268,6 +270,7 @@ static char buffer[1300];
 static int bufferIndex = 0;
 static char isIPD = 0;
 static char isSMS = 0;
+static char isRTC = 0;
 static int lenIPD;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
@@ -317,6 +320,26 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 	}
 }
 
+static inline void __gmsReceiveRTCData(unsigned char data) {
+	if (data == 0x0A) {
+		GsmTaskMessage *message;
+		portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+		buffer[bufferIndex++] = 0;
+		message = __gsmCreateMessage(TYPE_RTC_DATA, buffer, bufferIndex);
+		if (pdTRUE == xQueueSendFromISR(__queue, &message, &xHigherPriorityTaskWoken)) {
+			if (xHigherPriorityTaskWoken) {
+				taskYIELD();
+			}
+		} else {
+			printf("RTC handle error");
+		}
+		isRTC = 0;
+		bufferIndex = 0;
+	} else if (data != 0x0D) {
+		buffer[bufferIndex++] = data;
+	}
+}
+
 void USART2_IRQHandler(void) {
 	unsigned char data;
 	if (USART_GetITStatus(USART2, USART_IT_RXNE) == RESET) {
@@ -333,6 +356,11 @@ void USART2_IRQHandler(void) {
 
 	if (isSMS) {
 		__gmsReceiveSMSData(data);
+		return;
+	}
+	
+	if (isRTC) {
+		__gmsReceiveRTCData(data);
 		return;
 	}
 
@@ -366,6 +394,12 @@ void USART2_IRQHandler(void) {
 		if ((bufferIndex == 2) && (strncmp("#H", buffer, 2) == 0)) {
 			isIPD = 1;
 		}
+		
+		if (strncmp(buffer, "+QNITZ: ", 8) == 0) {
+			bufferIndex = 0;
+			isRTC = 1;
+		}
+		
 	}
 }
 
@@ -687,6 +721,19 @@ void __handleSendSMS(GsmTaskMessage *msg) {
 	}
 }
 
+void __handleM35RTC(GsmTaskMessage *msg) {
+	DateTime dateTime;
+	char *p = __gsmGetMessageData(msg);	 
+	p++;
+	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
+	dateTime.month = (p[3] - '0') * 10 + (p[4] - '0');
+	dateTime.date = (p[6] - '0') * 10 + (p[7] - '0');
+	dateTime.hour = (p[9] - '0') * 10 + (p[10] - '0') + 8;
+	dateTime.minute = (p[12] - '0') * 10 + (p[13] - '0');
+	dateTime.second = (p[15] - '0') * 10 + (p[16] - '0');
+	RtcSetTime(DateTimeToSecond(&dateTime));
+}
+
 typedef struct {
 	GsmTaskMessageType type;
 	void (*handlerFunc)(GsmTaskMessage *);
@@ -698,6 +745,7 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_GPRS_DATA, __handleProtocol },
 	{ TYPE_SEND_TCP_DATA, __handleSendTcpDataLowLevel },
 	{ TYPE_RESET, __handleReset },
+  { TYPE_RTC_DATA, __handleM35RTC},
 	{ TYPE_NO_CARRIER, __handleResetNoCarrier },
 	{ TYPE_SEND_AT, __handleSendAtCommand },
 	{ TYPE_SEND_SMS, __handleSendSMS },
@@ -717,9 +765,9 @@ static void __gsmTask(void *parameter) {
 		}
 	}
 
-	while (!__gsmGetImeiFromModem()) {
-		vTaskDelay(configTICK_RATE_HZ);
-	}
+// 	while (!__gsmGetImeiFromModem()) {
+// 		vTaskDelay(configTICK_RATE_HZ);
+// 	}
 
 	for (;;) {
 		printf("Gsm: loop again\n");
@@ -735,6 +783,7 @@ static void __gsmTask(void *parameter) {
 			__gsmDestroyMessage(message);
 		} else {
 			int curT;
+			continue;
 			curT = xTaskGetTickCount();
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
 				printf("Gsm: Connect TCP error\n");
@@ -753,6 +802,6 @@ static void __gsmTask(void *parameter) {
 void GSMInit(void) {
 	ATCommandRuntimeInit();
 	__gsmInitHardware();
-	__queue = xQueueCreate(6, sizeof(GsmTaskMessage *));
-	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
+	__queue = xQueueCreate(2, sizeof(GsmTaskMessage *));
+	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 }

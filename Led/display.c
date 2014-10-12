@@ -105,9 +105,12 @@ void __displayMessageLowlevel(void) {
 	if (__displayCurrentPoint == NULL) {
 		__displayCurrentPoint = __displayMessage;
 	}
-	LedDisplayClear(0, 0,LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
+//	LedDisplayClear(0, 0,LED_PHY_DOT_WIDTH - 1, LED_PHY_DOT_HEIGHT - 1);
+	LedDisplayClear(0, 0, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT / 2 - 1);
+	LedDisplayClear(0, LED_VIR_DOT_HEIGHT / 2, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT - 1);
+	
 	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String16(0, 0, __displayCurrentPoint);
+		tmp = LedDisplayGB2312String16(0, 0,  __displayCurrentPoint);
 	}
 
 // 	if (__displayMessageColor & 2) {
@@ -138,8 +141,8 @@ void __handlerDisplayMessage(DisplayTaskMessage *msg) {
 	}
 	__displayMessage = msg->data.pointData;
 	__displayCurrentPoint = __displayMessage;
-	DisplayClear();
-//	__displayMessageLowlevel();
+//	DisplayClear();
+	__displayMessageLowlevel();
 }
 
 
@@ -231,20 +234,20 @@ void DisplayTask(void *helloString) {
 	portBASE_TYPE rc;
 	DisplayTaskMessage msg;
 	const char *p;
-
+  printf("DisplayTask: loop again\n");
 //	printf("DisplayTask: start-> %s\n", (const char *)helloString);
-	__displayQueue = xQueueCreate(5, sizeof(DisplayTaskMessage));
-	p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
-	if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-		host = p;
-	} else if (isAsciiStart(p[0])) {
-		host = p;
-	}
-	LedScanOnOff(1);
-	MessDisplay((char*)host);
-//  ScrollDisplayInit();
+ 	__displayQueue = xQueueCreate(2, sizeof(DisplayTaskMessage));
+// 	p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
+// 	if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
+// 		host = p;
+// 	} else if (isAsciiStart(p[0])) {
+// 		host = p;
+// 	}
+// 	LedScanOnOff(1);
+// 	MessDisplay((char*)host);
+// ScrollDisplayInit();
 	while (1) {
-		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 7);
+		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 10);
 		if (rc == pdTRUE) {
 			int i;
 			for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
@@ -257,7 +260,7 @@ void DisplayTask(void *helloString) {
 				}
 			}
 		} else {
-			__displayMessageLowlevel();
+		__displayMessageLowlevel();
 		}
 	}
 }
@@ -267,7 +270,7 @@ void DisplayTask(void *helloString) {
 
 void DisplayInit(void) {
 	LedScanInit();
-	xTaskCreate(DisplayTask, (signed portCHAR *) "DISPLAY", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 10, NULL);
+	xTaskCreate(DisplayTask, (signed portCHAR *) "DISPLAY", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
 }
 
 #endif

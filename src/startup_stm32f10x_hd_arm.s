@@ -32,7 +32,7 @@
 ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
 ; </h>
 
-Stack_Size      EQU     0x00000400
+Stack_Size      EQU     0x00000800
 
                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
 Stack_Mem       SPACE   Stack_Size
@@ -71,10 +71,10 @@ __Vectors       DCD     __initial_sp               ; Top of Stack
                 DCD     MemManage_Handler          ; MPU Fault Handler
                 DCD     BusFault_Handler           ; Bus Fault Handler
                 DCD     UsageFault_Handler         ; Usage Fault Handler
-                DCD     0                          ; Reserved
+                DCD     __Vectors                        ; Reserved
                 DCD     __Vectors                  ; Reserved
-                DCD     0                          ; Reserved
-                DCD     0                          ; Reserved
+                DCD     __Vectors                         ; Reserved
+                DCD     __Vectors                         ; Reserved
                 DCD     vPortSVCHandler                ; SVCall Handler
                 DCD     DebugMon_Handler           ; Debug Monitor Handler
                 DCD     0                          ; Reserved

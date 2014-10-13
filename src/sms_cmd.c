@@ -494,9 +494,8 @@ static void __smsTask(void *nouse) {
 	char *msg;
 
 	__smsQueue = xQueueCreate(1, sizeof(char *));
-	printf("sms: loop again\n");
 	while (1) {
-		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 40);
+		rc = xQueueReceive(__smsQueue, &msg, configTICK_RATE_HZ * 30);
 		if (rc == pdTRUE) {
 		} else {
 			
@@ -535,6 +534,6 @@ static void __smsTask(void *nouse) {
 }
 
  void __smsCreateTask(void) {
-	xTaskCreate(__smsTask, (signed portCHAR *) "SMS", SMS_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
+	xTaskCreate(__smsTask, (signed portCHAR *) "SMS", SMS_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 6, NULL);
 }
 

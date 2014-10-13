@@ -40,7 +40,6 @@ static void __ledTestTask(void *nouse) {
 
 //	unsigned short unicode = 0x4E2D;
 //	Unicode2GBKDestroy(Unicode2GBK((const uint8_t *)&unicode, 2));
-	printf("Test: loop again\n");
 	while (1) {
 
 		if (!RtcWaitForSecondInterruptOccured(portMAX_DELAY)) {
@@ -85,5 +84,5 @@ static void __ledTestTask(void *nouse) {
 
 void SHT10TestInit(void) {
 	SHT10Init();
-	xTaskCreate(__ledTestTask, (signed portCHAR *) "TST", SHT_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
+	xTaskCreate(__ledTestTask, (signed portCHAR *) "TST", SHT_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 4, NULL);
 }

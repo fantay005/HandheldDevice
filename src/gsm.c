@@ -768,7 +768,6 @@ static void __gsmTask(void *parameter) {
 // 	while (!__gsmGetImeiFromModem()) {
 // 		vTaskDelay(configTICK_RATE_HZ);
 // 	}
-
 	for (;;) {
 		printf("Gsm: loop again\n");
 		rc = xQueueReceive(__queue, &message, configTICK_RATE_HZ * 10);
@@ -782,7 +781,11 @@ static void __gsmTask(void *parameter) {
 			}
 			__gsmDestroyMessage(message);
 		} else {
-			int curT;
+			static int curT = 0;
+			curT++;
+			if (curT == 1) {
+			  ZIGBEEInit();
+			}
 			continue;
 			curT = xTaskGetTickCount();
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
@@ -802,6 +805,6 @@ static void __gsmTask(void *parameter) {
 void GSMInit(void) {
 	ATCommandRuntimeInit();
 	__gsmInitHardware();
-	__queue = xQueueCreate(2, sizeof(GsmTaskMessage *));
-	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
+	__queue = xQueueCreate(3, sizeof(GsmTaskMessage *));
+	xTaskCreate(__gsmTask, (signed portCHAR *) "GSM", GSM_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
 }

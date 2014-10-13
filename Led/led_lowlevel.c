@@ -53,7 +53,7 @@ static unsigned char __scanBuffer[LED_SCAN_MUX][LED_SCAN_LENGTH];
 #if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
 static unsigned char __displayBuffer[LED_DOT_HEIGHT + 16][LED_DOT_WIDTH / 8];
 #else
-static unsigned char __displayBuffer[LED_VIR_DOT_HEIGHT / 2 * 3][LED_VIR_DOT_WIDTH  / 8];
+static unsigned char __displayBuffer[LED_VIR_DOT_HEIGHT][LED_VIR_DOT_WIDTH  / 8];
 #endif
 
 void LedDisplayClearAll() {

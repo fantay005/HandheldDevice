@@ -14,7 +14,7 @@
 #include "unicode2gbk.h"
 #include "font_dot_array.h"
 
-#define DISPLAY_TASK_STACK_SIZE		( configMINIMAL_STACK_SIZE + 256 )
+#define DISPLAY_TASK_STACK_SIZE		( configMINIMAL_STACK_SIZE + 128 )
 
 enum { MSG_CMD_DISPLAY_CONTROL = 0,
 	   MSG_CMD_DISPLAY_MESSAGE,
@@ -110,6 +110,7 @@ void __displayMessageLowlevel(void) {
 	LedDisplayClear(0, LED_VIR_DOT_HEIGHT / 2, LED_VIR_DOT_WIDTH - 1, LED_VIR_DOT_HEIGHT - 1);
 	
 	if (__displayMessageColor & 1) {
+		printf("%s\n", __displayCurrentPoint);
 		tmp = LedDisplayGB2312String16(0, 0,  __displayCurrentPoint);
 	}
 
@@ -141,8 +142,8 @@ void __handlerDisplayMessage(DisplayTaskMessage *msg) {
 	}
 	__displayMessage = msg->data.pointData;
 	__displayCurrentPoint = __displayMessage;
-//	DisplayClear();
-	__displayMessageLowlevel();
+	DisplayClear();
+//	__displayMessageLowlevel();
 }
 
 
@@ -154,7 +155,7 @@ void __handlerDisplayMessageRed(DisplayTaskMessage *msg) {
 	__displayCurrentPoint = __displayMessage;
 	__displayMessageColor = 1;
 	DisplayClear();
-	//__displayMessageLowlevel();
+	__displayMessageLowlevel();
 }
 
 static char N = 0;
@@ -234,7 +235,6 @@ void DisplayTask(void *helloString) {
 	portBASE_TYPE rc;
 	DisplayTaskMessage msg;
 	const char *p;
-  printf("DisplayTask: loop again\n");
 //	printf("DisplayTask: start-> %s\n", (const char *)helloString);
  	__displayQueue = xQueueCreate(2, sizeof(DisplayTaskMessage));
 // 	p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
@@ -243,7 +243,7 @@ void DisplayTask(void *helloString) {
 // 	} else if (isAsciiStart(p[0])) {
 // 		host = p;
 // 	}
-// 	LedScanOnOff(1);
+ 	LedScanOnOff(1);
 // 	MessDisplay((char*)host);
 // ScrollDisplayInit();
 	while (1) {
@@ -270,7 +270,7 @@ void DisplayTask(void *helloString) {
 
 void DisplayInit(void) {
 	LedScanInit();
-	xTaskCreate(DisplayTask, (signed portCHAR *) "DISPLAY", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 3, NULL);
+	xTaskCreate(DisplayTask, (signed portCHAR *) "DISPLAY", DISPLAY_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 }
 
 #endif

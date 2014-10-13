@@ -95,7 +95,7 @@ int main(void) {
 	DisplayInit();
 	SevenSegLedInit();
 	SHT10TestInit();
-	ZIGBEEInit();
+//	ZIGBEEInit();
 	__smsCreateTask();
 #endif
 

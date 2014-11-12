@@ -19,6 +19,7 @@
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
 #define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
+#define END_HEART_BEAT_TIME      (configTICK_RATE_HZ * 60 * 60 * 24)
 #define GSM_IMEI_LENGTH              15
 
 #define RESET_GPIO_GROUP           GPIOG
@@ -242,7 +243,7 @@ static int bufferIndex = 0;
 static char isIPD = 0;
 static char isSMS = 0;
 static int lenIPD;
-static char isONtcp = 0;
+static char isONtcp = 1;
 
 static inline void __gmsReceiveIPDData(unsigned char data) {
 	if (isIPD == 1) {
@@ -677,7 +678,7 @@ extern void __sensors_config(void);
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0;
+	portTickType lastT = 0, endT = 0;
 
 	while (1) {
 		printf("Gsm start\n");
@@ -720,6 +721,10 @@ static void __gsmTask(void *parameter) {
 				vPortFree(dat);
 				printf("Send dat sucess.\n");
 				lastT = curT;
+			}
+			
+			if((curT - endT) >= END_HEART_BEAT_TIME) {
+				NVIC_SystemReset();
 			}
 		}
 	}

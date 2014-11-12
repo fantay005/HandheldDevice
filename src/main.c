@@ -69,11 +69,13 @@ extern void GSMInit(void);
 extern void WatchdogInit(void);
 extern void SDInit(void);
 extern void __sensors_config(void);
+extern void SHT10TestInit(void);
 
 int main(void) {
 	PreSetupHardware();
 	UartDebugInit();
-	//RtcInit();
+	RtcInit();
+	SHT10TestInit();
 	//WatchdogInit();
 
 	GSMInit();

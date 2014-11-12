@@ -29,21 +29,11 @@
 #define LED_INDEX_MINUTE_L 19
 
 static void __ledTestTask(void *nouse) {
-	int temp;
-	int humi;
-//	enum SoftPWNLedColor color;
-	uint32_t second;
-	DateTime dateTime;
 
 	while (1) {
 		if (!RtcWaitForSecondInterruptOccured(portMAX_DELAY)) {
 			continue;
 		}
-
-		if ((dateTime.hour == 0x00) && (dateTime.minute == 0x00) && (dateTime.minute == 0x00)) {
-
-		}
-
 	}
 }
 

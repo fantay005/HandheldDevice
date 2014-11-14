@@ -460,7 +460,13 @@ static void __cmd_REFAC_Handler(const SMSInfo *p) {
 
 static void __cmd_RST_Handler(const SMSInfo *p) {
 	NorFlashMutexLock(configTICK_RATE_HZ * 10);
+	FSMC_NOR_EraseSector(XFS_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 5);
 	FSMC_NOR_EraseSector(GSM_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 5);
+	FSMC_NOR_EraseSector(USER_PARAM_STORE_ADDR);
+	vTaskDelay(configTICK_RATE_HZ / 5);
+	FSMC_NOR_EraseSector(SMS1_PARAM_STORE_ADDR);
 	vTaskDelay(configTICK_RATE_HZ / 5);
 	NorFlashMutexUnlock();
 	printf("Reboot From Default Configuration\n");

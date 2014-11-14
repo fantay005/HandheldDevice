@@ -97,7 +97,7 @@ int main(void) {
 	SHT10TestInit();
 #endif
 	
-	__smsCreateTask();
+	//__smsCreateTask();
 
 	printf("\n==============================\n");
 	printf("%s", Version());

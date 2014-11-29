@@ -18,8 +18,8 @@
 #include "unicode2gbk.h"
 
 #define GSM_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 256)
-#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 5)
-#define END_HEART_BEAT_TIME      (configTICK_RATE_HZ * 60 * 60 * 24)
+#define GSM_GPRS_HEART_BEAT_TIME     (configTICK_RATE_HZ * 60 * 2)
+
 #define GSM_IMEI_LENGTH              15
 
 #define RESET_GPIO_GROUP           GPIOG
@@ -27,6 +27,10 @@
 
 #define __gsmAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)
 #define __gsmDeassertResetPin()      GPIO_ResetBits(RESET_GPIO_GROUP, RESET_GPIO)
+
+#define __gsmPowerSupplyOn()         GPIO_SetBits(GPIOB, GPIO_Pin_0)
+#define __gsmPowerSupplyOff()        GPIO_ResetBits(GPIOB, GPIO_Pin_0)
+
 
 #define __gsmPortMalloc(size)        pvPortMalloc(size)
 #define __gsmPortFree(p)             vPortFree(p)
@@ -40,7 +44,7 @@ static xQueueHandle __queue;
 static char __imei[GSM_IMEI_LENGTH + 1];
 
 /// Save runtime parameters for GSM task;
-static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12304};
+static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 2092};
 
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
@@ -48,6 +52,11 @@ void ATCmdSendChar(char c) {
 	USART_SendData(USART2, c);
 	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
 }
+
+char *feedbackIMEI(void){
+	return __imei;
+}
+
 
 typedef enum {
 	TYPE_NONE = 0,
@@ -180,14 +189,14 @@ static void __gsmInitHardware(void) {
 	//GPIO_PinRemapConfig(GPIO_FullRemap_USART3,ENABLE);
 	GPIO_PinRemapConfig(GPIO_Remap_USART2,ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_2;
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_5;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
+	GPIO_Init(GPIOD, &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSM模块的串口
+	GPIO_Init(GPIOD, &GPIO_InitStructure);				   //GSM模块的串口
 // 	GPIO_SetBits(GPIOD, GPIO_Pin_8);
 // 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
 // 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
@@ -211,6 +220,11 @@ static void __gsmInitHardware(void) {
 // 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 // 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 // 	GPIO_Init(GPIOG, &GPIO_InitStructure);	
+
+	GPIO_ResetBits(GPIOB, GPIO_Pin_0);
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_0;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+	GPIO_Init(GPIOB, &GPIO_InitStructure);	
 
 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
@@ -342,6 +356,12 @@ void USART2_IRQHandler(void) {
 
 /// Start GSM modem.
 void __gsmModemStart() {
+	__gsmPowerSupplyOff();
+	vTaskDelay(configTICK_RATE_HZ);
+
+	__gsmPowerSupplyOn();
+	vTaskDelay(configTICK_RATE_HZ);
+	
 	__gsmAssertResetPin();
 	vTaskDelay(configTICK_RATE_HZ * 2);
 	__gsmDeassertResetPin();
@@ -438,8 +458,7 @@ bool __gsmCheckTcpAndConnect(const char *ip, unsigned short port) {
 
 bool __gsmInitRuntime() {
 	int i;
-	//static const int bauds[] = {19200, 9600, 115200, 38400, 51200, 4800 };
-	static const int bauds[] = {19200 };
+	static const int bauds[] = {19200, 9600 };
 	for (i = 0; i < ARRAY_MEMBER_NUMBER(bauds); ++i) {
 		// 设置波特率
 		printf("Init gsm baud: %d\n", bauds[i]);
@@ -672,13 +691,12 @@ static const MessageHandlerMap __messageHandlerMaps[] = {
 	{ TYPE_NONE, NULL },
 };
 
-extern char *backdate(int *size);
-extern void __sensors_config(void);
+extern  void ProtoclUPloaddata(void);
 
 static void __gsmTask(void *parameter) {
 	portBASE_TYPE rc;
 	GsmTaskMessage *message;
-	portTickType lastT = 0, endT = 0;
+	portTickType lastT = 0;
 
 	while (1) {
 		printf("Gsm start\n");
@@ -691,8 +709,6 @@ static void __gsmTask(void *parameter) {
 	while (!__gsmGetImeiFromModem()) {
 		vTaskDelay(configTICK_RATE_HZ);
 	}
-	
-	__sensors_config();
 
 	for (;;) {
 		printf("Gsm: loop again\n");
@@ -710,21 +726,17 @@ static void __gsmTask(void *parameter) {
 			portTickType curT; 
 			curT = xTaskGetTickCount();
 			if (0 == __gsmCheckTcpAndConnect(__gsmRuntimeParameter.serverIP, __gsmRuntimeParameter.serverPORT)) {
-			    isONtcp = 0;
+			  isONtcp = 0;
 				printf("Gsm: Connect TCP error\n");
-			}
-																		
-			if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
+			} else if ((curT - lastT) >= GSM_GPRS_HEART_BEAT_TIME) {
 				int size;
-        char *dat = backdate(&size);
-				__gsmSendTcpDataLowLevel(dat, size);
-				vPortFree(dat);
+				const char *data;
+				data = ProtoclCreatLogin(__imei, &size);
+				__gsmSendTcpDataLowLevel(data, size);
+				ProtocolDestroyMessage(data);
+				ProtoclUPloaddata();
 				printf("Send dat sucess.\n");
 				lastT = curT;
-			}
-			
-			if((curT - endT) >= END_HEART_BEAT_TIME) {
-				NVIC_SystemReset();
 			}
 		}
 	}

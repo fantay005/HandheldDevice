@@ -49,10 +49,6 @@ static void PreSetupHardware(void) {
 	/* Enable DMA1 clock */
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_DMA1, ENABLE);
 
-	/* Enable USART2 clock */
-	/* Enable UART4 clock */
-	/* TIM2 clock enable */
-	/* TIM3 clock enable */
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3 | RCC_APB1Periph_PWR |
 						   RCC_APB1Periph_BKP | RCC_APB1Periph_TIM2 |
 						   RCC_APB1Periph_USART2 | RCC_APB1Periph_USART3 
@@ -75,7 +71,7 @@ int main(void) {
 	PreSetupHardware();
 	UartDebugInit();
 	RtcInit();
-//	SHT10TestInit();
+	SHT10TestInit();
 	//WatchdogInit();
 
 	GSMInit();

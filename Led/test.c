@@ -6,9 +6,9 @@
 #include "rtc.h"
 #include "seven_seg_led.h"
 #include "second_datetime.h"
+#include "stm32f10x_gpio.h"
 #include "unicode2gbk.h"
-#include "softpwm_led.h"
-#include "softpwm_led.h"
+
 
 #define SHT_TASK_STACK_SIZE	( configMINIMAL_STACK_SIZE + 64 )
 
@@ -27,10 +27,11 @@
 #define LED_INDEX_HOUR_L 17
 #define LED_INDEX_MINUTE_H 18
 #define LED_INDEX_MINUTE_L 19
-
+	
 static void __ledTestTask(void *nouse) {
 
 	while (1) {
+
 		if (!RtcWaitForSecondInterruptOccured(portMAX_DELAY)) {
 			continue;
 		}
@@ -38,5 +39,6 @@ static void __ledTestTask(void *nouse) {
 }
 
 void SHT10TestInit(void) {
+
 	xTaskCreate(__ledTestTask, (signed portCHAR *) "TST", SHT_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 }

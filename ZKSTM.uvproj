@@ -676,14 +676,24 @@
               <FilePath>.\src\timdelay.c</FilePath>
             </File>
             <File>
-              <FileName>adc_dma.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\adc_dma.c</FilePath>
-            </File>
-            <File>
               <FileName>test.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Led\test.c</FilePath>
+            </File>
+            <File>
+              <FileName>gather.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gather.c</FilePath>
+            </File>
+            <File>
+              <FileName>modbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\modbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>GatherData.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\GatherData.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -747,46 +757,6 @@
               <FileName>softI2C.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\softI2C.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Fatfs</GroupName>
-          <Files>
-            <File>
-              <FileName>ff.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Fatfs\ff.c</FilePath>
-            </File>
-            <File>
-              <FileName>diskio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Fatfs\diskio.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Devices</GroupName>
-          <Files>
-            <File>
-              <FileName>BH1750.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Devices\BH1750.c</FilePath>
-            </File>
-            <File>
-              <FileName>soil.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Devices\soil.c</FilePath>
-            </File>
-            <File>
-              <FileName>sht1x.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Devices\sht1x.c</FilePath>
-            </File>
-            <File>
-              <FileName>sensors.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Devices\sensors.c</FilePath>
             </File>
           </Files>
         </Group>

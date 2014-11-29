@@ -75,7 +75,7 @@ int main(void) {
 	PreSetupHardware();
 	UartDebugInit();
 	RtcInit();
-	SHT10TestInit();
+//	SHT10TestInit();
 	//WatchdogInit();
 
 	GSMInit();

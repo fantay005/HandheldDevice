@@ -45,8 +45,8 @@ static GMSParameter __gsmRuntimeParameter = {"61.190.61.78", 12304};
 /// Basic function for sending AT Command, need by atcmd.c.
 /// \param  c    Char data to send to modem.
 void ATCmdSendChar(char c) {
-	USART_SendData(USART3, c);
-	while (USART_GetFlagStatus(USART3, USART_FLAG_TXE) == RESET);
+	USART_SendData(USART2, c);
+	while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET);
 }
 
 typedef enum {
@@ -165,11 +165,11 @@ static void __gsmInitUsart(int baud) {
 	USART_InitStructure.USART_Parity = USART_Parity_No;
 	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-	USART_Init(USART3, &USART_InitStructure);
+	USART_Init(USART2, &USART_InitStructure);
 	
-	USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
+	USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
 	
-	USART_Cmd(USART3, ENABLE);
+	USART_Cmd(USART2, ENABLE);
 }
 
 /// Init the CPU on chip hardware for the GSM modem.
@@ -177,17 +177,17 @@ static void __gsmInitHardware(void) {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 	
-	GPIO_PinRemapConfig(GPIO_FullRemap_USART3,ENABLE);
-//	GPIO_PinRemapConfig(GPIO_Remap_USART2,ENABLE);
+	//GPIO_PinRemapConfig(GPIO_FullRemap_USART3,ENABLE);
+	GPIO_PinRemapConfig(GPIO_Remap_USART2,ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
+	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_2;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOD, &GPIO_InitStructure);
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_3;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOD, &GPIO_InitStructure);				   //GSM模块的串口
+	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSM模块的串口
 // 	GPIO_SetBits(GPIOD, GPIO_Pin_8);
 // 	GPIO_InitStructure.GPIO_Pin =  GPIO_Pin_8;
 // 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
@@ -217,7 +217,7 @@ static void __gsmInitHardware(void) {
 	GPIO_Init(GPIOA, &GPIO_InitStructure);				   //GSM模块的STATAS
 
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
-	NVIC_InitStructure.NVIC_IRQChannel = USART3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannel = USART2_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -288,15 +288,15 @@ static inline void __gmsReceiveSMSData(unsigned char data) {
 	}
 }
 
-void USART3_IRQHandler(void) {
+void USART2_IRQHandler(void) {
 	unsigned char data;
-	if (USART_GetITStatus(USART3, USART_IT_RXNE) == RESET) {
+	if (USART_GetITStatus(USART2, USART_IT_RXNE) == RESET) {
 		return;
 	}
 
-	data = USART_ReceiveData(USART3);
+	data = USART_ReceiveData(USART2);
 	USART_SendData(USART1, data);
-	USART_ClearITPendingBit(USART3, USART_IT_RXNE);
+	USART_ClearITPendingBit(USART2, USART_IT_RXNE);
 	if (isIPD) {
 		__gmsReceiveIPDData(data);
 		return;

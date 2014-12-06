@@ -430,11 +430,6 @@ void LedScanClear(int x, int y, int xend, int yend) {
 	}
 }
 
-
-
-
-
-
 #if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
 void LedDisplayToScan2(int x, int y, int xend, int yend) {
 	int vx;
@@ -453,8 +448,6 @@ void LedDisplayToScan2(int x, int y, int xend, int yend) {
 	}
 }
 #endif
-
-
 
 static inline void __ledScanHardwareInit() {
 	GPIO_InitTypeDef GPIO_InitStructure;

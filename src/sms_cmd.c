@@ -16,7 +16,6 @@
 #include "unicode2gbk.h"
 #include "led_lowlevel.h"
 #include "display.h"
-#include "softpwm_led.h"
 #include "version.h"
 #include "second_datetime.h"
 
@@ -363,35 +362,6 @@ static void __cmd_UPDATA_Handler(const SMSInfo *p) {
 	vPortFree(mark);
 }
 
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-static void __cmd_ALARM_Handler(const SMSInfo *p) {
-	const char *pcontent = p->content;
-	enum SoftPWNLedColor color;
-	switch (pcontent[7]) {
-	case '3':
-		color = SoftPWNLedColorYellow;
-		break;
-	case '2':
-		color = SoftPWNLedColorOrange;
-		break;
-	case '4':
-		color = SoftPWNLedColorBlue;
-		break;
-	case '1':
-		color = SoftPWNLedColorRed;
-		break;
-	default :
-		color =	SoftPWNLedColorNULL;
-		break;
-	}
-	Display2Clear();
-	SoftPWNLedSetColor(color);
-	LedDisplayGB2312String162(2 * 4, 0, &pcontent[8]);
-	LedDisplayToScan2(2 * 4, 0, 16 * 12 - 1, 15);
-	__storeSMS2((char *)&pcontent[8]);
-}
-#endif
-
 #if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
 
 static void __cmd_RED_Display(const SMSInfo *sms) {
@@ -521,9 +491,6 @@ const static SMSModifyMap __SMSModifyMap[] = {
 	{"<UPDATA>", __cmd_UPDATA_Handler, UP_ALL},
 	{"<SETIP>", __cmd_SETIP_Handler, UP_ALL},
 	{"<A>", __cmd_A_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#if defined(__LED_HUAIBEI__) && (__LED_HUAIBEI__!=0)
-	{"<ALARM>",	__cmd_ALARM_Handler, UP1 | UP2 | UP3 | UP4 | UP5 | UP6},
-#endif
 
 #if defined(__LED_LIXIN__) && (__LED_LIXIN__!=0)
 	{"1", __cmd_RED_Display, UP_ALL},
@@ -540,20 +507,8 @@ void ProtocolHandlerSMS(const SMSInfo *sms) {
 	const SMSModifyMap *map;
 //	DateTime dateTime;
 	int index;
-	const char *p = sms->time;
 	const char *pnumber = sms->number;
 	__restorUSERParam();
-// 	dateTime.year = (p[0] - '0') * 10 + (p[1] - '0');
-// 	dateTime.month = (p[2] - '0') * 10 + (p[3] - '0');
-// 	dateTime.date = (p[4] - '0') * 10 + (p[5] - '0');
-// 	dateTime.hour = (p[6] - '0') * 10 + (p[7] - '0');
-// 	dateTime.minute = (p[8] - '0') * 10 + (p[9] - '0');
-// 	if (p[10] != 0 && p[11] != 0) {
-// 		dateTime.second = (p[10] - '0') * 10 + (p[11] - '0');
-// 	} else {
-// 		dateTime.second = 0;
-// 	}
-// 	RtcSetTime(DateTimeToSecond(&dateTime));
 
 	index = __userIndex(sms->numberType == PDU_NUMBER_TYPE_INTERNATIONAL ? &pnumber[2] : &pnumber[0]);
 	for (map = __SMSModifyMap; map->cmd != NULL; ++map) {

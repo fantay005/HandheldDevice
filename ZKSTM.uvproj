@@ -764,39 +764,9 @@
               <FilePath>.\Led\led_lowlevel.c</FilePath>
             </File>
             <File>
-              <FileName>sht1x.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\sht1x.c</FilePath>
-            </File>
-            <File>
-              <FileName>seven_seg_led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\seven_seg_led.c</FilePath>
-            </File>
-            <File>
               <FileName>test.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Led\test.c</FilePath>
-            </File>
-            <File>
-              <FileName>softpwm_led.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\softpwm_led.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>SPEAKER</GroupName>
-          <Files>
-            <File>
-              <FileName>mp3.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3.c</FilePath>
-            </File>
-            <File>
-              <FileName>soundcontrol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\soundcontrol.c</FilePath>
             </File>
           </Files>
         </Group>

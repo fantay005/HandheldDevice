@@ -26,8 +26,8 @@
 #  define RESET_GPIO_GROUP           GPIOA
 #  define RESET_GPIO                 GPIO_Pin_11
 #elif defined(__LED__)
-#  define RESET_GPIO_GROUP           GPIOB
-#  define RESET_GPIO                 GPIO_Pin_1
+#  define RESET_GPIO_GROUP           GPIOG
+#  define RESET_GPIO                 GPIO_Pin_10
 #endif
 
 #define __gsmAssertResetPin()        GPIO_SetBits(RESET_GPIO_GROUP, RESET_GPIO)

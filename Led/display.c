@@ -27,14 +27,10 @@
 #define	MSG_DATA_DISPLAY_CONTROL_ON 1
 
 #if defined(__LED_HUAIBEI__)
-static const char *host = "安徽气象欢迎您！";
-static const char *assistant = "淮北气象三农服务";
+static const char *host = "绿源电动车欢迎您!安徽中科金城智能科技有限公司";
+static const char *assistant = "   绿源电动车";
 #endif
 
-
-#if defined(__LED_LIXIN__)
-static const char *host = "安徽气象欢迎您！";
-#endif
 
 typedef struct {
 	uint32_t cmd;
@@ -109,29 +105,6 @@ void DisplayOnOff(int isOn) {
 	xQueueSend(__displayQueue, &msg, configTICK_RATE_HZ);
 }
 
-#if defined(__LED_LIXIN__)
-void __displayMessageLowlevel(void) {
-	const uint8_t *tmp;
-	if (__displayMessage == NULL) {
-		return;
-	}
-	if (__displayCurrentPoint == NULL) {
-		__displayCurrentPoint = __displayMessage;
-	}
-	LedDisplayClear(0, 0, LED_DOT_XEND, LED_DOT_HEIGHT / 2 - 1);
-	LedDisplayClear(0, LED_DOT_HEIGHT / 2, LED_DOT_XEND, LED_DOT_HEIGHT - 1);
-	if (__displayMessageColor & 1) {
-		tmp = LedDisplayGB2312String32(0, 0, LED_DOT_WIDTH / 8, 32, __displayCurrentPoint);
-	}
-
-	if (__displayMessageColor & 2) {
-		tmp = LedDisplayGB2312String32(0, 32, LED_DOT_WIDTH / 8, 64, __displayCurrentPoint);
-	}
-	__displayCurrentPoint = tmp;
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-
-}
-#endif
 
 #if defined(__LED_HUAIBEI__)
 void __displayMessageLowlevel(void) {
@@ -222,13 +195,6 @@ static const struct {
 	MessageDestroyFunc destroyFunc;
 } __messageHandlerFunctions[] = {
 	{ MSG_CMD_DISPLAY_MESSAGE, __handlerDisplayMessage, NULL },
-
-#if defined(__LED_LIXIN__)
-	{ MSG_CMD_DISPLAY_MESSAGE_RED, __handlerDisplayMessageRed, NULL },
-	{ MSG_CMD_DISPLAY_MESSAGE_GREEN, __handlerDisplayMessageGreen, NULL },
-	{ MSG_CMD_DISPLAY_MESSAGE_YELLOW, __handlerDisplayMessageYellow, NULL },
-#endif
-
 	{ MSG_CMD_DISPLAY_CONTROL, __handlerDisplayControl, NULL},
 };
 
@@ -263,17 +229,6 @@ void __lowerToUpper() {
 		vTaskDelay(configTICK_RATE_HZ / 20);
 	}
 }
-#if defined(__LED_LIXIN__)
-void DisplayClear(void) {
-	char clear[144];
-	int i;
-	for (i = 0; i < 144; i++) {
-		clear[i] = ' ';
-	}
-	LedDisplayGB2312String32(0, 0, LED_DOT_WIDTH / 8, LED_DOT_YEND - 1, (const uint8_t *)clear);
-	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-}
-#endif
 
 #if defined(__LED_HUAIBEI__)
 void DisplayClear(void) {
@@ -293,50 +248,8 @@ void Display2Clear(void) {
 		clear[i] = ' ';
 	}
 	LedDisplayGB2312String162(0, 0, (const uint8_t *)clear);
-	LedDisplayToScan2(2 * 4, 0, LED_DOT_XEND, LED_DOT_YEND);
+	LedDisplayToScan2(0, 0, LED_DOT_XEND, LED_DOT_YEND);
 }
-#endif
-
-#if defined(__LED_LIXIN__)
-void DisplayTask(void *helloString) {
-	portBASE_TYPE rc;
-	DisplayTaskMessage msg;
-
-	printf("DisplayTask: start-> %s\n", (const char *)helloString);
-	__displayQueue = xQueueCreate(5, sizeof(DisplayTaskMessage));
-	{
-		const char *p = (const char *)(Bank1_NOR2_ADDR + SMS1_PARAM_STORE_ADDR);
-		if (isGB2312Start(p[0]) && isGB2312Start(p[1])) {
-			host = p;
-		} else if (isAsciiStart(p[0])) {
-			host = p;
-		}
-		p = (const char *)(Bank1_NOR2_ADDR + SMS2_PARAM_STORE_ADDR);
-
-		LedDisplayGB2312String32(288 / 8, 0, LED_DOT_WIDTH / 8, 32, host);
-		LedDisplayGB2312String32(288 / 8, 32, LED_DOT_WIDTH / 8, 64, host);
-		LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-		LedScanOnOff(1);
-		while (1) {
-			rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);
-			if (rc == pdTRUE) {
-				int i;
-				for (i = 0; i < ARRAY_MEMBER_NUMBER(__messageHandlerFunctions); ++i) {
-					if (__messageHandlerFunctions[i].cmd == msg.cmd) {
-						__messageHandlerFunctions[i].handlerFunc(&msg);
-						if (__messageHandlerFunctions[i].destroyFunc != NULL) {
-							__messageHandlerFunctions[i].destroyFunc(&msg);
-						}
-						break;
-					}
-				}
-			} else {
-				__displayMessageLowlevel();
-			}
-		}
-	}
-}
-
 #endif
 
 #if defined(__LED_HUAIBEI__)
@@ -361,10 +274,10 @@ void DisplayTask(void *helloString) {
 		}
 	}
 	MessDisplay((char *)host);
-//	LedDisplayGB2312String16(0, 0, host);
-	LedDisplayGB2312String162(8, 0, assistant);
-//	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
-	LedDisplayToScan2(2 * 4, 0, LED_DOT_XEND, 15);
+	LedDisplayGB2312String16(0, 0, host);
+	LedDisplayGB2312String162(0, 0, assistant);
+	LedDisplayToScan(0, 0, LED_DOT_XEND, LED_DOT_YEND);
+	LedDisplayToScan2(0, 0, LED_DOT_XEND, 15);
 	LedScanOnOff(1);
 	while (1) {
 		rc = xQueueReceive(__displayQueue, &msg, configTICK_RATE_HZ * 5);

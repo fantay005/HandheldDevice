@@ -7,7 +7,6 @@
 #include "stm32f10x_gpio.h"
 #include "misc.h"
 
-
 #define DEBUG_TASK_STACK_SIZE		( configMINIMAL_STACK_SIZE + 64 )
 
 static xQueueHandle __uartDebugQueue;

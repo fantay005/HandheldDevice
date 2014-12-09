@@ -3,9 +3,7 @@
 #include <stdlib.h>
 #include "rtc.h"
 #include "second_datetime.h"
-#include "led_lowlevel.h"
-#include "softpwm_led.h"
-
+#include "commu.h"
 
 //static void __setRtcTime(const char *p) {
 //	DateTime dateTime;
@@ -24,6 +22,9 @@
 ////	RtcSetTime(DateTimeToSecond(&dateTime));
 //}
 
+void __communicat(CommuMessage *p){
+	debug_comm(p);
+}
 
 typedef struct {
 	const char *prefix;
@@ -44,6 +45,7 @@ static const DebugHandlerMap __handlerMaps[] = {
 //	{ "SPWM", __setSoftPWMLed },
 #endif
 //	{ "AT", __sendAtCommandToGSM },
+	{ "MAX", __communicat},
 	{ NULL, NULL },
 };
 
@@ -54,7 +56,7 @@ void DebugHandler(const char *msg) {
 
 	for (map = __handlerMaps; map->prefix != NULL; ++map) {
 		if (0 == strncmp(map->prefix, msg, strlen(map->prefix))) {
-			map->func(msg);
+			map->func(&msg[3]);
 			return;
 		}
 	}

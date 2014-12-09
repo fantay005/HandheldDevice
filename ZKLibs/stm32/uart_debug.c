@@ -68,7 +68,7 @@ static uint8_t *__uartDebugCreateMessage(const uint8_t *dat, int len) {
 
 
 static inline void __uartDebugCreateTask(void) {
-	xTaskCreate(__uartDebugTask, (signed portCHAR *) "DBG", DEBUG_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+	xTaskCreate(__uartDebugTask, (signed portCHAR *) "DBG", DEBUG_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 5, NULL);
 }
 
 

@@ -41,12 +41,12 @@ static void PreSetupHardware(void) {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB |
 						   RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD |
 						   RCC_APB2Periph_GPIOE | RCC_APB2Periph_GPIOF |
-						   RCC_APB2Periph_GPIOG | 
+						   RCC_APB2Periph_GPIOG | RCC_APB2Periph_AFIO |
 						   RCC_APB2Periph_USART1 
 						   , ENABLE);
 	/* Enable peripheral clocks --------------------------------------------------*/
 
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 , ENABLE);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2 | RCC_APB1Periph_TIM3, ENABLE);
 
 	NVIC_SetVectorTable((unsigned int)&__Vectors, 0x0);
 
@@ -55,7 +55,6 @@ static void PreSetupHardware(void) {
 
 extern void UartDebugInit(void);
 extern void WatchdogInit(void);
-extern void motorInit(void);
 extern void feedbackInit(void);
 extern void commuInit(void);
 

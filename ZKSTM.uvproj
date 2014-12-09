@@ -101,11 +101,11 @@
         <DllOption>
           <SimDllName>SARMCM3.DLL</SimDllName>
           <SimDllArguments></SimDllArguments>
-          <SimDlgDll>DCM.DLL</SimDlgDll>
+          <SimDlgDll>DARMSTM.DL</SimDlgDll>
           <SimDlgDllArguments>-pSTM32F103RC</SimDlgDllArguments>
           <TargetDllName>SARMCM3.DLL</TargetDllName>
           <TargetDllArguments></TargetDllArguments>
-          <TargetDlgDll>TCM.DLL</TargetDlgDll>
+          <TargetDlgDll>TARMSTM.DLL</TargetDlgDll>
           <TargetDlgDllArguments>-pSTM32F103RC</TargetDlgDllArguments>
         </DllOption>
         <DebugOption>
@@ -654,11 +654,6 @@
               <FileName>timdelay.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\timdelay.c</FilePath>
-            </File>
-            <File>
-              <FileName>motor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\motor.c</FilePath>
             </File>
             <File>
               <FileName>feedback.c</FileName>

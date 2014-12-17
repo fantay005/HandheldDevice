@@ -79,7 +79,7 @@ static void __ledTestTask(void *nouse) {
 		}
 		if (((dateTime.hour == 0x06) || (dateTime.hour == 0x12))&& (dateTime.minute == 0x00) && (dateTime.second == 0x00)) {
 				int size, i;
-				const char *data;  
+				char *data;  
 				size = 6;
 			  for(i = 0; i < 4; i++){
 					data = (char *)ProtoclAchieveMessage();

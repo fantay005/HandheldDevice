@@ -55,7 +55,7 @@ static void PreSetupHardware(void) {
 
 extern void UartDebugInit(void);
 extern void WatchdogInit(void);
-extern void feedbackInit(void);
+//extern void feedbackInit(void);
 extern void commuInit(void);
 
 
@@ -63,7 +63,7 @@ int main(void) {
 	PreSetupHardware();
 	UartDebugInit();
 
-	feedbackInit();
+//	feedbackInit();
 	commuInit();
 	printf("\n==============================\n");
 	printf("µç»úÆô¶¯¡£\r\n");

@@ -45,35 +45,15 @@ static inline void __uartDebugHardwareInit(void) {
 }
 
 
-static void __uartDebugTask(void *nouse) {
-	portBASE_TYPE rc;
-	char *msg;
-
-//	printf("UartDebugTask: start\n");
-	__uartDebugQueue = xQueueCreate(3, sizeof(char *));
-	while (1) {
-		rc = xQueueReceive(__uartDebugQueue, &msg, portMAX_DELAY);
-		if (rc == pdTRUE) {
-			extern void DebugHandler(char * msg);
-			DebugHandler(msg);
-			vPortFree(msg);
-		}
-	}
-}
-
 static uint8_t *__uartDebugCreateMessage(const uint8_t *dat, int len) {
 	uint8_t *r = pvPortMalloc(len);
 	memcpy(r, dat, len);
 	return r;
 }
 
-static inline void __uartDebugCreateTask(void) {
-	xTaskCreate(__uartDebugTask, (signed portCHAR *) "DBG", DEBUG_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
-}
 
 void UartDebugInit() {
 	__uartDebugHardwareInit();
-	__uartDebugCreateTask();
 }
 
 void USART1_IRQHandler(void) {

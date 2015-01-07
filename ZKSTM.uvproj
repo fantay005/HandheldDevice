@@ -606,26 +606,6 @@
               <FilePath>./SRC/startup_stm32f10x_hd_arm.s</FilePath>
             </File>
             <File>
-              <FileName>tim.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/tim.c</FilePath>
-            </File>
-            <File>
-              <FileName>xfs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/xfs.c</FilePath>
-            </File>
-            <File>
-              <FileName>debug_handler.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\SRC\debug_handler.c</FilePath>
-            </File>
-            <File>
-              <FileName>recovery.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\recovery.c</FilePath>
-            </File>
-            <File>
               <FileName>sms_cmd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\sms_cmd.c</FilePath>
@@ -675,6 +655,16 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>modbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\modbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>gather.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gather.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -709,16 +699,6 @@
           <GroupName>ZKLibs_stm32</GroupName>
           <Files>
             <File>
-              <FileName>font_dot_array.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./ZKLibs/stm32/font_dot_array.c</FilePath>
-            </File>
-            <File>
-              <FileName>fsmc_nor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\fsmc_nor.c</FilePath>
-            </File>
-            <File>
               <FileName>rtc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\rtc.c</FilePath>
@@ -729,11 +709,6 @@
               <FilePath>.\ZKLibs\stm32\libupdater.c</FilePath>
             </File>
             <File>
-              <FileName>norflash.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\norflash.c</FilePath>
-            </File>
-            <File>
               <FileName>uart_debug.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\uart_debug.c</FilePath>
@@ -742,46 +717,6 @@
               <FileName>watchdog.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\watchdog.c</FilePath>
-            </File>
-            <File>
-              <FileName>unicode2gbk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\unicode2gbk.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>LED</GroupName>
-          <Files>
-            <File>
-              <FileName>test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\test.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>SPEAKER</GroupName>
-          <Files>
-            <File>
-              <FileName>mp3.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3.c</FilePath>
-            </File>
-            <File>
-              <FileName>soundcontrol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\soundcontrol.c</FilePath>
-            </File>
-            <File>
-              <FileName>fm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\fm.c</FilePath>
-            </File>
-            <File>
-              <FileName>mp3test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3test.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1387,26 +1322,6 @@
               <FilePath>./SRC/startup_stm32f10x_hd_arm.s</FilePath>
             </File>
             <File>
-              <FileName>tim.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/tim.c</FilePath>
-            </File>
-            <File>
-              <FileName>xfs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/xfs.c</FilePath>
-            </File>
-            <File>
-              <FileName>debug_handler.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\SRC\debug_handler.c</FilePath>
-            </File>
-            <File>
-              <FileName>recovery.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\recovery.c</FilePath>
-            </File>
-            <File>
               <FileName>sms_cmd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\sms_cmd.c</FilePath>
@@ -1456,6 +1371,16 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>modbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\modbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>gather.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gather.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1490,16 +1415,6 @@
           <GroupName>ZKLibs_stm32</GroupName>
           <Files>
             <File>
-              <FileName>font_dot_array.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./ZKLibs/stm32/font_dot_array.c</FilePath>
-            </File>
-            <File>
-              <FileName>fsmc_nor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\fsmc_nor.c</FilePath>
-            </File>
-            <File>
               <FileName>rtc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\rtc.c</FilePath>
@@ -1510,11 +1425,6 @@
               <FilePath>.\ZKLibs\stm32\libupdater.c</FilePath>
             </File>
             <File>
-              <FileName>norflash.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\norflash.c</FilePath>
-            </File>
-            <File>
               <FileName>uart_debug.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\uart_debug.c</FilePath>
@@ -1523,46 +1433,6 @@
               <FileName>watchdog.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\watchdog.c</FilePath>
-            </File>
-            <File>
-              <FileName>unicode2gbk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\unicode2gbk.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>LED</GroupName>
-          <Files>
-            <File>
-              <FileName>test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\test.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>SPEAKER</GroupName>
-          <Files>
-            <File>
-              <FileName>mp3.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3.c</FilePath>
-            </File>
-            <File>
-              <FileName>soundcontrol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\soundcontrol.c</FilePath>
-            </File>
-            <File>
-              <FileName>fm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\fm.c</FilePath>
-            </File>
-            <File>
-              <FileName>mp3test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3test.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2168,26 +2038,6 @@
               <FilePath>./SRC/startup_stm32f10x_hd_arm.s</FilePath>
             </File>
             <File>
-              <FileName>tim.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/tim.c</FilePath>
-            </File>
-            <File>
-              <FileName>xfs.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./SRC/xfs.c</FilePath>
-            </File>
-            <File>
-              <FileName>debug_handler.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\SRC\debug_handler.c</FilePath>
-            </File>
-            <File>
-              <FileName>recovery.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\recovery.c</FilePath>
-            </File>
-            <File>
               <FileName>sms_cmd.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\sms_cmd.c</FilePath>
@@ -2237,6 +2087,16 @@
                 </FileArmAds>
               </FileOption>
             </File>
+            <File>
+              <FileName>modbus.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\modbus.c</FilePath>
+            </File>
+            <File>
+              <FileName>gather.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\gather.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2271,16 +2131,6 @@
           <GroupName>ZKLibs_stm32</GroupName>
           <Files>
             <File>
-              <FileName>font_dot_array.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>./ZKLibs/stm32/font_dot_array.c</FilePath>
-            </File>
-            <File>
-              <FileName>fsmc_nor.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\fsmc_nor.c</FilePath>
-            </File>
-            <File>
               <FileName>rtc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\rtc.c</FilePath>
@@ -2291,11 +2141,6 @@
               <FilePath>.\ZKLibs\stm32\libupdater.c</FilePath>
             </File>
             <File>
-              <FileName>norflash.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\norflash.c</FilePath>
-            </File>
-            <File>
               <FileName>uart_debug.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\uart_debug.c</FilePath>
@@ -2304,46 +2149,6 @@
               <FileName>watchdog.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\ZKLibs\stm32\watchdog.c</FilePath>
-            </File>
-            <File>
-              <FileName>unicode2gbk.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\ZKLibs\stm32\unicode2gbk.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>LED</GroupName>
-          <Files>
-            <File>
-              <FileName>test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Led\test.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>SPEAKER</GroupName>
-          <Files>
-            <File>
-              <FileName>mp3.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3.c</FilePath>
-            </File>
-            <File>
-              <FileName>soundcontrol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\soundcontrol.c</FilePath>
-            </File>
-            <File>
-              <FileName>fm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\fm.c</FilePath>
-            </File>
-            <File>
-              <FileName>mp3test.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\Speaker\mp3test.c</FilePath>
             </File>
           </Files>
         </Group>

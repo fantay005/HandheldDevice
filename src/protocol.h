@@ -4,7 +4,7 @@
 #include "sms.h"
 
 void ProtocolDestroyMessage(const char *p);
-char *ProtoclCreateHeartBeat(int *size);
+char *ProtoclUPloaddata(char *msg,int *size);
 char *ProtoclCreatLogin(char *imei, int *size);
 void ProtocolHandler(char *p);
 void ProtocolHandlerSMS(const SMSInfo *sms);

@@ -61,12 +61,13 @@ extern void commuInit(void);
 
 int main(void) {
 	PreSetupHardware();
+	WatchdogInit();
 	UartDebugInit();
 
 	feedbackInit();
 	commuInit();
 	printf("\n==============================\n");
-	printf("µç»úÆô¶¯¡£\r\n");
+	printf("This is a vending machine.\n");
 	printf("\n==============================\n");
 	vTaskStartScheduler();
 	return 0;

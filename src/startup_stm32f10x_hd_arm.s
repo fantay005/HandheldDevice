@@ -53,6 +53,7 @@ __heap_limit
 				IMPORT xPortPendSVHandler
 				IMPORT xPortSysTickHandler
 				IMPORT vPortSVCHandler
+				IMPORT EXTI_X_IRQHandler
 
                 PRESERVE8
                 THUMB
@@ -88,11 +89,11 @@ __Vectors       DCD     __initial_sp               ; Top of Stack
                 DCD     RTC_IRQHandler             ; RTC
                 DCD     FLASH_IRQHandler           ; Flash
                 DCD     RCC_IRQHandler             ; RCC
-                DCD     EXTI0_IRQHandler           ; EXTI Line 0
-                DCD     EXTI1_IRQHandler           ; EXTI Line 1
-                DCD     EXTI2_IRQHandler           ; EXTI Line 2
-                DCD     EXTI3_IRQHandler           ; EXTI Line 3
-                DCD     EXTI4_IRQHandler           ; EXTI Line 4
+                DCD     EXTI_X_IRQHandler           ; EXTI Line 0
+                DCD     EXTI_X_IRQHandler           ; EXTI Line 1
+                DCD     EXTI_X_IRQHandler           ; EXTI Line 2
+                DCD     EXTI_X_IRQHandler           ; EXTI Line 3
+                DCD     EXTI_X_IRQHandler           ; EXTI Line 4
                 DCD     DMA1_Channel1_IRQHandler   ; DMA1 Channel 1
                 DCD     DMA1_Channel2_IRQHandler   ; DMA1 Channel 2
                 DCD     DMA1_Channel3_IRQHandler   ; DMA1 Channel 3
@@ -105,7 +106,7 @@ __Vectors       DCD     __initial_sp               ; Top of Stack
                 DCD     USB_LP_CAN1_RX0_IRQHandler ; USB Low  Priority or CAN1 RX0
                 DCD     CAN1_RX1_IRQHandler        ; CAN1 RX1
                 DCD     CAN1_SCE_IRQHandler        ; CAN1 SCE
-                DCD     EXTI9_5_IRQHandler         ; EXTI Line 9..5
+                DCD     EXTI_X_IRQHandler            ; EXTI Line 9..5
                 DCD     TIM1_BRK_IRQHandler        ; TIM1 Break
                 DCD     TIM1_UP_IRQHandler         ; TIM1 Update
                 DCD     TIM1_TRG_COM_IRQHandler    ; TIM1 Trigger and Commutation
@@ -122,7 +123,7 @@ __Vectors       DCD     __initial_sp               ; Top of Stack
                 DCD     USART1_IRQHandler          ; USART1
                 DCD     USART2_IRQHandler          ; USART2
                 DCD     USART3_IRQHandler          ; USART3
-                DCD     EXTI15_10_IRQHandler       ; EXTI Line 15..10
+                DCD     EXTI_X_IRQHandler       ; EXTI Line 15..10
                 DCD     RTCAlarm_IRQHandler        ; RTC Alarm through EXTI Line
                 DCD     USBWakeUp_IRQHandler       ; USB Wakeup from suspend
                 DCD     TIM8_BRK_IRQHandler        ; TIM8 Break

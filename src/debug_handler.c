@@ -22,9 +22,9 @@
 ////	RtcSetTime(DateTimeToSecond(&dateTime));
 //}
 
-void __communicat(CommuMessage *p){
-	debug_comm(p);
-}
+// void __communicat(CommuMessage *p){
+// 	debug_comm(p);
+// }
 
 typedef struct {
 	const char *prefix;
@@ -45,7 +45,7 @@ static const DebugHandlerMap __handlerMaps[] = {
 //	{ "SPWM", __setSoftPWMLed },
 #endif
 //	{ "AT", __sendAtCommandToGSM },
-	{ "MAX", __communicat},
+// 	{ "MAX", __communicat},
 	{ NULL, NULL },
 };
 

@@ -32,9 +32,9 @@ void __scrollDisplayTask(void *helloString) {
 		   start->\n");
 	while(1) {
 		if (xSemaphoreTake(__scrollSemaphore, portMAX_DELAY) == pdTRUE) {
-			LedScrollDisplayToScan(xDisp, 0, xScan, 0);
-			if (xScan > 0) {
-				--xScan;
+			LedScrollDisplayToScan(xDisp, 0, xScan, 0);¡¤
+			if (xScan > 0) {¡¤
+				--xScan;¡¤
 			} else {
 				++xDisp;
 				if (xDisp >= xContentEnd) {

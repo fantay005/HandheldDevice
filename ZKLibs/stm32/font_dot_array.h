@@ -26,6 +26,9 @@
 #define BYTES_HEIGHT_PER_FONT_ASCII_24X16 24
 #define BYTES_WIDTH_PER_FONT_ASCII_24X16 2
 
+#define BYTES_HEIGHT_PER_FONT_UCS_24X24 24
+#define	BYTES_WIDTH_PER_FONT_UCS_24X24 3
+
 
 void FontDotArrayInit(void);
 static inline bool FontDotArrayFetchLock(void) {

@@ -63,7 +63,7 @@ int main(void) {
 	PreSetupHardware();
 	UartDebugInit();
 
-//	feedbackInit();
+	feedbackInit();
 	commuInit();
 	printf("\n==============================\n");
 	printf("µç»úÆô¶¯¡£\r\n");

@@ -25,6 +25,15 @@
 // void __communicat(CommuMessage *p){
 // 	debug_comm(p);
 // }
+extern void communicat_handle(const comm_pack *msg);
+
+static void __communicat(char *p){
+	char *ret = p;
+	for(ret; *ret != 0; ret++){
+		*ret = *ret - '0';
+	}
+	communicat_handle((const comm_pack *)p);
+}
 
 typedef struct {
 	const char *prefix;
@@ -45,7 +54,7 @@ static const DebugHandlerMap __handlerMaps[] = {
 //	{ "SPWM", __setSoftPWMLed },
 #endif
 //	{ "AT", __sendAtCommandToGSM },
-//	{ "MAX", __communicat},
+	{ "MAX", __communicat},
 	{ NULL, NULL },
 };
 

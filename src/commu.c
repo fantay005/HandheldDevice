@@ -17,19 +17,11 @@
 #define Pin_TX    GPIO_Pin_2
 #define Pin_RX    GPIO_Pin_3
 
-#define GPIO_MAX_EN  GPIOA
-#define Pin_MAX_EN   GPIO_Pin_0
+#define GPIO_MAX_EN  GPIOB
+#define Pin_MAX_EN   GPIO_Pin_8
 
 static   xQueueHandle  __commuQueue;
 #define  COMMU_TASK_STACK_SIZE  (configMINIMAL_STACK_SIZE + 64)
-
-static GPIO_TypeDef * gpio_port[] = {
-	GPIO_1, GPIO_2, GPIO_3, GPIO_4, GPIO_5, GPIO_6, GPIO_7, GPIO_8, GPIO_9, GPIO_10, GPIO_11, GPIO_12, GPIO_13, GPIO_14, GPIO_15, GPIO_16
-};
-
-static uint16_t gpio_pin[] = {
-	Pin_1, Pin_2, Pin_3, Pin_4, Pin_5, Pin_6, Pin_7, Pin_8, Pin_9, Pin_10, Pin_11, Pin_12, Pin_13, Pin_14, Pin_15, Pin_16
-};
 
 static void inline open(GPIO_TypeDef * port, uint16_t pin) {
 	GPIO_ResetBits(port, pin);
@@ -100,20 +92,6 @@ void coder(void){
 	unsigned int data;
 	data = GPIO_ReadInputData(GPIOB);
 	code = (data & 0xF800) >> 11;
-}
-
-static void coder_Init(void){
-	int i;
-	GPIO_InitTypeDef GPIO_InitStructure;
-	
-	for (i = 0; i < sizeof(gpio_port) / sizeof(GPIO_TypeDef *); ++i) {
-		close(gpio_port[i], gpio_pin[i]);
-		GPIO_InitStructure.GPIO_Pin =  gpio_pin[i];
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-		GPIO_Init(gpio_port[i], &GPIO_InitStructure);
-	}
-	coder();
 }
 
 static void uart2_Init(void) {
@@ -239,8 +217,7 @@ void communicat_handle(const comm_pack *msg){
  	if (!comm_pack_check_sum(msg)) return;
 	printf("start.\n");
 	if (msg->mach >= Number_1  &&  msg->mach <= Number_16) {
-		int tmp = msg->mach - 1;
-		openthenclose(gpio_port[tmp], gpio_pin[tmp]);
+
 	}
 }
 
@@ -250,26 +227,17 @@ static void __commuTask(void *parameter) {
 	
 	__commuQueue = xQueueCreate(4, sizeof(comm_pack));
 	printf("MOTOR start.\n");
-		
-	comm_receive_dir();
 
 	for (;;) {
 		rc = xQueueReceive(__commuQueue, &msg, portMAX_DELAY);
 		printf("+2.\n");
 		if (rc == pdTRUE) {
-			if(msg.addr == code) {
-  			printf("commuTask: get message\n");
-				FLAG = msg.mach;
-				communicat_handle(&msg);
-				vTaskDelay(configTICK_RATE_HZ / 2);
-				max_send(msg.mach);
+
 			}
-		}
 	}
 }
 
 void commuInit(void) {
-	coder_Init();
 	uart2_Init();
 	xTaskCreate(__commuTask, (signed portCHAR *) "COMMUNICATION", COMMU_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 0, NULL);
 }

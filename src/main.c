@@ -42,7 +42,7 @@ static void PreSetupHardware(void) {
 						   RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD |
 						   RCC_APB2Periph_GPIOE | RCC_APB2Periph_GPIOF |
 						   RCC_APB2Periph_GPIOG | RCC_APB2Periph_AFIO |
-						   RCC_APB2Periph_USART1 
+						   RCC_APB2Periph_USART1 | RCC_APB2Periph_SPI1
 						   , ENABLE);
 	/* Enable peripheral clocks --------------------------------------------------*/
 

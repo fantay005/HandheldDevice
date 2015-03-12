@@ -64,7 +64,7 @@ int main(void) {
 	WatchdogInit();
 	UartDebugInit();
 
-	feedbackInit();
+//	feedbackInit();
 	commuInit();
 	printf("\n==============================\n");
 	printf("This is a vending machine.\n");

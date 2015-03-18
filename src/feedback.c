@@ -9,6 +9,7 @@
 #include "feedback.h"
 #include "commu.h"
 
+#if 0
 // static xQueueHandle __queue;
 
 #define  FEEDBACK_TASK_STACK_SIZE			 (configMINIMAL_STACK_SIZE + 64)
@@ -103,3 +104,4 @@ void feedbackInit(void) {
 //	TimerInit();
 //	xTaskCreate(__FeedbackTask, (signed portCHAR *) "FEEDBACK", FEEDBACK_TASK_STACK_SIZE, NULL, tskIDLE_PRIORITY + 2, NULL);
 }
+#endif

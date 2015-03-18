@@ -31,6 +31,11 @@ static uint16_t gpio_pin[] = {
 	Pin_1, Pin_2, Pin_3, Pin_4, Pin_5, Pin_6, Pin_7, Pin_8, Pin_9, Pin_10, Pin_11, Pin_12, Pin_13, Pin_14, Pin_15, Pin_16
 };
 
+static uint16_t feedback_pin[] = {
+	GPIO_Pin_0, GPIO_Pin_1, GPIO_Pin_2, GPIO_Pin_3, GPIO_Pin_4, GPIO_Pin_5, GPIO_Pin_6, GPIO_Pin_7, GPIO_Pin_8, GPIO_Pin_9, GPIO_Pin_10, 
+	GPIO_Pin_11, GPIO_Pin_12, GPIO_Pin_13, GPIO_Pin_14, GPIO_Pin_15 
+};
+
 static void inline open(GPIO_TypeDef * port, uint16_t pin) {
 	GPIO_ResetBits(port, pin);
 }
@@ -114,6 +119,14 @@ static void coder_Init(void){
 		GPIO_Init(gpio_port[i], &GPIO_InitStructure);
 	}
 	coder();
+}
+
+static void FeedBack_init(void) {
+	GPIO_InitTypeDef GPIO_InitStructure;
+	
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_All;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
 static void uart2_Init(void) {
@@ -210,20 +223,24 @@ void USART2_IRQHandler(void) {
 	}
 }
 
-static char CHOOSE = 0;
-static char FLAG = 0; 
+//static char CHOOSE = 0;
+//static char FLAG = 0; 
 
-void status(machineNumber msg){
-	if(msg == FLAG){
-		CHOOSE = msg;
-	} 
+// void status(machineNumber msg){
+// 	if(msg == FLAG){
+// 		CHOOSE = msg;
+// 	} 
+// }
+
+static uint8_t IOchoose(unsigned char numb) {
+	return GPIO_ReadInputDataBit(GPIOC, feedback_pin[numb - 1]);
 }
 
 void max_send(machineNumber msg){
 	comm_pack pack;
 	pack.addr = code;
 	pack.mach = msg;
-	if(CHOOSE == msg){
+	if(IOchoose(msg) == 1){
 	   pack.act = 1;
 	} else {
 		 pack.act = 0;
@@ -232,7 +249,7 @@ void max_send(machineNumber msg){
 	comm_transmit_dir();
 	comm_pack_send(&pack);
   comm_receive_dir();
-	CHOOSE = 0;
+//	CHOOSE = 0;
 }
 
 void communicat_handle(const comm_pack *msg){
@@ -259,7 +276,7 @@ static void __commuTask(void *parameter) {
 		if (rc == pdTRUE) {
 			if(msg.addr == code) {
   			printf("commuTask: get message\n");
-				FLAG = msg.mach;
+//				FLAG = msg.mach;
 				communicat_handle(&msg);
 				vTaskDelay(configTICK_RATE_HZ / 2);
 				max_send(msg.mach);
